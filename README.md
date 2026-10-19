@@ -27,14 +27,22 @@ Biến môi trường: `FIGMA_AGENT_TOKEN` (cố định token), `FIGMA_AGENT_PO
 
 | Nhóm | Tool |
 |---|---|
-| Kết nối | `figma_status` |
-| Đọc | `get_document_info`, `set_current_page`, `get_selection`, `get_node`, `find_nodes`, `get_design_system`, `list_fonts` |
-| Tạo | `render_tree`: dựng cả màn hình từ cây JSON (frame/auto layout, text, rect, ellipse, svg, image, instance) |
+| Kết nối | `figma_status` (kèm `versionCheck`: cảnh báo khi plugin trong Figma khác bản build của server) |
+| Đọc | `get_document_info`, `set_current_page`, `get_selection`, `get_node`, `find_nodes`, `get_design_system` (`usedIn`: token đang bind trong một node), `list_fonts`, `search_design_system` |
+| Tạo | `render_tree`: dựng cả màn hình từ cây JSON (section/frame/auto layout/layout grid, text, rect, ellipse, svg, image, instance) |
 | Sửa | `update_nodes`, `delete_nodes`, `move_nodes`, `clone_node`, `select_nodes` |
+| Design system | `manage_pages`, `create_variables`, `import_tokens` (DTCG, lint giống `check_tokens.py`), `create_styles`, `render_foundations`, `create_component_set` |
+| Prototype | `set_interactions` (Smart Animate, motion token, interactive component, flow start) |
+| QA | `audit_design`, `stress_test`, `bind_variables`, `rename_by_rule` (hai tool sau mặc định dryRun) |
+| Bàn giao | `annotate`, `set_dev_status`, `export_tokens` (json/css/swift/kotlin), `export_assets` |
 | Mọi thứ khác | `execute_code`: chạy JS Plugin API (`figma`, helper `h`) |
 | Kiểm tra | `screenshot`: trả PNG để agent tự nhìn |
 
-Quy trình và quy tắc cho agent nằm ở `.claude/skills/figma-agent/SKILL.md` (Claude Code tự nạp). Ví dụ DSL: `examples/fintech-wallet.json` (dán vào ô *Test render_tree locally* trong plugin để thử không cần agent).
+Mọi tool nhận `page` (id/tên) để chạy trên page đó rồi trả page cũ, nên nhiều agent chạy song song không ghi nhầm page.
+
+**Phiên bản:** mỗi lần nâng cấp plugin thì tăng `version` trong `package.json`. `npm run build` gắn version + commit vào cả plugin và server. Bảng plugin hiện `Plugin <version> (<commit>)`, còn `figma_status` báo ⚠️ khi plugin đang mở là bản cũ: đóng và mở lại plugin trong Figma.
+
+Quy trình và quy tắc cho agent nằm ở `.claude/skills/figma-agent/SKILL.md` (Claude Code tự nạp); quy trình design system 8 giai đoạn ở `.claude/skills/figma-master/` (đọc `references/figma-agent-adapter.md`). Ví dụ DSL: `examples/fintech-wallet.json` (dán vào ô *Test render_tree locally* trong plugin để thử không cần agent).
 
 ## Phát triển
 

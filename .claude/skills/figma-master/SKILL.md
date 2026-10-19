@@ -16,6 +16,7 @@ Gọi `SKILL_DIR` là thư mục chứa file này.
 
 | Khi cần | Đọc |
 |---|---|
+| Phiên có tool `figma-agent` (`figma_status`, `render_tree`…) — **đọc trước** | `references/figma-agent-adapter.md` |
 | Thao tác Figma bằng MCP (mọi lần ghi lên canvas) | `references/agent-mcp.md` |
 | Cấu trúc page, đặt tên layer/frame, Auto Layout, grid | `references/file-standards.md` |
 | Variables, token, styles, component, variants, thư viện | `references/design-system.md` |
@@ -47,7 +48,7 @@ Không phải task nào cũng chạy đủ 8. Xác định điểm vào ở Giai
 
 ### Giai đoạn 0 — Tiếp nhận và định vị
 
-1. Xác định chế độ: có tool Figma MCP (`use_figma`, `get_metadata`…) trong phiên không? Có → Agent. Không → Designer (vẫn chạy cùng quy trình, đầu ra là hướng dẫn). Nếu người dùng muốn Agent nhưng thiếu MCP: nói rõ cần kết nối Figma MCP remote, rồi tiếp tục ở chế độ Designer.
+1. Xác định chế độ: có tool ghi Figma trong phiên không — Figma MCP remote (`use_figma`, `get_metadata`…) **hoặc** `figma-agent` (`figma_status`, `render_tree`, `search_design_system`…)? Có → Agent. Với `figma-agent`: đọc `references/figma-agent-adapter.md` để đổi tên tool, gọi `figma_status` và xử lý cảnh báo `versionCheck` trước khi làm. Không có tool → Designer (vẫn chạy cùng quy trình, đầu ra là hướng dẫn). Nếu người dùng muốn Agent nhưng thiếu tool: nói rõ cần mở plugin figma-agent-UI (hoặc kết nối Figma MCP remote), rồi tiếp tục ở chế độ Designer.
 2. Phân loại yêu cầu và chọn điểm vào:
 
 | Yêu cầu | Bắt đầu ở |

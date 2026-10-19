@@ -2,6 +2,7 @@
 // update_nodes (existing nodes). Ordering follows the Plugin API rules:
 // layout mode → text/fonts → paints → resize → (append) → sizing modes.
 import type { AnyProps, NumOrVar } from '../shared/schemas';
+import { GRID_PRESETS, toLayoutGrid } from '../shared/grids';
 import { expandSides, parseLetterSpacing, parseLineHeight, weightToStyle } from '../shared/values';
 import { loadFont, loadNodeFonts, resolveFont } from './fonts';
 import { resolveEffects, resolveFill } from './paints';
@@ -97,6 +98,17 @@ async function applyFrame(node: FrameNode, p: AnyProps, ctx: ApplyCtx) {
     if (v !== undefined) await setNum(node, fields[i], v, ctx, (n) => (node[fields[i]] = n));
   }
   if (p.clip !== undefined) node.clipsContent = p.clip;
+  if (p.layoutGrids !== undefined) {
+    const g = p.layoutGrids;
+    if (!Array.isArray(g) && 'style' in g) await node.setGridStyleIdAsync((await ctx.res.gridStyle(g.style)).id);
+    else node.layoutGrids = resolveGrids(g);
+  }
+}
+
+export function resolveGrids(g: NonNullable<AnyProps['layoutGrids']>): LayoutGrid[] {
+  if (!Array.isArray(g) && 'style' in g) throw new Error('A grid style must be applied with setGridStyleIdAsync.');
+  const specs = Array.isArray(g) ? g : GRID_PRESETS[g.preset];
+  return specs.map((x) => toLayoutGrid(x) as LayoutGrid);
 }
 
 async function applyText(node: TextNode, p: AnyProps, ctx: ApplyCtx, isNew: boolean) {

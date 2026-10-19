@@ -1,6 +1,7 @@
-import type { AnyProps, RenderTreeInput, TreeNode } from '../../shared/schemas';
+import type { AnyProps, RenderTreeInput, SectionSpec, TreeNode } from '../../shared/schemas';
 import { parseColor } from '../../shared/values';
 import { applyPlacement, applyProps, type ApplyCtx } from '../apply';
+import { resolveFill } from '../paints';
 import { Resources } from '../resources';
 import { freeSpot, getContainer, isAutoLayout, RolledBackError } from '../util';
 
@@ -8,7 +9,7 @@ export async function renderTree(p: RenderTreeInput) {
   const ctx: ApplyCtx = { res: new Resources(), defaultFont: p.defaultFont ?? 'Inter' };
   const parent = p.parentId ? await getContainer(p.parentId) : figma.currentPage;
   const ids: Record<string, string> = {};
-  const state = { root: null as SceneNode | null, count: 0 };
+  const state: BuildState = { root: null, count: 0 };
 
   const onPage = parent.type === 'PAGE' && p.tree.x === undefined && p.tree.y === undefined;
   const spot = onPage ? freeSpot((parent as PageNode).children) : null;
@@ -35,18 +36,26 @@ export async function renderTree(p: RenderTreeInput) {
   }
 }
 
-async function build(
+export interface BuildState {
+  root: SceneNode | null;
+  count: number;
+}
+
+// Builds one spec subtree under `parent`. Exported for create_component_set,
+// which builds each variant with the same appliers as render_tree.
+export async function build(
   spec: TreeNode,
   parent: BaseNode & ChildrenMixin,
   index: number | undefined,
   ctx: ApplyCtx,
   path: string[],
   ids: Record<string, string>,
-  state: { root: SceneNode | null; count: number },
+  state: BuildState,
 ): Promise<SceneNode> {
   const label = spec.name ?? spec.type;
   const here = [...path, label];
   try {
+    if (spec.type === 'section') return await buildSection(spec, parent, index, ctx, here, ids, state);
     // Mutable copy: create() may consume or derive some properties.
     const props = { ...spec } as unknown as AnyProps;
     const node = await create(spec, ctx, props);
@@ -76,7 +85,63 @@ async function build(
 
 class PathError extends Error {}
 
-async function create(spec: TreeNode, ctx: ApplyCtx, props: AnyProps): Promise<SceneNode> {
+// file-standards.md §5–6: one Section per flow; screens 200px apart, laid
+// out left → right unless they carry their own x/y.
+async function buildSection(
+  spec: SectionSpec,
+  parent: BaseNode & ChildrenMixin,
+  index: number | undefined,
+  ctx: ApplyCtx,
+  here: string[],
+  ids: Record<string, string>,
+  state: BuildState,
+): Promise<SceneNode> {
+  if (parent.type !== 'PAGE' && parent.type !== 'SECTION') {
+    throw new Error(`A section can only live on a page or inside another section, not in a ${parent.type}.`);
+  }
+  const section = figma.createSection();
+  if (!state.root) state.root = section;
+  state.count++;
+  if (spec.name !== undefined) section.name = spec.name;
+  if (spec.fill !== undefined) {
+    const r = await resolveFill(spec.fill, ctx.res);
+    if ('style' in r) await section.setFillStyleIdAsync(r.style.id);
+    else section.fills = r.paints;
+  }
+  if (index !== undefined) parent.insertChild(Math.min(index, parent.children.length), section);
+  else parent.appendChild(section);
+  if (spec.x !== undefined) section.x = spec.x;
+  if (spec.y !== undefined) section.y = spec.y;
+
+  const pad = spec.padding ?? 80;
+  const gap = spec.gap ?? 200;
+  let cursor = pad;
+  for (const child of spec.children ?? []) {
+    const node = await build(child, section, undefined, ctx, here, ids, state);
+    const placed = 'x' in child && (child.x !== undefined || child.y !== undefined);
+    if (!placed) {
+      node.x = cursor;
+      node.y = pad;
+    }
+    cursor = Math.max(cursor, node.x + node.width + gap);
+  }
+  let w = spec.width ?? 0;
+  let h = spec.height ?? 0;
+  if (spec.width === undefined || spec.height === undefined) {
+    for (const c of section.children) {
+      w = Math.max(w, c.x + c.width + pad);
+      h = Math.max(h, c.y + c.height + pad);
+    }
+  }
+  section.resizeWithoutConstraints(Math.max(w, 400), Math.max(h, 300));
+
+  let key = here.join('/');
+  for (let i = 2; key in ids; i++) key = `${here.join('/')}#${i}`;
+  ids[key] = section.id;
+  return section;
+}
+
+async function create(spec: Exclude<TreeNode, SectionSpec>, ctx: ApplyCtx, props: AnyProps): Promise<SceneNode> {
   switch (spec.type) {
     case 'frame': {
       const node = spec.component ? figma.createComponent() : figma.createFrame();

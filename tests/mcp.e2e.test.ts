@@ -2,7 +2,8 @@
 // bridge, and drives it with the official MCP client.
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
-import { existsSync } from 'node:fs';
+import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { WebSocket } from 'ws';
@@ -34,6 +35,31 @@ beforeAll(async () => {
     const reply = (body: object) => plugin.send(JSON.stringify({ type: 'response', id: msg.id, ...body }));
     if (msg.command === 'screenshot') {
       reply({ ok: true, result: { nodeId: '1:2', mimeType: 'image/png', base64: 'iVBORw0KGgo=', width: 10, height: 10 } });
+    } else if (msg.command === 'export_tokens') {
+      reply({
+        ok: true,
+        result: {
+          collections: [
+            { name: 'Primitives', modes: ['Value'], variables: [{ name: 'color/gray/900', type: 'COLOR', values: { Value: '#0F172A' } }] },
+            {
+              name: 'Semantic',
+              modes: ['Light', 'Dark'],
+              variables: [{ name: 'color/text/primary', type: 'COLOR', values: { Light: { alias: 'Primitives/color/gray/900' }, Dark: '#F8FAFC' } }],
+            },
+          ],
+          textStyles: [],
+        },
+      });
+    } else if (msg.command === 'export_assets') {
+      reply({
+        ok: true,
+        result: {
+          files: [
+            { id: '1:2', name: 'icon/home', format: 'PNG', scale: 1, base64: 'iVBORw0KGgo=' },
+            { id: '1:2', name: 'icon/home', format: 'PNG', scale: 2, base64: 'iVBORw0KGgo=' },
+          ],
+        },
+      });
     } else if (msg.command === 'delete_nodes') {
       reply({ ok: false, error: 'Node 9:9 not found', safeToRetryWithoutCanvasRead: false });
     } else {
@@ -65,24 +91,37 @@ describe('MCP server', () => {
     const names = tools.map((t) => t.name).sort();
     expect(names).toEqual(
       [
+        'annotate',
         'audit_design',
+        'bind_variables',
         'clone_node',
+        'create_component_set',
+        'create_styles',
         'create_variables',
         'delete_nodes',
         'execute_code',
+        'export_assets',
+        'export_tokens',
         'figma_status',
         'find_nodes',
         'get_design_system',
         'get_document_info',
         'get_node',
         'get_selection',
+        'import_tokens',
         'list_fonts',
         'manage_pages',
         'move_nodes',
+        'rename_by_rule',
+        'render_foundations',
         'render_tree',
         'screenshot',
+        'search_design_system',
         'select_nodes',
         'set_current_page',
+        'set_dev_status',
+        'set_interactions',
+        'stress_test',
         'update_nodes',
       ].sort(),
     );
@@ -173,5 +212,63 @@ describe('MCP server', () => {
 
     const bad = await client.callTool({ name: 'manage_pages', arguments: { rename: [{ page: 'A' }] } });
     expect(bad.isError).toBe(true);
+  });
+
+  it('warns when the plugin in Figma is another build than the server', async () => {
+    const r = await client.callTool({ name: 'figma_status', arguments: {} });
+    const body = JSON.parse((r.content as { text: string }[])[0].text);
+    expect(body.versionCheck).toMatch(/⚠️.*E2E = 1\.0\.0 \(e2e\).*mở lại/);
+  });
+});
+
+describe('figma-master tools with server-side work', () => {
+  const example = join(__dirname, '..', '.claude', 'skills', 'figma-master', 'assets', 'tokens.example.json');
+
+  it('import_tokens lints and plans on the server, then sends collections', async () => {
+    const r = await client.callTool({ name: 'import_tokens', arguments: { path: example, dryRun: true } });
+    expect(r.isError).toBeFalsy();
+    const sent = received.filter((x) => x.command === 'import_tokens').at(-1)!.params as {
+      collections: { collection: string; modes: string[] }[];
+      dryRun: boolean;
+      onExisting: string;
+    };
+    expect(sent.collections.map((c) => c.collection)).toEqual(['Primitives', 'Semantic']);
+    expect(sent.collections[1].modes).toEqual(['Light', 'Dark']);
+    expect(sent).toMatchObject({ dryRun: true, onExisting: 'skip' });
+  });
+
+  it('import_tokens stops on check_tokens errors before reaching Figma', async () => {
+    const before = received.length;
+    const r = await client.callTool({
+      name: 'import_tokens',
+      arguments: { tokens: { primitives: { color: { Blue: { $type: 'color', $value: '#00F' } } } } },
+    });
+    expect(r.isError).toBe(true);
+    expect(JSON.stringify(r.content)).toMatch(/check_tokens/);
+    expect(received.length).toBe(before);
+  });
+
+  it('export_tokens converts and writes the file', async () => {
+    const out = join(mkdtempSync(join(tmpdir(), 'export-')), 'tokens.css');
+    const r = await client.callTool({ name: 'export_tokens', arguments: { format: 'css', path: out } });
+    expect(r.isError).toBeFalsy();
+    const css = readFileSync(out, 'utf8');
+    expect(css).toContain('--color-text-primary: var(--color-gray-900);');
+    expect(css).toContain('[data-theme="dark"]');
+  });
+
+  it('export_assets writes one file per scale', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'assets-'));
+    const r = await client.callTool({ name: 'export_assets', arguments: { ids: ['1:2'], scales: [1, 2], outDir: dir } });
+    expect(r.isError).toBeFalsy();
+    expect(existsSync(join(dir, 'icon-home.png'))).toBe(true);
+    expect(existsSync(join(dir, 'icon-home@2x.png'))).toBe(true);
+  });
+
+  it('bind_variables and rename_by_rule default to dryRun', async () => {
+    await client.callTool({ name: 'bind_variables', arguments: { rootId: '1:2' } });
+    await client.callTool({ name: 'rename_by_rule', arguments: { rootId: '1:2' } });
+    expect(received.filter((x) => x.command === 'bind_variables').at(-1)!.params).toMatchObject({ dryRun: true, auto: true, tolerance: 2 });
+    expect(received.filter((x) => x.command === 'rename_by_rule').at(-1)!.params).toMatchObject({ dryRun: true, auto: true });
   });
 });

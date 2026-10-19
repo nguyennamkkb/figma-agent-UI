@@ -7,7 +7,9 @@ import {
   contrastVerdict,
   isOffScale,
   isRedundantWrapper,
+  LOREM,
   nameProblem,
+  worstContrast,
   targetSeverity,
   toQaMarkdown,
   type Issue,
@@ -17,10 +19,11 @@ import { getNode } from '../util';
 
 const CHECK_GROUPS: Record<string, string[]> = {
   names: ['default-name', 'blacklisted-name'],
-  tokens: ['raw-fill', 'raw-text'],
+  tokens: ['raw-fill', 'raw-text', 'raw-stroke', 'raw-radius', 'primitive-bound'],
   layout: ['no-autolayout', 'redundant-wrapper', 'off-scale-spacing'],
   a11y: ['contrast', 'small-target'],
-  hygiene: ['hidden-layer', 'orphan-token'],
+  hygiene: ['hidden-layer', 'orphan-token', 'outside-section', 'variant-explosion'],
+  content: ['lorem'],
 };
 
 // Names that make a layer an interactive target (master: button, tab, chip,
@@ -44,25 +47,48 @@ function solidColor(node: SceneNode): RGB | null {
   return null;
 }
 
-// Real backdrop: nearest ancestor with a resolvable solid fill. Gradients and
-// images return null so the caller reports "needs-check" instead of a wrong ratio.
-function backdropOf(node: SceneNode): RGB | null {
+// Real backdrop: nearest ancestor with a visible fill. A solid gives one
+// colour, an opaque gradient gives its stops (judged by the worst one);
+// images and translucent paints return null → "needs-check", never a wrong ratio.
+function backdropOf(node: SceneNode): RGB[] | null {
   let cur: BaseNode | null = node.parent;
   while (cur && cur.type !== 'PAGE' && cur.type !== 'DOCUMENT') {
     if (isScene(cur)) {
-      const paints = 'fills' in cur && Array.isArray(cur.fills) ? cur.fills : [];
-      const hasPaint = paints.some((p) => p.visible !== false);
-      if (hasPaint) return solidColor(cur);
+      const paints = 'fills' in cur && Array.isArray(cur.fills) ? (cur.fills as Paint[]) : [];
+      const visible = paints.filter((p) => p.visible !== false);
+      if (visible.length) {
+        const top = visible[visible.length - 1];
+        if ((top.type === 'GRADIENT_LINEAR' || top.type === 'GRADIENT_RADIAL') && (top.opacity ?? 1) >= 0.95) {
+          const stops = top.gradientStops;
+          return stops.every((s) => s.color.a >= 0.95) ? stops.map((s) => s.color) : null;
+        }
+        const solid = solidColor(cur);
+        return solid ? [solid] : null;
+      }
     }
     cur = cur.parent;
   }
-  return { r: 1, g: 1, b: 1 };
+  return [{ r: 1, g: 1, b: 1 }];
 }
 
 const bound = (node: SceneNode, field: string): boolean => {
   const bv = (node as SceneNode & { boundVariables?: Record<string, unknown> }).boundVariables;
   return !!bv && !!bv[field];
 };
+
+// Every variable id bound on the node, its fills/strokes and effects.
+function boundIds(n: SceneNode): string[] {
+  const ids: string[] = [];
+  const collect = (value: unknown) => {
+    if (!value || typeof value !== 'object') return;
+    if (Array.isArray(value)) return value.forEach(collect);
+    const alias = value as VariableAlias;
+    if (alias.type === 'VARIABLE_ALIAS') ids.push(alias.id);
+    else Object.values(value).forEach(collect);
+  };
+  collect((n as SceneNode & { boundVariables?: unknown }).boundVariables);
+  return [...new Set(ids)];
+}
 
 export async function auditDesign(p: AuditInput) {
   const root = p.rootId ? await getNode(p.rootId) : figma.currentPage;
@@ -78,6 +104,16 @@ export async function auditDesign(p: AuditInput) {
     };
     for (const child of (root as ChildrenMixin).children) walk(child);
   }
+
+  // Primitives (scopes [] or a "Primitive…" collection) must not be bound to layers.
+  const primitives = new Map<string, string>();
+  if (enabled.has('primitive-bound')) {
+    const [vars, colls] = await Promise.all([figma.variables.getLocalVariablesAsync(), figma.variables.getLocalVariableCollectionsAsync()]);
+    const primColl = new Set(colls.filter((c) => /primitive/i.test(c.name)).map((c) => c.id));
+    for (const v of vars) if (primColl.has(v.variableCollectionId) || v.scopes.length === 0) primitives.set(v.id, v.name);
+  }
+  const page = root.type === 'PAGE' ? root : null;
+  const pageHasSections = !!page && page.children.some((c) => c.type === 'SECTION');
 
   for (const n of nodes) {
     const rect = 'x' in n ? { x: Math.round(n.x), y: Math.round(n.y), w: Math.round(n.width), h: Math.round(n.height) } : undefined;
@@ -159,8 +195,11 @@ export async function auditDesign(p: AuditInput) {
         continue;
       }
       const weight = t.fontName === figma.mixed ? undefined : t.fontName.style;
-      const v = contrastVerdict(fg, bg, t.fontSize === figma.mixed ? 14 : t.fontSize, weight);
-      if (!v.pass) push('contrast', `${v.ratio}:1 < ${v.need}:1 (cần ${v.need === 3 ? 'chữ lớn' : 'chữ thường'})`);
+      const size = t.fontSize === figma.mixed ? 14 : t.fontSize;
+      const v = bg.length === 1 ? contrastVerdict(fg, bg[0], size, weight) : worstContrast(fg, bg, size, weight);
+      if (!v.pass) {
+        push('contrast', `${v.ratio}:1 < ${v.need}:1 (cần ${v.need === 3 ? 'chữ lớn' : 'chữ thường'})${bg.length > 1 ? ' — điểm tệ nhất của nền gradient' : ''}`);
+      }
     }
 
     // E — tap target (B3): only real interactive layers, never icon glyphs.
@@ -169,27 +208,60 @@ export async function auditDesign(p: AuditInput) {
       if (sev) issues.push({ id: n.id, kind: 'small-target', name: n.name, detail: `${Math.round(n.width)}×${Math.round(n.height)} < 44pt`, rect, severity: sev });
     }
 
+    // B — strokes and radius bound to tokens too
+    if (enabled.has('raw-stroke') && 'strokes' in n && Array.isArray(n.strokes)) {
+      const styleId = 'strokeStyleId' in n ? n.strokeStyleId : '';
+      const boundStrokes = ((n as SceneNode & { boundVariables?: Record<string, unknown[]> }).boundVariables?.strokes ?? []) as unknown[];
+      n.strokes.forEach((paint, i) => {
+        if (paint.type === 'SOLID' && paint.visible !== false && !boundStrokes[i] && !styleId) push('raw-stroke', `stroke[${i}] không bind variable/style`);
+      });
+    }
+    if (enabled.has('raw-radius') && 'cornerRadius' in n && typeof n.cornerRadius === 'number' && n.cornerRadius > 0) {
+      if (!bound(n, 'topLeftRadius') && !bound(n, 'cornerRadius')) push('raw-radius', `radius ${n.cornerRadius} không bind variable`);
+    }
+    if (enabled.has('primitive-bound')) {
+      for (const vid of boundIds(n)) {
+        const meta = primitives.get(vid);
+        if (meta) push('primitive-bound', `bind thẳng primitive "${meta}"`);
+      }
+    }
+
+    // F1 — placeholder copy
+    if (enabled.has('lorem') && n.type === 'TEXT' && LOREM.test((n as TextNode).characters)) push('lorem', 'nội dung giả (lorem ipsum)');
+
+    // A — structure
+    if (enabled.has('variant-explosion') && n.type === 'COMPONENT_SET' && n.children.length > 50) {
+      push('variant-explosion', `${n.children.length} variant > 50`);
+    }
+    if (enabled.has('outside-section') && pageHasSections && n.parent?.type === 'PAGE' && n.type === 'FRAME') {
+      push('outside-section', 'frame top-level nằm ngoài Section');
+    }
+
     // G1 — hygiene
     if (enabled.has('hidden-layer') && n.visible === false) push('hidden-layer');
   }
 
-  // Orphan styles: defined locally but referenced by nothing in the audited tree.
+  // Orphan styles: defined locally but referenced by nothing in the whole
+  // file (a style used on another page is not an orphan).
   if (enabled.has('orphan-token')) {
     const used = new Set<string>();
-    for (const n of nodes) {
-      for (const key of ['fillStyleId', 'strokeStyleId', 'effectStyleId', 'textStyleId'] as const) {
+    await figma.loadAllPagesAsync();
+    // eslint-disable-next-line @figma/figma-plugins/dynamic-page-find-method-advice -- pages loaded just above
+    for (const n of figma.root.findAll(() => true)) {
+      for (const key of ['fillStyleId', 'strokeStyleId', 'effectStyleId', 'textStyleId', 'gridStyleId'] as const) {
         if (key in n) {
           const v = (n as unknown as Record<string, unknown>)[key];
           if (typeof v === 'string' && v) used.add(v);
         }
       }
     }
-    const [paint, text, effect] = await Promise.all([
+    const [paint, text, effect, grid] = await Promise.all([
       figma.getLocalPaintStylesAsync(),
       figma.getLocalTextStylesAsync(),
       figma.getLocalEffectStylesAsync(),
+      figma.getLocalGridStylesAsync(),
     ]);
-    for (const s of [...paint, ...text, ...effect]) {
+    for (const s of [...paint, ...text, ...effect, ...grid]) {
       if (!used.has(s.id)) issues.push({ id: s.id, kind: 'orphan-token', name: s.name, detail: 'style không được dùng' });
     }
   }

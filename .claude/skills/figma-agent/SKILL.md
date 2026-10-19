@@ -11,6 +11,10 @@ The `figma-agent` MCP server talks to the **figma-agent-UI** plugin running insi
 
 Call `figma_status` first. `files: []` means no file is connected: ask the user to open Figma → Plugins → Development → **figma-agent-UI**, paste the `token` shown by `figma_status`, press Connect. With several files connected, pass `file` (file name or key) to every tool.
 
+If `versionCheck` starts with ⚠️, the plugin open in Figma is an older build than the server: newer tools will answer "Unknown command". Ask the user to close and reopen the plugin; its panel shows `Plugin <version> (<commit>)` to compare.
+
+Design-system work (file skeleton, tokens, styles, component sets, prototype, QA report, handoff) follows the **figma-master** skill; its `references/figma-agent-adapter.md` maps every stage to the tools below.
+
 Two situations need the plugin restarted by hand, so say so plainly instead of retrying: the user closed it, or a previous `execute_code` call never returned (see §6).
 
 ## 1. Inspect before you build
@@ -31,7 +35,16 @@ Then match what already exists: naming, spacing scale, colors, type styles, comp
 | New screen / section / card / component tree | `render_tree` — one call per screen or large section |
 | Change text, colors, spacing, sizing, variants, resize on existing layers | `update_nodes` — batch them into one call |
 | Delete / reorder / reparent / duplicate | `delete_nodes`, `move_nodes`, `clone_node` |
-| Components, variants, variables, modes, styles, prototyping, constraints, boolean ops, anything else | `execute_code` |
+| Anything that might already exist (component, token, style) | `search_design_system` first |
+| Page skeleton / rename / reorder pages | `manage_pages` |
+| Variables (collections, modes, aliases, scopes) / token JSON | `create_variables`, `import_tokens` (DTCG) |
+| Text / paint / effect / grid styles | `create_styles` |
+| Component set with variants and TEXT/BOOLEAN/INSTANCE_SWAP properties | `create_component_set` |
+| Prototype links, Smart Animate, interactive components | `set_interactions` |
+| QA report / bulk fixes | `audit_design`, then `bind_variables`, `rename_by_rule` (both dryRun by default) |
+| Long text / large type / narrow / dark checks | `stress_test` |
+| Handoff | `annotate`, `set_dev_status`, `export_tokens`, `export_assets`, `render_foundations` |
+| Constraints, boolean ops, vector edits, anything else | `execute_code` |
 | Look at the result | `screenshot` |
 | Show the user where the result is | `select_nodes` |
 | Understand the file | `get_document_info`, `get_design_system`, `get_selection`, `get_node`, `find_nodes`, `list_fonts`, `set_current_page` |
@@ -99,6 +112,8 @@ The result returns `rootId`, `created` and `ids` keyed by name path (`"Login/For
 - `clone_node` — `{id, parentId?, index?, x?, y?}` returns the copy's id.
 - `delete_nodes` — `{ids}`; the response separates `deleted` from `missing`.
 - `select_nodes` — `{ids, zoom?}`; use it as the last step so the user sees the work.
+- Every tool takes `page` (id or name): it runs on that page and restores the previous one, so parallel agents never write to the wrong page. Prefer it over `set_current_page`.
+- `render_tree` also builds `{type: "section", name, children}` (screens of one flow, auto-placed 200 px apart) and frame `layoutGrids` (`[{pattern, count, gutter, margin}]`, `{preset: "mobile"}` or `{style}`).
 
 ## 6. execute_code
 

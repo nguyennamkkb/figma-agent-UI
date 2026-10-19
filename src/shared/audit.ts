@@ -20,7 +20,13 @@ export type IssueKind =
   | 'contrast'
   | 'detached-instance'
   | 'hidden-layer'
-  | 'orphan-token';
+  | 'orphan-token'
+  | 'raw-stroke'
+  | 'raw-radius'
+  | 'primitive-bound'
+  | 'lorem'
+  | 'outside-section'
+  | 'variant-explosion';
 
 export type Severity = 'block' | 'should' | 'nice';
 
@@ -37,6 +43,12 @@ export const SEVERITY: Record<IssueKind, Severity> = {
   'orphan-token': 'should',
   'redundant-wrapper': 'nice',
   'hidden-layer': 'nice',
+  'raw-stroke': 'should',
+  'raw-radius': 'should',
+  'primitive-bound': 'should',
+  lorem: 'should',
+  'outside-section': 'nice',
+  'variant-explosion': 'should',
 };
 
 export const SEVERITY_LABEL: Record<Severity, string> = { block: '🔴 Chặn', should: '🟡 Nên sửa', nice: '🔵 Gợi ý' };
@@ -78,6 +90,20 @@ export function contrastThreshold(fontSize = 14, fontWeight?: number | string): 
   const large = fontSize >= 24 || (fontSize >= 18.66 && isBold(fontWeight));
   return large ? 3 : 4.5;
 }
+
+// Gradient backdrops (B2): the text must pass against every stop, so the
+// verdict is the worst stop. Images stay unverifiable (needs-check).
+export function worstContrast(fg: RGB, stops: RGB[], fontSize?: number, fontWeight?: number | string) {
+  let worst = contrastVerdict(fg, stops[0], fontSize, fontWeight);
+  for (const s of stops.slice(1)) {
+    const v = contrastVerdict(fg, s, fontSize, fontWeight);
+    if (v.ratio < worst.ratio) worst = v;
+  }
+  return worst;
+}
+
+// handoff-qa.md F1: placeholder copy must not reach handoff.
+export const LOREM = /lorem ipsum|dolor sit amet|consectetur adipiscing/i;
 
 export function contrastVerdict(fg: RGB, bg: RGB, fontSize?: number, fontWeight?: number | string) {
   const ratio = contrastRatio(fg, bg);
@@ -161,9 +187,11 @@ export function toQaMarkdown(report: AuditReport, opts: { file?: string; date?: 
   const verdict = report.severity.block > 0 ? '🔴 Chưa bàn giao được' : '🟢 Sẵn sàng bàn giao';
   const groupOf: Record<string, string> = {
     'default-name': 'A', 'blacklisted-name': 'A', 'hidden-layer': 'A', 'detached-instance': 'A',
-    'raw-fill': 'B', 'raw-text': 'B', 'orphan-token': 'B',
+    'outside-section': 'A', 'variant-explosion': 'A',
+    'raw-fill': 'B', 'raw-text': 'B', 'orphan-token': 'B', 'raw-stroke': 'B', 'raw-radius': 'B', 'primitive-bound': 'B',
     'no-autolayout': 'C', 'redundant-wrapper': 'C', 'off-scale-spacing': 'C',
     contrast: 'E', 'small-target': 'E',
+    lorem: 'F',
   };
   const groups: Record<string, { block: number; should: number; nice: number }> = {};
   for (const i of report.issues) {
@@ -190,7 +218,7 @@ ${rows.length ? rows.join('\n') : '| – | – | – | – | Không phát hiện
 
 ## Ghi chú kiểm tra tự động
 - B3/D4 (trạng thái, bàn phím) cần người kiểm — audit chỉ đọc được cấu trúc.
-- Tương phản chỉ tính khi nền là màu đặc; nền gradient/ảnh/blend bị bỏ qua (ghi \`needs-check\`).
+- Tương phản: nền màu đặc tính trực tiếp, nền gradient lấy điểm dừng tệ nhất; nền ảnh/blend ghi \`needs-check\`.
 - Mục \`raw-fill\` đếm cả trường hợp hợp lệ trong file chưa có design system.
 `;
 }
@@ -223,5 +251,17 @@ function fixHint(kind: IssueKind): string {
       return 'Xoá layer ẩn không dùng';
     case 'orphan-token':
       return 'Xoá token mồ côi hoặc ghi chú lý do giữ';
+    case 'raw-stroke':
+      return 'Bind `color/border/*` variable hoặc paint style';
+    case 'raw-radius':
+      return 'Bind `radius/*` variable (bind_variables)';
+    case 'primitive-bound':
+      return 'Đổi sang Semantic token — Primitive không bind thẳng vào layer';
+    case 'lorem':
+      return 'Thay bằng nội dung thật';
+    case 'outside-section':
+      return 'Đưa frame vào Section theo flow';
+    case 'variant-explosion':
+      return 'Chuyển bớt trục variant sang boolean/instance-swap property hoặc mode';
   }
 }

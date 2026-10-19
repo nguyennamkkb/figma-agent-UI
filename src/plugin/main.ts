@@ -6,6 +6,15 @@ import { executeCode } from './commands/execute';
 import { auditDesign } from './commands/audit';
 import { managePages } from './commands/pages';
 import { createVariables } from './commands/variables';
+import { bindVariables } from './commands/bind';
+import { createComponentSet } from './commands/components';
+import { annotate, exportAssets, setDevStatus } from './commands/handoff';
+import { setInteractions } from './commands/interactions';
+import { renameByRule } from './commands/rename';
+import { searchDesignSystem } from './commands/search';
+import { stressTest } from './commands/stress';
+import { createStyles } from './commands/styles';
+import { importTokens, readTokens, renderFoundations } from './commands/tokens';
 import {
   findNodes,
   getDesignSystem,
@@ -45,6 +54,19 @@ const commands: Record<string, Command> = {
   audit_design: { mutates: false, run: auditDesign },
   manage_pages: { mutates: true, run: managePages },
   create_variables: { mutates: true, run: createVariables },
+  search_design_system: { mutates: false, run: searchDesignSystem },
+  create_styles: { mutates: true, run: createStyles },
+  import_tokens: { mutates: true, run: importTokens },
+  export_tokens: { mutates: false, run: readTokens },
+  render_foundations: { mutates: true, run: renderFoundations },
+  create_component_set: { mutates: true, run: createComponentSet },
+  stress_test: { mutates: true, run: stressTest },
+  set_interactions: { mutates: true, run: setInteractions },
+  bind_variables: { mutates: true, run: bindVariables },
+  rename_by_rule: { mutates: true, run: renameByRule },
+  annotate: { mutates: true, run: annotate },
+  set_dev_status: { mutates: true, run: setDevStatus },
+  export_assets: { mutates: false, run: exportAssets },
 };
 
 figma.showUI(__html__, { width: 360, height: 480, themeColors: true });

@@ -62,7 +62,44 @@ export async function findNodes(p: FindNodesInput) {
   return { total: hits.length, nodes: hits.slice(0, p.limit).map(summary) };
 }
 
+// get_variable_defs equivalent: tokens actually bound inside one subtree.
+async function usedIn(id: string) {
+  const root = await getNode(id);
+  const nodes: BaseNode[] = [root, ...('findAll' in root ? (root as ChildrenMixin).findAll(() => true) : [])];
+  const varUses = new Map<string, number>();
+  const styleUses = new Map<string, number>();
+  const collect = (value: unknown) => {
+    if (!value || typeof value !== 'object') return;
+    if (Array.isArray(value)) return value.forEach(collect);
+    const alias = value as VariableAlias;
+    if (alias.type === 'VARIABLE_ALIAS') varUses.set(alias.id, (varUses.get(alias.id) ?? 0) + 1);
+    else Object.values(value).forEach(collect);
+  };
+  for (const n of nodes) {
+    // Paint bindings are mirrored in node.boundVariables.fills/strokes, so
+    // reading the paints too would count them twice.
+    collect((n as SceneNode & { boundVariables?: unknown }).boundVariables);
+    for (const key of ['fillStyleId', 'strokeStyleId', 'effectStyleId', 'textStyleId', 'gridStyleId'] as const) {
+      const v = (n as unknown as Record<string, unknown>)[key];
+      if (typeof v === 'string' && v) styleUses.set(v, (styleUses.get(v) ?? 0) + 1);
+    }
+  }
+  const variables = [];
+  for (const [vid, count] of varUses) {
+    const v = await figma.variables.getVariableByIdAsync(vid);
+    const c = v ? await figma.variables.getVariableCollectionByIdAsync(v.variableCollectionId) : null;
+    variables.push({ id: vid, name: v?.name ?? '(library/deleted)', collection: c?.name, type: v?.resolvedType, uses: count });
+  }
+  const styles = [];
+  for (const [sid, count] of styleUses) {
+    const s = await figma.getStyleByIdAsync(sid);
+    styles.push({ id: sid, name: s?.name ?? '(library/deleted)', type: s?.type, uses: count });
+  }
+  return { node: { id: root.id, name: root.name }, scanned: nodes.length, variables, styles };
+}
+
 export async function getDesignSystem(p: DesignSystemInput) {
+  if (p.usedIn) return usedIn(p.usedIn);
   const out: Record<string, unknown> = {};
   const inc = new Set(p.include);
 

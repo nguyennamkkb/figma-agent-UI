@@ -83,4 +83,20 @@ describe('plugin bundle', () => {
     expect(posted.find((m) => m.id === 'd')).toMatchObject({ ok: false, error: 'bad', safeToRetryWithoutCanvasRead: false });
     expect(posted.find((m) => m.id === 'e')?.error).toMatch(/Syntax error/);
   });
+
+  it('dispatches every figma-master command (none is "Unknown command")', async () => {
+    const { posted, send } = loadPlugin();
+    const commands = [
+      'search_design_system', 'create_styles', 'import_tokens', 'export_tokens', 'render_foundations',
+      'create_component_set', 'stress_test', 'set_interactions', 'bind_variables', 'rename_by_rule',
+      'annotate', 'set_dev_status', 'export_assets', 'audit_design', 'manage_pages', 'create_variables',
+    ];
+    for (const [i, command] of commands.entries()) await send({ type: 'request', id: `m${i}`, command, params: {} });
+    for (const [i, command] of commands.entries()) {
+      const res = posted.find((m) => m.id === `m${i}`);
+      expect(res, command).toBeDefined();
+      expect(res?.error ?? '', command).not.toMatch(/Unknown command/);
+    }
+  });
 });
+

@@ -62,6 +62,22 @@ export const Effects = z.union([
 
 const Sizing = z.enum(['FIXED', 'HUG', 'FILL']);
 
+export const GridSpec = z.strictObject({
+  pattern: z.enum(['COLUMNS', 'ROWS', 'GRID']),
+  count: z.number().int().min(1).optional().describe('Columns/rows; default 4 columns'),
+  gutter: z.number().min(0).optional().describe('Default 16'),
+  margin: z.number().min(0).optional().describe('Outer margin (STRETCH) or offset; default 16'),
+  size: z.number().min(1).optional().describe('Column/row width for non-STRETCH alignment, or GRID cell size'),
+  alignment: z.enum(['STRETCH', 'CENTER', 'MIN', 'MAX']).optional(),
+  color: z.string().optional(),
+  visible: z.boolean().optional(),
+});
+export const LayoutGrids = z.union([
+  z.strictObject({ style: z.string().describe('Local grid style name') }),
+  z.strictObject({ preset: z.enum(['mobile', 'tablet', 'desktop', 'baseline']).describe('file-standards §4 presets') }),
+  z.array(GridSpec),
+]);
+
 // ---------------------------------------------------------------- property groups
 
 const baseProps = {
@@ -103,6 +119,7 @@ const frameProps = {
   align: z.enum(['START', 'CENTER', 'END', 'BASELINE']).optional().describe('Counter axis'),
   clip: z.boolean().optional(),
   variableModes: z.record(z.string(), z.string()).optional().describe('{ "Collection": "Mode" }, e.g. dark mode'),
+  layoutGrids: LayoutGrids.optional().describe('Layout grids: [{pattern, count, gutter, margin}], { preset } or { style }'),
 };
 
 const textProps = {
@@ -158,12 +175,26 @@ export const ImageSpec = z.strictObject({
   scaleMode: ScaleMode.optional(),
 });
 export const InstanceSpec = z.strictObject({ type: z.literal('instance'), ...baseProps, ...instanceProps });
+// Sections group screens of one flow (file-standards.md §5). Only valid on a
+// page or inside another section; children without x/y flow left → right.
+const SectionBase = z.strictObject({
+  type: z.literal('section'),
+  name: z.string().optional().describe('Flow name, e.g. "Checkout"'),
+  x: z.number().optional(),
+  y: z.number().optional(),
+  width: z.number().optional().describe('Default: fit the children'),
+  height: z.number().optional(),
+  fill: Fill.optional(),
+  gap: z.number().min(0).optional().describe('Space between auto-placed children; default 200'),
+  padding: z.number().min(0).optional().describe('Default 80'),
+});
 
 export type FrameSpec = z.infer<typeof FrameBase> & { children?: TreeNode[] };
 export type TextSpec = z.infer<typeof TextSpec>;
 export type SvgSpec = z.infer<typeof SvgSpec>;
 export type ImageSpec = z.infer<typeof ImageSpec>;
 export type InstanceSpec = z.infer<typeof InstanceSpec>;
+export type SectionSpec = z.infer<typeof SectionBase> & { children?: TreeNode[] };
 export type TreeNode =
   | FrameSpec
   | TextSpec
@@ -171,12 +202,15 @@ export type TreeNode =
   | z.infer<typeof EllipseSpec>
   | SvgSpec
   | ImageSpec
-  | InstanceSpec;
+  | InstanceSpec
+  | SectionSpec;
 
 // Recursive: declared through z.lazy with an explicit type to break the cycle.
 export const TreeNode: z.ZodType<TreeNode> = z.lazy(() => TreeNodeUnion);
 export const FrameSpec = FrameBase.extend({ children: z.array(TreeNode).optional() });
+export const SectionSpec = SectionBase.extend({ children: z.array(TreeNode).optional() });
 const TreeNodeUnion = z.discriminatedUnion('type', [
+  SectionSpec,
   FrameSpec,
   TextSpec,
   RectSpec,
@@ -240,6 +274,7 @@ export const DesignSystemInput = z.object({
     .array(z.enum(['variables', 'styles', 'components', 'library']))
     .default(['variables', 'styles', 'components']),
   componentLimit: z.number().int().min(1).max(2000).default(200),
+  usedIn: NodeId.optional().describe('Only the variables/styles bound inside this node (like get_variable_defs)'),
 });
 export const ListFontsInput = z.object({
   family: z.string().optional().describe('Filter families by case-insensitive substring'),
@@ -290,7 +325,7 @@ export const ExecuteCodeInput = z.object({
 export const AuditInput = z.object({
   rootId: NodeId.optional().describe('Audit this subtree; default: the current page'),
   checks: z
-    .array(z.enum(['names', 'tokens', 'layout', 'a11y', 'hygiene']))
+    .array(z.enum(['names', 'tokens', 'layout', 'a11y', 'hygiene', 'content']))
     .optional()
     .describe('Groups to run; default: all of them'),
   limit: z.number().int().min(1).max(500).default(50).describe('Sample size per issue kind'),
@@ -315,6 +350,10 @@ export const CreateVariablesInput = z.object({
       }),
     )
     .min(1),
+  onExisting: z
+    .enum(['error', 'skip', 'update'])
+    .default('error')
+    .describe('A variable with the same name already in this collection: fail, keep it, or overwrite its values/scopes'),
 });
 
 // figma-master Giai đoạn 1: the standard page skeleton and page maintenance.
@@ -325,6 +364,167 @@ export const ManagePagesInput = z.object({
   delete: z.array(z.string()).optional(),
   order: z.array(z.string()).optional().describe('These pages first, in this order; the rest follow'),
   dryRun: z.boolean().default(false).describe('Return the plan without touching the file'),
+});
+
+// figma-master luật #3 "tìm trước khi tạo".
+export const SearchDesignSystemInput = z.object({
+  query: z.string().describe('Name or words, e.g. "button primary", "text/secondary", "elevation"'),
+  kinds: z
+    .array(z.enum(['component', 'variable', 'style']))
+    .default(['component', 'variable', 'style']),
+  includeLibraries: z.boolean().default(false).describe('Also search variables of enabled team libraries'),
+  limit: z.number().int().min(1).max(200).default(20),
+});
+
+const StyleName = z.string().min(1).describe('Slash path, e.g. "body/md" or "elevation/2"');
+export const StyleSpec = z.discriminatedUnion('kind', [
+  z.strictObject({
+    kind: z.literal('text'),
+    name: StyleName,
+    fontFamily: z.string().default('Inter'),
+    fontStyle: z.string().optional().describe('Exact style, e.g. "Semi Bold"'),
+    fontWeight: z.union([z.number(), z.string()]).optional(),
+    fontSize: NumOrVar,
+    lineHeight: z.union([z.number(), z.string()]).optional().describe('px, "150%" or "AUTO"'),
+    letterSpacing: z.union([z.number(), z.string()]).optional().describe('px or "-2%"'),
+    textCase: z.enum(['ORIGINAL', 'UPPER', 'LOWER', 'TITLE']).optional(),
+    decoration: z.enum(['NONE', 'UNDERLINE', 'STRIKETHROUGH']).optional(),
+    description: z.string().optional(),
+  }),
+  z.strictObject({ kind: z.literal('paint'), name: StyleName, fill: Fill, description: z.string().optional() }),
+  z.strictObject({ kind: z.literal('effect'), name: StyleName, effects: Effects, description: z.string().optional() }),
+  z.strictObject({ kind: z.literal('grid'), name: StyleName, grids: LayoutGrids, description: z.string().optional() }),
+]);
+const OnExisting = z.enum(['error', 'skip', 'update']).default('error').describe('When a style/variable with the same name exists');
+export const CreateStylesInput = z.object({
+  styles: z.array(StyleSpec).min(1),
+  onExisting: OnExisting,
+});
+
+export const ImportTokensInput = z.object({
+  tokens: z.record(z.string(), z.unknown()).optional().describe('DTCG JSON tree (figma-master assets/tokens.example.json format)'),
+  path: z.string().optional().describe('Absolute path of a DTCG JSON file on this machine (read by the server)'),
+  dryRun: z.boolean().default(false).describe('Return the plan and lint result without touching the file'),
+  onExisting: z.enum(['error', 'skip', 'update']).default('skip'),
+  allowLintErrors: z.boolean().default(false).describe('Import even when check_tokens rules report errors'),
+});
+
+export const ExportTokensInput = z.object({
+  format: z.enum(['json', 'css', 'swift', 'kotlin']).default('json'),
+  collections: z.array(z.string()).optional().describe('Default: every local collection'),
+  path: z.string().optional().describe('Also write the result to this absolute file path'),
+});
+
+export const RenderFoundationsInput = z.object({
+  collections: z.array(z.string()).optional().describe('Default: every local collection'),
+});
+
+const ComponentPropertySpec = z.strictObject({
+  name: z.string().min(1).describe('e.g. "Label", "Has icon", "Icon"'),
+  type: z.enum(['TEXT', 'BOOLEAN', 'INSTANCE_SWAP']),
+  default: z.union([z.string(), z.boolean()]).describe('TEXT: text · BOOLEAN: true/false · INSTANCE_SWAP: component id/key/name'),
+  targets: z.array(z.string()).default([]).describe('Layer names in every variant this property drives'),
+  preferred: z.array(z.string()).optional().describe('INSTANCE_SWAP preferred components (ids/keys/names)'),
+});
+export const CreateComponentSetInput = z.object({
+  name: z.string().min(1).describe('e.g. "Button"'),
+  description: z.string().optional().describe('When to use / not use, link to docs'),
+  variants: z
+    .array(
+      z.strictObject({
+        props: z.record(z.string(), z.string()).describe('{ "Size": "md", "State": "Default" }'),
+        tree: FrameSpec.describe('Variant content as a render_tree frame (auto layout, tokens)'),
+      }),
+    )
+    .min(1),
+  properties: z.array(ComponentPropertySpec).default([]),
+  parentId: NodeId.optional().describe('Section/frame to place the set in; default the page'),
+});
+
+export const StressTestInput = z.object({
+  id: NodeId.describe('Frame or component to stress'),
+  cases: z
+    .array(z.enum(['long-text', 'large-text', 'narrow', 'wide', 'empty-text']))
+    .default(['long-text', 'large-text', 'narrow']),
+  modes: z.record(z.string(), z.string()).optional().describe('Also render one copy with these variable modes, e.g. { "Semantic": "Dark" }'),
+  page: z.string().optional().describe('Page for the copies; default "🧪 Explore" when it exists, else the current page'),
+});
+
+const Trigger = z.union([
+  z.enum(['ON_CLICK', 'ON_HOVER', 'ON_PRESS', 'ON_DRAG']),
+  z.strictObject({ afterTimeout: z.number().min(0).describe('ms') }),
+]);
+const Reaction = z.strictObject({
+  trigger: Trigger.default('ON_CLICK'),
+  action: z.enum(['NAVIGATE', 'OVERLAY', 'SWAP', 'SCROLL_TO', 'CHANGE_TO', 'BACK', 'CLOSE', 'URL', 'SET_VARIABLE', 'SET_VARIABLE_MODE']),
+  destination: NodeId.optional().describe('Frame (NAVIGATE/OVERLAY/SWAP/SCROLL_TO) or variant (CHANGE_TO)'),
+  url: z.string().optional(),
+  variable: z.string().optional().describe('SET_VARIABLE target (name or id)'),
+  value: z.union([z.string(), z.number(), z.boolean()]).optional(),
+  collection: z.string().optional().describe('SET_VARIABLE_MODE collection'),
+  mode: z.string().optional(),
+  transition: z
+    .strictObject({
+      type: z.enum(['INSTANT', 'DISSOLVE', 'SMART_ANIMATE', 'MOVE_IN', 'MOVE_OUT', 'PUSH', 'SLIDE_IN', 'SLIDE_OUT']).default('SMART_ANIMATE'),
+      direction: z.enum(['LEFT', 'RIGHT', 'TOP', 'BOTTOM']).optional(),
+      duration: NumOrVar.default(250).describe('ms, or a motion token { var: "duration/base" }'),
+      easing: z.string().default('standard').describe('standard | decelerate | accelerate | spring | linear | Figma easing | cubic-bezier()'),
+    })
+    .optional(),
+});
+export const SetInteractionsInput = z.object({
+  items: z.array(z.strictObject({ id: NodeId, reactions: z.array(Reaction), replace: z.boolean().default(true) })).min(1),
+  flowStart: z.strictObject({ id: NodeId, name: z.string() }).optional().describe('Mark a frame as a prototype flow starting point'),
+});
+
+export const BindVariablesInput = z.object({
+  rootId: NodeId.describe('Subtree to fix'),
+  fields: z.array(z.enum(['fills', 'strokes', 'spacing', 'radius'])).default(['fills', 'strokes', 'spacing', 'radius']),
+  map: z
+    .record(z.string(), z.string())
+    .optional()
+    .describe('Explicit "#2563EB" → "color/action/primary" or "16" → "space/4"; wins over auto matching'),
+  auto: z.boolean().default(true).describe('Match the nearest in-scope Semantic variable'),
+  tolerance: z.number().min(0).max(10).default(2).describe('Max colour distance ΔE for auto matching'),
+  dryRun: z.boolean().default(true).describe('Report what would change; set false to apply'),
+  limit: z.number().int().min(1).max(500).default(100),
+});
+
+export const RenameByRuleInput = z.object({
+  rootId: NodeId.describe('Subtree to rename'),
+  rules: z
+    .array(z.strictObject({ match: z.string().describe('RegExp on the layer name'), to: z.string().describe('Replacement, $1 for groups'), types: z.array(z.string()).optional() }))
+    .default([]),
+  auto: z.boolean().default(true).describe('Give role names (label/…, icon/…, row, stack) to layers with Figma default names'),
+  dryRun: z.boolean().default(true),
+  limit: z.number().int().min(1).max(1000).default(200),
+});
+
+export const AnnotateInput = z.object({
+  items: z
+    .array(
+      z.strictObject({
+        id: NodeId,
+        label: z.string().describe('Markdown: behaviour, logic, edge case, motion, a11y label'),
+        properties: z.array(z.string()).optional().describe('Pinned properties, e.g. ["fills","itemSpacing","padding"]'),
+        category: z.string().optional().describe('Annotation category label, e.g. "Interaction"'),
+      }),
+    )
+    .min(1),
+  replace: z.boolean().default(false).describe('Replace the node annotations instead of appending'),
+});
+
+export const SetDevStatusInput = z.object({
+  ids: z.array(NodeId).min(1).describe('Sections or top-level frames'),
+  status: z.enum(['READY_FOR_DEV', 'COMPLETED', 'NONE']),
+  description: z.string().optional(),
+});
+
+export const ExportAssetsInput = z.object({
+  ids: z.array(NodeId).min(1),
+  format: z.enum(['PNG', 'JPG', 'SVG', 'PDF']).default('PNG'),
+  scales: z.array(z.number().min(0.5).max(4)).default([1, 2, 3]).describe('PNG/JPG only'),
+  outDir: z.string().describe('Absolute directory to write the files into'),
 });
 
 export type GetNodeInput = z.infer<typeof GetNodeInput>;
@@ -344,3 +544,17 @@ export type ExecuteCodeInput = z.infer<typeof ExecuteCodeInput>;
 export type AuditInput = z.infer<typeof AuditInput>;
 export type ManagePagesInput = z.infer<typeof ManagePagesInput>;
 export type CreateVariablesInput = z.infer<typeof CreateVariablesInput>;
+export type SearchDesignSystemInput = z.infer<typeof SearchDesignSystemInput>;
+export type StyleSpec = z.infer<typeof StyleSpec>;
+export type CreateStylesInput = z.infer<typeof CreateStylesInput>;
+export type ImportTokensInput = z.infer<typeof ImportTokensInput>;
+export type ExportTokensInput = z.infer<typeof ExportTokensInput>;
+export type RenderFoundationsInput = z.infer<typeof RenderFoundationsInput>;
+export type CreateComponentSetInput = z.infer<typeof CreateComponentSetInput>;
+export type StressTestInput = z.infer<typeof StressTestInput>;
+export type SetInteractionsInput = z.infer<typeof SetInteractionsInput>;
+export type BindVariablesInput = z.infer<typeof BindVariablesInput>;
+export type RenameByRuleInput = z.infer<typeof RenameByRuleInput>;
+export type AnnotateInput = z.infer<typeof AnnotateInput>;
+export type SetDevStatusInput = z.infer<typeof SetDevStatusInput>;
+export type ExportAssetsInput = z.infer<typeof ExportAssetsInput>;

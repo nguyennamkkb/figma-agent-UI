@@ -4,12 +4,14 @@
 import { randomBytes } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { dirname, isAbsolute, join } from 'node:path';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
 import { DEFAULT_PORT } from '../shared/protocol';
 import * as S from '../shared/schemas';
+import { exportTokens, planTokenImport, type DtcgTree, type ExportCollection, type ExportTextStyle } from '../shared/tokens';
+import { slug } from '../shared/rename';
 import { Bridge, PluginError } from './bridge';
 import { inlineImages } from './images';
 
@@ -38,9 +40,11 @@ const INSTRUCTIONS = `Tools that read, create, edit and screenshot designs in th
 Workflow: (1) inspect first: get_document_info, get_design_system, get_selection; reuse existing components, variables and styles instead of hardcoding values.
 (2) build new screens with render_tree (one wrapper frame, auto layout everywhere); edit with update_nodes; use execute_code for anything else in the Plugin API.
 (3) verify with screenshot after composing and after each fix; fix the specific node instead of rebuilding.
+Design-system work (figma-master): search_design_system before creating anything; manage_pages{template} for the file skeleton; import_tokens / create_variables / create_styles for foundations; create_component_set for variants; set_interactions for prototypes; audit_design → bind_variables / rename_by_rule to fix; annotate / set_dev_status / export_tokens / export_assets for handoff.
 Every write returns node ids: keep them, there is no other state. If a write fails with safeToRetryWithoutCanvasRead=false, read the canvas before retrying.`;
 
-const server = new McpServer({ name: 'figma-agent', version: '1.0.0' }, { instructions: INSTRUCTIONS });
+const server = new McpServer({ name: 'figma-agent', version: __SERVER_VERSION__ }, { instructions: INSTRUCTIONS });
+const SERVER_STAMP = `${__SERVER_VERSION__} (${__SERVER_BUILD__})`;
 
 const fileParam = {
   file: z.string().optional().describe('Target file name or key when several Figma files are connected'),
@@ -78,7 +82,7 @@ interface ToolDef<T extends z.ZodObject> {
   noPage?: boolean;
   timeoutMs?: (args: z.infer<T>) => number;
   prepare?: (args: z.infer<T>) => Promise<unknown>;
-  format?: (result: unknown) => Content[];
+  format?: (result: unknown, args: z.infer<T>) => Content[];
 }
 
 function tool<T extends z.ZodObject>(name: string, def: ToolDef<T>) {
@@ -101,7 +105,7 @@ function tool<T extends z.ZodObject>(name: string, def: ToolDef<T>) {
           file,
           timeoutMs: def.timeoutMs?.(rest as z.infer<T>) ?? 30000,
         });
-        return { content: def.format ? def.format(result) : [text(result)] };
+        return { content: def.format ? def.format(result, rest as z.infer<T>) : [text(result)] };
       } catch (e) {
         return failure(e);
       }
@@ -117,17 +121,28 @@ server.registerTool(
     inputSchema: z.object({}),
     annotations: { readOnlyHint: true },
   },
-  async () => ({
-    content: [
-      text({
-        ...bridge.status(),
-        server: { version: __SERVER_VERSION__, build: __SERVER_BUILD__ },
-        token,
-        howToConnect:
-          'Figma desktop → Plugins → Development → figma-agent-UI. Paste the token in the plugin and press Connect.',
-      }),
-    ],
-  }),
+  async () => {
+    const status = bridge.status();
+    // A plugin built from another commit is still running in Figma: new tools
+    // will be "Unknown command" until it is reopened.
+    const stale = status.files.filter((f) => f.pluginVersion !== SERVER_STAMP);
+    return {
+      content: [
+        text({
+          ...status,
+          server: { version: __SERVER_VERSION__, build: __SERVER_BUILD__ },
+          versionCheck: stale.length
+            ? `⚠️ Plugin khác phiên bản server ${SERVER_STAMP}: ${stale.map((f) => `${f.fileName} = ${f.pluginVersion ?? 'unknown'}`).join(', ')}. Đóng plugin rồi mở lại (Plugins → Development → figma-agent-UI).`
+            : status.files.length
+              ? `✅ Plugin và server cùng phiên bản ${SERVER_STAMP}`
+              : undefined,
+          token,
+          howToConnect:
+            'Figma desktop → Plugins → Development → figma-agent-UI. Paste the token in the plugin and press Connect.',
+        }),
+      ],
+    };
+  },
 );
 
 tool('get_document_info', {
@@ -254,6 +269,140 @@ Safety: never deletes the last page, refuses name collisions, reports unknown pa
   input: S.ManagePagesInput,
   noPage: true,
   timeoutMs: () => 60000,
+});
+
+tool('search_design_system', {
+  description: `Ranked search over local components (with their properties), variables (collection, value, primitive or not) and paint/text/effect/grid styles — figma-master rule #3 "tìm trước khi tạo". Call it before creating any component, token or style.
+includeLibraries also searches variables of enabled team libraries (library components cannot be listed by the Plugin API).`,
+  input: S.SearchDesignSystemInput,
+  readOnly: true,
+  noPage: true,
+  timeoutMs: () => 120000,
+});
+
+tool('create_styles', {
+  description: `Create or update text, paint, effect and grid styles in one call (figma-master Giai đoạn 2).
+text: fontFamily + fontStyle/fontWeight + fontSize (number or {var}) + lineHeight/letterSpacing. paint: fill (hex, {var}, gradient). effect: shadow list or preset sm/md/lg/xl. grid: [{pattern, count, gutter, margin}] or {preset: mobile|tablet|desktop|baseline}.
+New styles are removed again if any entry fails.`,
+  input: S.CreateStylesInput,
+  noPage: true,
+  timeoutMs: () => 120000,
+});
+
+tool('import_tokens', {
+  description: `Import a DTCG design-token JSON (figma-master assets/tokens.example.json format) as variable collections: each top-level group becomes a collection ("primitives" → "Primitives"), $extensions.modes become modes, "{primitives.color.white}" becomes an alias, scopes are inferred (primitives get []).
+The JSON is first linted with the same rules as scripts/check_tokens.py (names, aliases, tiers, 4-grid, WCAG contrast); errors stop the import unless allowLintErrors. Pass tokens (the JSON) or path (a file on this machine). dryRun returns the plan only.`,
+  input: S.ImportTokensInput,
+  noPage: true,
+  timeoutMs: () => 180000,
+  prepare: async (args) => {
+    let tree: unknown = args.tokens;
+    if (!tree && args.path) {
+      if (!isAbsolute(args.path)) throw new Error('path phải là đường dẫn tuyệt đối');
+      tree = JSON.parse(readFileSync(args.path, 'utf8'));
+    }
+    if (!tree || typeof tree !== 'object') throw new Error('Cần tokens (JSON) hoặc path tới file JSON');
+    const plan = planTokenImport(tree as DtcgTree);
+    if (plan.lint.errors.length && !args.allowLintErrors) {
+      throw new Error(`Token JSON có ${plan.lint.errors.length} lỗi (check_tokens):\n${plan.lint.errors.join('\n')}\nSửa JSON hoặc gọi lại với allowLintErrors: true.`);
+    }
+    if (!plan.collections.length) throw new Error('Không có token nào thành variable được (cần $type color/dimension/number/string/boolean).');
+    return { collections: plan.collections, skipped: plan.skipped, lint: plan.lint, dryRun: args.dryRun, onExisting: args.onExisting };
+  },
+});
+
+tool('export_tokens', {
+  description: `Export local variables (and text styles for json/css) as code (figma-master Giai đoạn 8, handoff-qa §5): json = DTCG with $extensions.modes, css = custom properties with [data-theme] blocks per extra mode, swift = SwiftUI Color/CGFloat with dark appearance, kotlin = Compose Color objects per mode + dp values.
+Aliases stay aliases in json/css (var(--…)) and are resolved in swift/kotlin. path also writes the file.`,
+  input: S.ExportTokensInput,
+  readOnly: true,
+  noPage: true,
+  timeoutMs: () => 60000,
+  format: (result, args) => {
+    const r = result as { collections: ExportCollection[]; textStyles: ExportTextStyle[] };
+    const out = exportTokens(r.collections, r.textStyles, args.format);
+    if (args.path) {
+      if (!isAbsolute(args.path)) throw new Error('path phải là đường dẫn tuyệt đối');
+      mkdirSync(dirname(args.path), { recursive: true });
+      writeFileSync(args.path, out);
+    }
+    const summary = { format: args.format, collections: r.collections.map((c) => `${c.name} (${c.variables.length})`), textStyles: r.textStyles.length, written: args.path };
+    return [text(summary), { type: 'text', text: out.length > MAX_TEXT ? out.slice(0, MAX_TEXT) + '\n…[truncated: use path to get the whole file]' : out }];
+  },
+});
+
+tool('render_foundations', {
+  description: 'Draw the Foundations page content (figma-master GĐ2): colour swatches per collection/group, type specimen per text style, spacing ruler, radius and elevation samples — every sample bound to the real variable/style. Pass page: "🎨 Foundations". Returns the render_tree result.',
+  input: S.RenderFoundationsInput,
+  timeoutMs: () => 180000,
+});
+
+tool('create_component_set', {
+  description: `Create a component set in one call (figma-master Giai đoạn 3). Each variant = { props: { Size: "md", State: "Default" }, tree: <render_tree frame> }; names become "Size=md, State=Default". properties add TEXT / BOOLEAN / INSTANCE_SWAP component properties and wire them to layers by name (targets), e.g. { name: "Label", type: "TEXT", default: "Button", targets: ["label"] }.
+Validates duplicate/missing variant values, mixed size vocabularies and the 50-variant budget before drawing; on any failure nothing is left on the canvas. Search first (search_design_system) — create only when nothing fits.`,
+  input: S.CreateComponentSetInput,
+  timeoutMs: () => 180000,
+  prepare: (args) => inlineImages(args),
+});
+
+tool('stress_test', {
+  description: `Playground check (figma-master GĐ3, handoff-qa D2): copies a frame/component into a Section "Stress / <name>" (default on page 🧪 Explore) with long text (×2), large text (×1.5), narrow (−25%), wide (+50%), empty text and/or other variable modes, and reports text that overflows its clip area. Screenshot the returned sectionId to review; delete it afterwards.`,
+  input: S.StressTestInput,
+  noPage: true,
+  timeoutMs: () => 120000,
+});
+
+tool('set_interactions', {
+  description: `Prototype reactions (figma-master Giai đoạn 6): trigger ON_CLICK/ON_HOVER/ON_PRESS/ON_DRAG/{afterTimeout} → action NAVIGATE/OVERLAY/SWAP/SCROLL_TO/CHANGE_TO (variant → interactive component)/BACK/CLOSE/URL/SET_VARIABLE/SET_VARIABLE_MODE, with transition { type: SMART_ANIMATE|DISSOLVE|PUSH|SLIDE_IN…, duration: ms or { var: "duration/base" }, easing: standard|decelerate|accelerate|spring|… }. flowStart marks a prototype starting frame.`,
+  input: S.SetInteractionsInput,
+  timeoutMs: () => 60000,
+});
+
+tool('bind_variables', {
+  description: `Fix raw values in bulk (figma-master GĐ7): binds solid fills/strokes, auto-layout gap/padding and corner radius under rootId to Semantic variables — the nearest in-scope colour within tolerance ΔE, exact numbers for spacing/radius, or an explicit map {"#2563EB": "color/action/primary", "16": "space/4"}. Primitives (scopes []) are never used. Ambiguous matches are listed, not guessed.
+dryRun defaults to true: review, then call again with dryRun: false.`,
+  input: S.BindVariablesInput,
+  timeoutMs: () => 120000,
+});
+
+tool('rename_by_rule', {
+  description: `Rename layers under rootId (figma-master rule #4): explicit RegExp rules first, then (auto) role names for Figma default/blacklisted names only — text → label/<words>, vector frames → icon/glyph, image fills → image/placeholder, auto-layout → row/stack. Instance sublayers are skipped. dryRun defaults to true.`,
+  input: S.RenameByRuleInput,
+  timeoutMs: () => 120000,
+});
+
+tool('annotate', {
+  description: 'Dev Mode annotations (figma-master GĐ8): markdown label for behaviour, logic, edge cases, motion specs and a11y labels, optionally pinning node properties (fills, itemSpacing, padding, …) and a category. Appends unless replace.',
+  input: S.AnnotateInput,
+  timeoutMs: () => 60000,
+});
+
+tool('set_dev_status', {
+  description: 'Mark sections or top-level frames "Ready for dev" / "Completed" (or NONE to clear) in Dev Mode (figma-master GĐ8). Only nodes directly on a page or in a section accept a status.',
+  input: S.SetDevStatusInput,
+});
+
+tool('export_assets', {
+  description: 'Export nodes as files into outDir (figma-master GĐ8): PNG/JPG at each scale (name@2x.png…), or SVG/PDF once. The server writes the files and returns their paths.',
+  input: S.ExportAssetsInput,
+  readOnly: true,
+  timeoutMs: () => 180000,
+  format: (result, args) => {
+    if (!isAbsolute(args.outDir)) throw new Error('outDir phải là đường dẫn tuyệt đối');
+    mkdirSync(args.outDir, { recursive: true });
+    const written: string[] = [];
+    const used = new Set<string>();
+    for (const f of (result as { files: { id: string; name: string; scale?: number; format: string; base64: string }[] }).files) {
+      const base = slug(f.name.replace(/\//g, ' '), 8) || f.id.replace(/[:;]/g, '-');
+      let name = `${base}${f.scale && f.scale !== 1 ? `@${f.scale}x` : ''}.${f.format.toLowerCase()}`;
+      for (let i = 2; used.has(name); i++) name = `${base}-${i}${f.scale && f.scale !== 1 ? `@${f.scale}x` : ''}.${f.format.toLowerCase()}`;
+      used.add(name);
+      const path = join(args.outDir, name);
+      writeFileSync(path, Buffer.from(f.base64, 'base64'));
+      written.push(path);
+    }
+    return [text({ written })];
+  },
 });
 
 async function main() {

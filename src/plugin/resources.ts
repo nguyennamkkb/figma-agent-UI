@@ -7,6 +7,7 @@ export class Resources {
   private paintStyles?: Promise<PaintStyle[]>;
   private textStyles?: Promise<TextStyle[]>;
   private effectStyles?: Promise<EffectStyle[]>;
+  private gridStyles?: Promise<GridStyle[]>;
   private components = new Map<string, Promise<ComponentNode | ComponentSetNode>>();
   private images = new Map<string, string>();
 
@@ -65,6 +66,11 @@ export class Resources {
   async effectStyle(name: string): Promise<EffectStyle> {
     if (!this.effectStyles) this.effectStyles = figma.getLocalEffectStylesAsync();
     return findStyle(await this.effectStyles, name, 'effect');
+  }
+
+  async gridStyle(name: string): Promise<GridStyle> {
+    if (!this.gridStyles) this.gridStyles = figma.getLocalGridStylesAsync();
+    return findStyle(await this.gridStyles, name, 'grid');
   }
 
   // id ("12:34"), published key (hex string), or local name.
