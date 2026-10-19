@@ -10,3 +10,9 @@ code.js
 # Claude Code: commit the project skill, keep local settings out
 !/.claude/
 .claude/settings.local.json
+
+# skill-creator eval workspace
+.skill-eval/
+
+# ảnh sinh tự động khi thử MCP image
+/generated-images/
