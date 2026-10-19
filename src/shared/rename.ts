@@ -1,4 +1,4 @@
-// Layer naming for `rename_by_rule` (figma-master luật #4, file-standards.md
+// Layer naming for `rename_by_rule` (figma-ui-flow rule #4, file-standards.md
 // §2.3). Pure: the plugin passes a light description of each layer.
 
 import { DEFAULT_NAME, nameProblem } from './audit';

@@ -1,4 +1,4 @@
-// figma-master Giai đoạn 2 + 8: import a DTCG token file, read every token
+// figma-ui-flow Stage 2 + 8: import a DTCG token file, read every token
 // back for export, and draw the Foundations page from them. The server parses
 // and lints the JSON (../../shared/tokens.ts); the plugin only writes.
 import { foundationsTree, type FoundationVar } from '../../shared/foundations';

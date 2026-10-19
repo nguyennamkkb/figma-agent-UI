@@ -1,4 +1,4 @@
-// figma-master Giai đoạn 2 — text, paint, effect and grid styles in one call.
+// figma-ui-flow Stage 2 — text, paint, effect and grid styles in one call.
 // Text style properties can bind variables ({ var }) so typography follows
 // the token system (design-system.md §4).
 import type { CreateStylesInput, StyleSpec } from '../../shared/schemas';

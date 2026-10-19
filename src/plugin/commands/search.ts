@@ -1,4 +1,4 @@
-// figma-master luật #3 "tìm trước khi tạo": one ranked search over local
+// figma-ui-flow rule #3 "search before you create": one ranked search over local
 // components, variables and styles (and enabled library variables).
 import { rank } from '../../shared/search';
 import type { SearchDesignSystemInput } from '../../shared/schemas';

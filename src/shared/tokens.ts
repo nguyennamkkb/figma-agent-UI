@@ -1,4 +1,4 @@
-// Token helpers for `create_variables` / `import_tokens` (figma-master Giai
+// Token helpers for `create_variables` / `import_tokens` (figma-ui-flow Giai
 // đoạn 2). Pure so the encoding and validation rules stay unit-testable.
 
 export type VariableType = 'COLOR' | 'FLOAT' | 'STRING' | 'BOOLEAN';
@@ -203,7 +203,7 @@ export function dtcgTypeToVariable(type: string): VariableType {
   return mapped;
 }
 
-// -- lint: same rules and wording as figma-master scripts/check_tokens.py ----
+// -- lint: same rules and wording as figma-ui-flow scripts/check_tokens.py ----
 // Kept in lockstep with the Python script (tests/tokens.test.ts runs both on
 // the same fixture) so a JSON that passes one passes the other.
 
@@ -234,7 +234,7 @@ function modeValues(t: DtcgToken): Record<string, unknown> {
 }
 
 function resolveDots(name: string, mode: string, tokens: Flat, stack: string[] = []): unknown {
-  if (stack.includes(name)) throw new Error('vòng lặp alias: ' + [...stack, name].join(' → '));
+  if (stack.includes(name)) throw new Error('alias cycle: ' + [...stack, name].join(' → '));
   const t = tokens.get(name);
   if (!t) throw new RangeError(name);
   const vals = modeValues(t);
@@ -290,14 +290,14 @@ export function lintTokens(tree: DtcgTree, extraPairs: [string, string, number][
   const errors: string[] = [];
   const warnings: string[] = [];
   const passes: string[] = [];
-  if (tokens.size === 0) errors.push('Không tìm thấy token nào có "$value".');
+  if (tokens.size === 0) errors.push('No token with "$value" found.');
 
   const allModes = new Set<string>();
   for (const t of tokens.values()) for (const m of Object.keys(modeValues(t))) allModes.add(m);
 
   for (const [name, tok] of tokens) {
     const bad = name.split('.').filter((p) => !KEBAB.test(p));
-    if (bad.length) errors.push(`[tên] ${name}: đoạn không hợp lệ [${bad.map(pyRepr).join(', ')}] (dùng chữ thường-gạch-ngang)`);
+    if (bad.length) errors.push(`[name] ${name}: invalid segment(s) [${bad.map(pyRepr).join(', ')}] (use lowercase kebab-case)`);
 
     const vals = modeValues(tok);
     const tier = tierOf(name);
@@ -307,18 +307,18 @@ export function lintTokens(tree: DtcgTree, extraPairs: [string, string, number][
         try {
           resolveDots(name, mode, tokens);
         } catch (e) {
-          if (e instanceof RangeError) errors.push(`[alias] ${name} (${mode}): trỏ tới token không tồn tại '${e.message}'`);
+          if (e instanceof RangeError) errors.push(`[alias] ${name} (${mode}): points to a missing token '${e.message}'`);
           else errors.push(`[alias] ${name} (${mode}): ${(e as Error).message}`);
           continue;
         }
       }
-      if (tier === 'primitive' && isAlias) errors.push(`[tầng] ${name}: primitive không được là alias`);
-      if (tier === 'semantic' && !isAlias) warnings.push(`[tầng] ${name} (${mode}): semantic nên alias tới primitive, đang là giá trị thô ${pyRepr(v)}`);
+      if (tier === 'primitive' && isAlias) errors.push(`[tier] ${name}: a primitive must not be an alias`);
+      if (tier === 'semantic' && !isAlias) warnings.push(`[tier] ${name} (${mode}): semantic should alias a primitive, got raw value ${pyRepr(v)}`);
     }
 
     if (Object.keys(vals).length > 1 || !('default' in vals)) {
       const missing = [...allModes].filter((m) => m !== 'default' && !(m in vals)).sort();
-      if (missing.length) warnings.push(`[mode] ${name}: thiếu giá trị cho mode [${missing.map(pyRepr).join(', ')}]`);
+      if (missing.length) warnings.push(`[mode] ${name}: missing value for mode(s) [${missing.map(pyRepr).join(', ')}]`);
     }
 
     const short = stripTier(name);
@@ -336,7 +336,7 @@ export function lintTokens(tree: DtcgTree, extraPairs: [string, string, number][
           const m = /^(-?\d+(\.\d+)?)(px)?$/.exec(v.trim());
           if (m) num = parseFloat(m[1]);
         }
-        if (num !== null && ![0, 1, 2, 999].includes(num) && num % 4 !== 0) warnings.push(`[lưới] ${name} = ${String(v)}: không thuộc lưới 4`);
+        if (num !== null && ![0, 1, 2, 999].includes(num) && num % 4 !== 0) warnings.push(`[grid] ${name} = ${String(v)}: not on the 4-pt grid`);
       }
     }
   }
@@ -358,17 +358,17 @@ export function lintTokens(tree: DtcgTree, extraPairs: [string, string, number][
       } catch (e) {
         // Python prints a KeyError with quotes, a cycle error without.
         const why = e instanceof RangeError ? `'${e.message}'` : (e as Error).message;
-        errors.push(`[tương phản] ${fg} / ${bg} (${mode}): không giải được token ${why}`);
+        errors.push(`[contrast] ${fg} / ${bg} (${mode}): cannot resolve token ${why}`);
         continue;
       }
       if (!(typeof a === 'string' && HEX.test(a) && typeof b === 'string' && HEX.test(b))) {
-        warnings.push(`[tương phản] ${fg} / ${bg} (${mode}): bỏ qua, chỉ hỗ trợ hex (${pyRepr(a)}, ${pyRepr(b)})`);
+        warnings.push(`[contrast] ${fg} / ${bg} (${mode}): skipped, only hex is supported (${pyRepr(a)}, ${pyRepr(b)})`);
         continue;
       }
       const r = hexContrast(a, b);
-      const line = `${fg} trên ${bg} (${mode}): ${r.toFixed(2)}:1 (cần ≥ ${pyFloat(mn)})`;
+      const line = `${fg} on ${bg} (${mode}): ${r.toFixed(2)}:1 (needs ≥ ${pyFloat(mn)})`;
       if (r >= mn) passes.push(line);
-      else errors.push('[tương phản] ' + line);
+      else errors.push('[contrast] ' + line);
     }
   }
   return { tokens: tokens.size, modes: [...allModes].sort(), errors, warnings, contrast_pass: passes };

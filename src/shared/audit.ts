@@ -1,7 +1,7 @@
-// Pure QA logic for the figma-master audit (Giai đoạn 7). Kept free of the
+// Pure QA logic for the figma-ui-flow audit (Stage 7). Kept free of the
 // Figma API so it can be unit-tested; the plugin command feeds it node data.
 //
-// Severity mapping follows figma-master `handoff-qa.md` §3:
+// Severity mapping follows figma-ui-flow `handoff-qa.md` §3:
 //   🔴 Chặn   – broken behaviour, broken layout, WCAG AA violation, missing state
 //   🟡 Nên sửa – inconsistency, system debt (raw values, off-scale spacing)
 //   🔵 Gợi ý  – quality improvement
@@ -173,7 +173,7 @@ export function buildReport(scope: string, scanned: number, issues: Issue[], lim
   return { scope, scanned, issues, counts, severity, samples, truncated: issues.length > Object.keys(counts).length * limit };
 }
 
-// Renders `assets/qa-report.template.md` of the figma-master skill.
+// Renders `assets/qa-report.template.md` of the figma-ui-flow skill.
 export function toQaMarkdown(report: AuditReport, opts: { file?: string; date?: string; author?: string } = {}): string {
   const rows: string[] = [];
   let n = 0;

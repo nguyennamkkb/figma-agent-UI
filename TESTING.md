@@ -46,7 +46,7 @@ Prompt mẫu trong Claude Code:
 
 Đạt khi agent: kiểm tra file trước khi dựng, dựng bằng 1–2 lệnh `render_tree`, chụp `screenshot` và tự sửa lỗi nhìn thấy, không để lớp rác khi lỗi.
 
-## H. figma-master tools (v1.1.0)
+## H. figma-ui-flow tools (v1.1.0, trước đây figma-master)
 
 Chạy trên page `🤖 Agent sandbox` của một file nháp. Trước tiên: `figma_status` → `versionCheck` phải ✅ (nếu ⚠️ thì đóng/mở lại plugin).
 
@@ -81,7 +81,7 @@ Ghi chú để không vấp lại:
 - ⚠️ **`execute_code` không thể ngắt**: một vòng lặp vô hạn (`while(true)`) chặn luồng chính của plugin; server báo timeout 30 s nhưng Figma sẽ tự đóng sandbox, plugin mất kết nối và **phải chạy lại plugin** (Plugins → Development). Server/bridge vẫn sống. Vì vậy `timeoutMs` chỉ ngăn phía MCP chờ, không dừng được code trong plugin — đừng viết vòng lặp không có điều kiện kết thúc.
 - Plugin tự kết nối lại sau khi chạy lại (không cần khởi động lại server).
 
-### H. Kết quả smoke test figma-master (2026-10-19, Figma desktop, gói 1 mode)
+### H. Kết quả smoke test figma-ui-flow tools (2026-10-19, Figma desktop, gói 1 mode)
 
 Đã chạy đủ 16 mục ở H trên file thật (page tạo bằng `manage_pages{template}`). v1.1.0 lộ ra 10 lỗi, đã sửa ở 1.1.1 và kiểm lại trên canvas:
 

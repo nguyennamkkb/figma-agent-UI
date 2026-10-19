@@ -9,7 +9,7 @@ import {
   type DtcgTree,
 } from '../src/shared/tokens';
 
-describe('colour parsing (figma-master GĐ2)', () => {
+describe('colour parsing (figma-ui-flow GĐ2)', () => {
   it('reads #RRGGBB, #RGB and #RRGGBBAA', () => {
     expect(parseColor('#3B82F6')).toMatchObject({ r: 59 / 255, g: 130 / 255, b: 246 / 255, a: 1 });
     expect(parseColor('#fff')).toMatchObject({ r: 1, g: 1, b: 1, a: 1 });
@@ -119,14 +119,14 @@ describe('DTCG tokens (check_tokens.py format)', () => {
   });
 });
 
-// -- figma-master parity: lint / import / export -----------------------------
+// -- figma-ui-flow parity: lint / import / export -----------------------------
 import { execFileSync } from 'node:child_process';
 import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { exportTokens, inferScopes, lintTokens, planTokenImport, type ExportCollection } from '../src/shared/tokens';
 
-const SKILL = join(__dirname, '..', '.claude', 'skills', 'figma-master');
+const SKILL = join(__dirname, '..', '.claude', 'skills', 'figma-ui-flow');
 const EXAMPLE = join(SKILL, 'assets', 'tokens.example.json');
 const example = () => JSON.parse(readFileSync(EXAMPLE, 'utf8')) as DtcgTree;
 
@@ -175,11 +175,11 @@ describe('lintTokens ≡ scripts/check_tokens.py', () => {
     expect(lintTokens(example()).errors).toEqual([]);
     expect(lintTokens(example()).contrast_pass).toHaveLength(6);
     const r = lintTokens(broken as unknown as DtcgTree);
-    expect(r.errors.join('\n')).toMatch(/\[tên\].*Blue/);
+    expect(r.errors.join('\n')).toMatch(/\[name\].*Blue/);
     expect(r.errors.join('\n')).toMatch(/\[alias\].*missing/);
-    expect(r.errors.join('\n')).toMatch(/primitive không được là alias/);
-    expect(r.warnings.join('\n')).toMatch(/\[lưới\]/);
-    expect(r.warnings.join('\n')).toMatch(/thiếu giá trị cho mode \['dark'\]/);
+    expect(r.errors.join('\n')).toMatch(/a primitive must not be an alias/);
+    expect(r.warnings.join('\n')).toMatch(/\[grid\]/);
+    expect(r.warnings.join('\n')).toMatch(/missing value for mode\(s\) \['dark'\]/);
   });
 });
 

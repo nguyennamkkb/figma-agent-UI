@@ -1,4 +1,4 @@
-// figma-master Giai đoạn 8 — Dev Mode annotations, Ready-for-dev status and
+// figma-ui-flow Stage 8 — Dev Mode annotations, Ready-for-dev status and
 // asset export (handoff-qa.md §4).
 import type { AnnotateInput, ExportAssetsInput, SetDevStatusInput } from '../../shared/schemas';
 import { getSceneNode } from '../util';

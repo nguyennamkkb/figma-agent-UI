@@ -1,4 +1,4 @@
-// figma-master Giai đoạn 6 — prototype reactions with durations and easings
+// figma-ui-flow Stage 6 — prototype reactions with durations and easings
 // taken from motion tokens (design-system.md §2.5, creative-process.md §7).
 import { transitionFor } from '../../shared/motion';
 import type { SetInteractionsInput } from '../../shared/schemas';

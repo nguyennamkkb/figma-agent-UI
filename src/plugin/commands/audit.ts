@@ -1,4 +1,4 @@
-// figma-master Giai đoạn 7 — read-only QA audit of a page or subtree.
+// figma-ui-flow Stage 7 — read-only QA audit of a page or subtree.
 // The heuristics live in ../../shared/audit.ts (unit-tested); this file only
 // collects node data from the Figma tree.
 import type { AuditInput } from '../../shared/schemas';

@@ -1,4 +1,4 @@
-// figma-master Giai đoạn 7 fix — bind raw fills, strokes, spacing and radius
+// figma-ui-flow Stage 7 fix — bind raw fills, strokes, spacing and radius
 // to Semantic variables in bulk. Matching lives in ../../shared/color.ts;
 // dryRun (default) only reports.
 import { exactNumber, nearestColor, type ColorCandidate, type Field, type NumberCandidate } from '../../shared/color';

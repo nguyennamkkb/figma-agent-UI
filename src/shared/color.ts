@@ -1,5 +1,5 @@
-// Colour distance and variable matching for `bind_variables` (figma-master
-// GĐ7: sửa raw-fill hàng loạt). Pure: the plugin passes resolved values.
+// Colour distance and variable matching for `bind_variables` (figma-ui-flow
+// Stage 7: bulk raw-fill fixes). Pure: the plugin passes resolved values.
 
 export type RGB = { r: number; g: number; b: number };
 

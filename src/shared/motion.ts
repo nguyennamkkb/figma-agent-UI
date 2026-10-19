@@ -1,4 +1,4 @@
-// Motion tokens → Figma prototype transitions (figma-master GĐ6,
+// Motion tokens → Figma prototype transitions (figma-ui-flow Stage 6,
 // design-system.md §2.5). Pure: the plugin resolves duration variables first.
 
 export interface EasingSpec {

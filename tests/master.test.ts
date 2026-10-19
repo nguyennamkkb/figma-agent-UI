@@ -1,4 +1,4 @@
-// Pure logic behind the figma-master tools: search, colour matching,
+// Pure logic behind the figma-ui-flow tools: search, colour matching,
 // component sets, motion, renaming, grids, foundations and audit additions.
 import { describe, expect, it } from 'vitest';
 import { LOREM, worstContrast } from '../src/shared/audit';

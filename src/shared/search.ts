@@ -1,5 +1,5 @@
-// Ranking for `search_design_system` (figma-master luật #3: tìm trước khi
-// tạo). Pure so the scoring stays unit-testable; the plugin feeds it names.
+// Ranking for `search_design_system` (figma-ui-flow rule #3: search before you
+// create). Pure so the scoring stays unit-testable; the plugin feeds it names.
 
 // Lowercase, strip Vietnamese diacritics and split on the separators Figma
 // names use: "Button/Primary", "color/text/primary", "Size=md, State=Default".

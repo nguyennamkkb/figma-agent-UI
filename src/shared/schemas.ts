@@ -321,7 +321,7 @@ export const ExecuteCodeInput = z.object({
   timeoutMs: z.number().int().min(1000).max(300000).default(30000),
 });
 
-// figma-master Giai đoạn 7: one read-only call returns the QA report.
+// figma-ui-flow Stage 7: one read-only call returns the QA report.
 export const AuditInput = z.object({
   rootId: NodeId.optional().describe('Audit this subtree; default: the current page'),
   checks: z
@@ -332,7 +332,7 @@ export const AuditInput = z.object({
   format: z.enum(['json', 'markdown']).default('json').describe('markdown = the skill QA report template'),
 });
 
-// figma-master Giai đoạn 2: variables in one call (collection, modes,
+// figma-ui-flow Stage 2: variables in one call (collection, modes,
 // aliases, scopes). Figma rejects addMode when the plan allows one mode only;
 // that case is reported as a warning, not a failure.
 export const CreateVariablesInput = z.object({
@@ -356,7 +356,7 @@ export const CreateVariablesInput = z.object({
     .describe('A variable with the same name already in this collection: fail, keep it, or overwrite its values/scopes'),
 });
 
-// figma-master Giai đoạn 1: the standard page skeleton and page maintenance.
+// figma-ui-flow Stage 1: the standard page skeleton and page maintenance.
 export const ManagePagesInput = z.object({
   template: z.boolean().optional().describe('Create the missing pages of the 9-page master skeleton'),
   create: z.array(z.string().min(1)).optional(),
@@ -366,7 +366,7 @@ export const ManagePagesInput = z.object({
   dryRun: z.boolean().default(false).describe('Return the plan without touching the file'),
 });
 
-// figma-master luật #3 "tìm trước khi tạo".
+// figma-ui-flow rule #3 "search before you create".
 export const SearchDesignSystemInput = z.object({
   query: z.string().describe('Name or words, e.g. "button primary", "text/secondary", "elevation"'),
   kinds: z
@@ -402,7 +402,7 @@ export const CreateStylesInput = z.object({
 });
 
 export const ImportTokensInput = z.object({
-  tokens: z.record(z.string(), z.unknown()).optional().describe('DTCG JSON tree (figma-master assets/tokens.example.json format)'),
+  tokens: z.record(z.string(), z.unknown()).optional().describe('DTCG JSON tree (figma-ui-flow assets/tokens.example.json format)'),
   path: z.string().optional().describe('Absolute path of a DTCG JSON file on this machine (read by the server)'),
   dryRun: z.boolean().default(false).describe('Return the plan and lint result without touching the file'),
   onExisting: z.enum(['error', 'skip', 'update']).default('skip'),

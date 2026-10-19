@@ -1,4 +1,4 @@
-// The Foundations page (figma-master GĐ2.5): swatches, type specimen,
+// The Foundations page (figma-ui-flow Stage 2.5): swatches, type specimen,
 // spacing ruler, radius and elevation, generated as a render_tree spec that
 // binds every sample to the real variable or style. Pure: the plugin passes
 // lists of what the file defines.

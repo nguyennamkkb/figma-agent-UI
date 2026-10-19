@@ -42,7 +42,7 @@ Mọi tool nhận `page` (id/tên) để chạy trên page đó rồi trả page
 
 **Phiên bản:** mỗi lần nâng cấp plugin thì tăng `version` trong `package.json`. `npm run build` gắn version + commit vào cả plugin và server. Bảng plugin hiện `Plugin <version> (<commit>)`, còn `figma_status` báo ⚠️ khi plugin đang mở là bản cũ: đóng và mở lại plugin trong Figma.
 
-Quy trình và quy tắc cho agent nằm ở `.claude/skills/figma-agent/SKILL.md` (Claude Code tự nạp); quy trình design system 8 giai đoạn ở `.claude/skills/figma-master/` (đọc `references/figma-agent-adapter.md`). Ví dụ DSL: `examples/fintech-wallet.json` (dán vào ô *Test render_tree locally* trong plugin để thử không cần agent).
+Agent có 2 skill (Claude Code tự nạp): `.claude/skills/figma-agent-tools/` là sổ tay mọi tool MCP (tham số, kết quả, lỗi, công thức `execute_code`, ảnh gemini); `.claude/skills/figma-ui-flow/` là luồng và kiến thức tạo UI: 11 luật, 8 giai đoạn có gate, và vòng dựng màn từ ngoài vào trong (`references/build-loop.md`: khung → vùng → khối → component → nội dung, kiểm tra từng tầng, đạt Definition of Done mới sang màn khác). Ví dụ DSL: `examples/fintech-wallet.json` (dán vào ô *Test render_tree locally* trong plugin để thử không cần agent).
 
 ## Phát triển
 

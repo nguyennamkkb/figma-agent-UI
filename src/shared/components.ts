@@ -1,4 +1,4 @@
-// Planning for `create_component_set` (figma-master GĐ3, design-system.md
+// Planning for `create_component_set` (figma-ui-flow Stage 3, design-system.md
 // §5–6). Pure: names, property definitions and the variant budget are
 // validated before anything is drawn.
 

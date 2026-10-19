@@ -1,25 +1,25 @@
 #!/usr/bin/env python3
 """
-check_tokens.py — Kiểm tra file design token JSON trước khi nhập vào Figma hoặc chuyển cho dev.
+check_tokens.py — Lint a design-token JSON file before importing it into Figma or handing it to developers.
 
-Định dạng hỗ trợ: W3C Design Tokens (DTCG) — token là object có "$value" (và "$type" tuỳ chọn),
-nhóm lồng nhau, alias dạng "{color.blue.600}". Modes khai báo trong
+Supported format: W3C Design Tokens (DTCG) — a token is an object with "$value" (and optional "$type"),
+nested groups, aliases like "{color.blue.600}". Modes are declared in
 "$extensions": {"modes": {"light": <value>, "dark": <value>}}.
 
-Kiểm tra:
-  1. Tên: mỗi đoạn tên chữ thường, số, gạch ngang (kebab-case).
-  2. Alias: trỏ tới token tồn tại, không vòng lặp.
-  3. Tầng: nhóm gốc tên chứa "primitive" phải là giá trị thô;
-     nhóm gốc tên chứa "semantic" nên là alias (cảnh báo nếu là giá trị thô).
-  4. Spacing/radius: giá trị số thuộc lưới 4 (cho phép 0, 1, 2, 999).
-  5. Tương phản WCAG cho các cặp tự suy ra (text/icon/on-action với nền) và cặp khai báo qua --pair.
+Checks:
+  1. Names: every name segment is lowercase letters, digits and hyphens (kebab-case).
+  2. Aliases: point to an existing token, no cycles.
+  3. Tiers: a root group whose name contains "primitive" holds raw values only;
+     a root group whose name contains "semantic" should hold aliases (warning on raw values).
+  4. Spacing/radius: numeric values sit on the 4-pt grid (0, 1, 2 and 999 allowed).
+  5. WCAG contrast for inferred pairs (text/icon/on-action against backgrounds) and pairs given with --pair.
 
-Dùng:
+Usage:
   python3 check_tokens.py tokens.json
   python3 check_tokens.py tokens.json --pair color.text.primary color.bg.default 4.5
-  python3 check_tokens.py tokens.json --json      # xuất kết quả dạng JSON
+  python3 check_tokens.py tokens.json --json      # print the result as JSON
 
-Mã thoát: 0 = không lỗi (có thể có cảnh báo), 1 = có lỗi.
+Exit code: 0 = no errors (warnings allowed), 1 = errors.
 """
 import argparse
 import json
@@ -32,7 +32,7 @@ HEX_RE = re.compile(r"^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$")
 
 
 def flatten(node, path, out):
-    """Trả về dict: 'a.b.c' -> token object."""
+    """Return a dict: 'a.b.c' -> token object."""
     if isinstance(node, dict) and "$value" in node:
         out[".".join(path)] = node
         return
@@ -44,7 +44,7 @@ def flatten(node, path, out):
 
 
 def mode_values(token):
-    """Trả về dict mode -> value. Không có modes thì {'default': $value}."""
+    """Return a dict mode -> value; {'default': $value} when there are no modes."""
     modes = (token.get("$extensions") or {}).get("modes")
     if isinstance(modes, dict) and modes:
         return dict(modes)
@@ -54,7 +54,7 @@ def mode_values(token):
 def resolve(name, mode, tokens, stack=None):
     stack = stack or []
     if name in stack:
-        raise ValueError("vòng lặp alias: " + " → ".join(stack + [name]))
+        raise ValueError("alias cycle: " + " → ".join(stack + [name]))
     if name not in tokens:
         raise KeyError(name)
     vals = mode_values(tokens[name])
@@ -100,7 +100,7 @@ def strip_tier(name):
 
 
 def auto_pairs(tokens):
-    """Suy ra cặp (fg, bg, ngưỡng) từ tên ngữ nghĩa."""
+    """Infer (fg, bg, threshold) pairs from semantic names."""
     by_short = {strip_tier(n): n for n in tokens}
     bgs = [by_short[s] for s in ("color.bg.default", "color.surface.default", "color.surface.raised") if s in by_short]
     pairs = []
@@ -119,11 +119,11 @@ def auto_pairs(tokens):
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Kiểm tra design token JSON (DTCG).")
+    ap = argparse.ArgumentParser(description="Lint a design-token JSON file (DTCG).")
     ap.add_argument("file")
     ap.add_argument("--pair", nargs=3, action="append", metavar=("FG", "BG", "MIN"),
-                    help="cặp kiểm tra tương phản thêm, ví dụ color.text.primary color.bg.default 4.5")
-    ap.add_argument("--json", action="store_true", help="xuất kết quả JSON")
+                    help="extra contrast pair to check, e.g. color.text.primary color.bg.default 4.5")
+    ap.add_argument("--json", action="store_true", help="print the result as JSON")
     args = ap.parse_args()
 
     with open(args.file, encoding="utf-8") as f:
@@ -134,17 +134,17 @@ def main():
     errors, warnings, passes = [], [], []
 
     if not tokens:
-        errors.append("Không tìm thấy token nào có \"$value\".")
+        errors.append("No token with \"$value\" found.")
 
     all_modes = set()
     for t in tokens.values():
         all_modes.update(mode_values(t).keys())
 
     for name, tok in tokens.items():
-        # 1. Tên
+        # 1. Names
         bad = [p for p in name.split(".") if not NAME_RE.match(p)]
         if bad:
-            errors.append(f"[tên] {name}: đoạn không hợp lệ {bad} (dùng chữ thường-gạch-ngang)")
+            errors.append(f"[name] {name}: invalid segment(s) {bad} (use lowercase kebab-case)")
 
         vals = mode_values(tok)
         tier = tier_of(name)
@@ -155,24 +155,24 @@ def main():
                 try:
                     resolve(name, mode, tokens)
                 except KeyError as e:
-                    errors.append(f"[alias] {name} ({mode}): trỏ tới token không tồn tại {e}")
+                    errors.append(f"[alias] {name} ({mode}): points to a missing token {e}")
                     continue
                 except ValueError as e:
                     errors.append(f"[alias] {name} ({mode}): {e}")
                     continue
-            # 3. Tầng
+            # 3. Tiers
             if tier == "primitive" and is_alias:
-                errors.append(f"[tầng] {name}: primitive không được là alias")
+                errors.append(f"[tier] {name}: a primitive must not be an alias")
             if tier == "semantic" and not is_alias:
-                warnings.append(f"[tầng] {name} ({mode}): semantic nên alias tới primitive, đang là giá trị thô {v!r}")
+                warnings.append(f"[tier] {name} ({mode}): semantic should alias a primitive, got raw value {v!r}")
 
-        # Mode thiếu
+        # Missing modes
         if len(vals) > 1 or "default" not in vals:
             missing = (all_modes - {"default"}) - set(vals)
             if missing:
-                warnings.append(f"[mode] {name}: thiếu giá trị cho mode {sorted(missing)}")
+                warnings.append(f"[mode] {name}: missing value for mode(s) {sorted(missing)}")
 
-        # 4. Lưới 4
+        # 4. 4-pt grid
         short = strip_tier(name)
         if short.split(".")[0] in ("space", "spacing", "radius"):
             for mode in vals:
@@ -188,9 +188,9 @@ def main():
                     if m:
                         num = float(m.group(1))
                 if num is not None and num not in (0, 1, 2, 999) and num % 4 != 0:
-                    warnings.append(f"[lưới] {name} = {v}: không thuộc lưới 4")
+                    warnings.append(f"[grid] {name} = {v}: not on the 4-pt grid")
 
-    # 5. Tương phản
+    # 5. Contrast
     pairs = auto_pairs(tokens)
     for fg, bg, mn in (args.pair or []):
         pairs.append((fg, bg, float(mn)))
@@ -205,14 +205,14 @@ def main():
             try:
                 a, b = resolve(fg, mode, tokens), resolve(bg, mode, tokens)
             except (KeyError, ValueError) as e:
-                errors.append(f"[tương phản] {fg} / {bg} ({mode}): không giải được token {e}")
+                errors.append(f"[contrast] {fg} / {bg} ({mode}): cannot resolve token {e}")
                 continue
             if not (isinstance(a, str) and HEX_RE.match(a) and isinstance(b, str) and HEX_RE.match(b)):
-                warnings.append(f"[tương phản] {fg} / {bg} ({mode}): bỏ qua, chỉ hỗ trợ hex ({a!r}, {b!r})")
+                warnings.append(f"[contrast] {fg} / {bg} ({mode}): skipped, only hex is supported ({a!r}, {b!r})")
                 continue
             r = contrast(a, b)
-            line = f"{fg} trên {bg} ({mode}): {r:.2f}:1 (cần ≥ {mn})"
-            (passes if r >= mn else errors).append(("[tương phản] " if r < mn else "") + line)
+            line = f"{fg} on {bg} ({mode}): {r:.2f}:1 (needs ≥ {mn})"
+            (passes if r >= mn else errors).append(("[contrast] " if r < mn else "") + line)
 
     result = {"tokens": len(tokens), "modes": sorted(all_modes),
               "errors": errors, "warnings": warnings, "contrast_pass": passes}
@@ -220,13 +220,13 @@ def main():
         print(json.dumps(result, ensure_ascii=False, indent=2))
     else:
         print(f"Token: {len(tokens)} · Modes: {', '.join(sorted(all_modes))}")
-        print(f"\nLỖI ({len(errors)}):")
+        print(f"\nERRORS ({len(errors)}):")
         for e in errors:
             print("  ✗", e)
-        print(f"\nCẢNH BÁO ({len(warnings)}):")
+        print(f"\nWARNINGS ({len(warnings)}):")
         for w in warnings:
             print("  !", w)
-        print(f"\nTƯƠNG PHẢN ĐẠT ({len(passes)}):")
+        print(f"\nCONTRAST PASSED ({len(passes)}):")
         for p in passes:
             print("  ✓", p)
     sys.exit(1 if errors else 0)

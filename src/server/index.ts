@@ -38,9 +38,9 @@ const bridge = new Bridge({ port, token, log });
 
 const INSTRUCTIONS = `Tools that read, create, edit and screenshot designs in the Figma file where the "figma-agent-UI" plugin is open.
 Workflow: (1) inspect first: get_document_info, get_design_system, get_selection; reuse existing components, variables and styles instead of hardcoding values.
-(2) build new screens with render_tree (one wrapper frame, auto layout everywhere); edit with update_nodes; use execute_code for anything else in the Plugin API.
-(3) verify with screenshot after composing and after each fix; fix the specific node instead of rebuilding.
-Design-system work (figma-master): search_design_system before creating anything; manage_pages{template} for the file skeleton; import_tokens / create_variables / create_styles for foundations; create_component_set for variants; set_interactions for prototypes; audit_design → bind_variables / rename_by_rule to fix; annotate / set_dev_status / export_tokens / export_assets for handoff.
+(2) build screens outside-in, one level per write: screen frame + empty named regions (render_tree) → each region's blocks (render_tree{parentId}) → components/instances → content (update_nodes); auto layout everywhere; execute_code only for what no tool covers.
+(3) verify after every write (screenshot the node, get_node for sizing), fix the specific node, then go one level deeper; finish a screen (audit_design + stress_test clean) before starting the next one.
+Flow and quality bar: skill figma-ui-flow; tool details: skill figma-agent-tools. Design-system work: search_design_system before creating anything; manage_pages{template} for the file skeleton; import_tokens / create_variables / create_styles for foundations; create_component_set for variants; set_interactions for prototypes; audit_design → bind_variables / rename_by_rule to fix; annotate / set_dev_status / export_tokens / export_assets for handoff.
 Every write returns node ids: keep them, there is no other state. If a write fails with safeToRetryWithoutCanvasRead=false, read the canvas before retrying.`;
 
 const server = new McpServer({ name: 'figma-agent', version: __SERVER_VERSION__ }, { instructions: INSTRUCTIONS });
@@ -207,8 +207,9 @@ tool('select_nodes', {
 });
 
 tool('render_tree', {
-  description: `Create a whole layout from a nested JSON tree in one call (frames with auto layout, text, rect, ellipse, svg icons, images, component instances).
-Rules: build one wrapper frame; use layout HORIZONTAL/VERTICAL with gap/padding instead of x/y; widthMode FILL needs an auto-layout parent; text wraps when it has a width or widthMode FILL; colors are hex or {var:"name"} to bind variables; text styles/paint styles/effect styles by name.
+  description: `Create a layout from a nested JSON tree (frames with auto layout, text, rect, ellipse, svg icons, images, component instances, sections).
+Build screens level by level: first the screen frame with empty named regions, then one render_tree{parentId: <region id>} per region, checking each with screenshot before the next.
+Rules: one wrapper frame per call; use layout HORIZONTAL/VERTICAL with gap/padding instead of x/y; widthMode FILL needs an auto-layout parent; text wraps when it has a width or widthMode FILL; colors are hex or {var:"name"} to bind variables; text styles/paint styles/effect styles by name.
 Images (src / {image}) may be URLs or local paths: the server downloads them. If anything fails, the partial result is removed.
 Returns rootId and an ids map "Root/Child/Grandchild" → node id.`,
   input: S.RenderTreeInput,
@@ -246,7 +247,7 @@ Helpers h: solid(hex) → SolidPaint, rgb(hex), hex(rgb), getNode(id), loadFont(
 });
 
 tool('audit_design', {
-  description: `Read-only QA audit of a page or subtree (figma-master Giai đoạn 7). Returns counts + samples per issue kind and a severity roll-up (Chặn / Nên sửa / Gợi ý).
+  description: `Read-only QA audit of a page or subtree (figma-ui-flow Stage 7). Returns counts + samples per issue kind and a severity roll-up (Chặn / Nên sửa / Gợi ý).
 Checks: default/blacklisted layer names, fills not bound to a variable or style, text without a text style, frames with children but no auto layout, redundant wrappers, spacing off the 4/8 scale, contrast below WCAG (background gradient/image is reported as needs-check instead of a wrong ratio), interactive targets under 44pt, hidden layers, orphan styles.
 Use format: "markdown" to get the skill's QA report template ready to paste into the repo.`,
   input: S.AuditInput,
@@ -255,7 +256,7 @@ Use format: "markdown" to get the skill's QA report template ready to paste into
 });
 
 tool('create_variables', {
-  description: `Create or extend a variable collection: modes, values per mode, aliases and scopes (figma-master Giai đoạn 2).
+  description: `Create or extend a variable collection: modes, values per mode, aliases and scopes (figma-ui-flow Stage 2).
 Names use slash paths ("color/blue/600", "space/4"). COLOR values are "#RRGGBB"/"#RRGGBBAA", numbers for FLOAT, or { alias: "other/name" } to point at another variable. Set scopes: [] on primitives so they stay out of pickers; bind Semantic tokens to layers.
 If the file/plan allows one mode only, Figma rejects addMode: the call still creates the variables with the default mode and returns that as a warning.`,
   input: S.CreateVariablesInput,
@@ -264,7 +265,7 @@ If the file/plan allows one mode only, Figma rejects addMode: the call still cre
 });
 
 tool('manage_pages', {
-  description: `Create, rename, delete and reorder pages (figma-master Giai đoạn 1). template: true creates the missing pages of the standard skeleton (Cover / Brief / Explore / Foundations / Components / Screens / Prototype / Ready for dev / Archive).
+  description: `Create, rename, delete and reorder pages (figma-ui-flow Stage 1). template: true creates the missing pages of the standard skeleton (Cover / Brief / Explore / Foundations / Components / Screens / Prototype / Ready for dev / Archive).
 Safety: never deletes the last page, refuses name collisions, reports unknown page refs in problems, and dryRun returns the plan without touching the file.`,
   input: S.ManagePagesInput,
   noPage: true,
@@ -272,7 +273,7 @@ Safety: never deletes the last page, refuses name collisions, reports unknown pa
 });
 
 tool('search_design_system', {
-  description: `Ranked search over local components (with their properties), variables (collection, value, primitive or not) and paint/text/effect/grid styles — figma-master rule #3 "tìm trước khi tạo". Call it before creating any component, token or style.
+  description: `Ranked search over local components (with their properties), variables (collection, value, primitive or not) and paint/text/effect/grid styles — figma-ui-flow rule #3 "search before you create". Call it before creating any component, token or style.
 includeLibraries also searches variables of enabled team libraries (library components cannot be listed by the Plugin API).`,
   input: S.SearchDesignSystemInput,
   readOnly: true,
@@ -281,7 +282,7 @@ includeLibraries also searches variables of enabled team libraries (library comp
 });
 
 tool('create_styles', {
-  description: `Create or update text, paint, effect and grid styles in one call (figma-master Giai đoạn 2).
+  description: `Create or update text, paint, effect and grid styles in one call (figma-ui-flow Stage 2).
 text: fontFamily + fontStyle/fontWeight + fontSize (number or {var}) + lineHeight/letterSpacing. paint: fill (hex, {var}, gradient). effect: shadow list or preset sm/md/lg/xl. grid: [{pattern, count, gutter, margin}] or {preset: mobile|tablet|desktop|baseline}.
 New styles are removed again if any entry fails.`,
   input: S.CreateStylesInput,
@@ -290,7 +291,7 @@ New styles are removed again if any entry fails.`,
 });
 
 tool('import_tokens', {
-  description: `Import a DTCG design-token JSON (figma-master assets/tokens.example.json format) as variable collections: each top-level group becomes a collection ("primitives" → "Primitives"), $extensions.modes become modes, "{primitives.color.white}" becomes an alias, scopes are inferred (primitives get []).
+  description: `Import a DTCG design-token JSON (figma-ui-flow assets/tokens.example.json format) as variable collections: each top-level group becomes a collection ("primitives" → "Primitives"), $extensions.modes become modes, "{primitives.color.white}" becomes an alias, scopes are inferred (primitives get []).
 The JSON is first linted with the same rules as scripts/check_tokens.py (names, aliases, tiers, 4-grid, WCAG contrast); errors stop the import unless allowLintErrors. Pass tokens (the JSON) or path (a file on this machine). dryRun returns the plan only.`,
   input: S.ImportTokensInput,
   noPage: true,
@@ -312,7 +313,7 @@ The JSON is first linted with the same rules as scripts/check_tokens.py (names, 
 });
 
 tool('export_tokens', {
-  description: `Export local variables (and text styles for json/css) as code (figma-master Giai đoạn 8, handoff-qa §5): json = DTCG with $extensions.modes, css = custom properties with [data-theme] blocks per extra mode, swift = SwiftUI Color/CGFloat with dark appearance, kotlin = Compose Color objects per mode + dp values.
+  description: `Export local variables (and text styles for json/css) as code (figma-ui-flow Stage 8, handoff-qa §5): json = DTCG with $extensions.modes, css = custom properties with [data-theme] blocks per extra mode, swift = SwiftUI Color/CGFloat with dark appearance, kotlin = Compose Color objects per mode + dp values.
 Aliases stay aliases in json/css (var(--…)) and are resolved in swift/kotlin. path also writes the file.`,
   input: S.ExportTokensInput,
   readOnly: true,
@@ -332,13 +333,13 @@ Aliases stay aliases in json/css (var(--…)) and are resolved in swift/kotlin. 
 });
 
 tool('render_foundations', {
-  description: 'Draw the Foundations page content (figma-master GĐ2): colour swatches per collection/group, type specimen per text style, spacing ruler, radius and elevation samples — every sample bound to the real variable/style. Pass page: "🎨 Foundations". Returns the render_tree result.',
+  description: 'Draw the Foundations page content (figma-ui-flow Stage 2): colour swatches per collection/group, type specimen per text style, spacing ruler, radius and elevation samples — every sample bound to the real variable/style. Pass page: "🎨 Foundations". Returns the render_tree result.',
   input: S.RenderFoundationsInput,
   timeoutMs: () => 180000,
 });
 
 tool('create_component_set', {
-  description: `Create a component set in one call (figma-master Giai đoạn 3). Each variant = { props: { Size: "md", State: "Default" }, tree: <render_tree frame> }; names become "Size=md, State=Default". properties add TEXT / BOOLEAN / INSTANCE_SWAP component properties and wire them to layers by name (targets), e.g. { name: "Label", type: "TEXT", default: "Button", targets: ["label"] }.
+  description: `Create a component set in one call (figma-ui-flow Stage 3). Each variant = { props: { Size: "md", State: "Default" }, tree: <render_tree frame> }; names become "Size=md, State=Default". properties add TEXT / BOOLEAN / INSTANCE_SWAP component properties and wire them to layers by name (targets), e.g. { name: "Label", type: "TEXT", default: "Button", targets: ["label"] }.
 Validates duplicate/missing variant values, mixed size vocabularies and the 50-variant budget before drawing; on any failure nothing is left on the canvas. Search first (search_design_system) — create only when nothing fits.`,
   input: S.CreateComponentSetInput,
   timeoutMs: () => 180000,
@@ -346,44 +347,44 @@ Validates duplicate/missing variant values, mixed size vocabularies and the 50-v
 });
 
 tool('stress_test', {
-  description: `Playground check (figma-master GĐ3, handoff-qa D2): copies a frame/component into a Section "Stress / <name>" (default on page 🧪 Explore) with long text (×2), large text (×1.5), narrow (−25%), wide (+50%), empty text and/or other variable modes, and reports text that overflows its clip area. Screenshot the returned sectionId to review; delete it afterwards.`,
+  description: `Playground check (figma-ui-flow Stage 3, handoff-qa D2): copies a frame/component into a Section "Stress / <name>" (default on page 🧪 Explore) with long text (×2), large text (×1.5), narrow (−25%), wide (+50%), empty text and/or other variable modes, and reports text that overflows its clip area. Screenshot the returned sectionId to review; delete it afterwards.`,
   input: S.StressTestInput,
   noPage: true,
   timeoutMs: () => 120000,
 });
 
 tool('set_interactions', {
-  description: `Prototype reactions (figma-master Giai đoạn 6): trigger ON_CLICK/ON_HOVER/ON_PRESS/ON_DRAG/{afterTimeout} → action NAVIGATE/OVERLAY/SWAP/SCROLL_TO/CHANGE_TO (variant → interactive component)/BACK/CLOSE/URL/SET_VARIABLE/SET_VARIABLE_MODE, with transition { type: SMART_ANIMATE|DISSOLVE|PUSH|SLIDE_IN…, duration: ms or { var: "duration/base" }, easing: standard|decelerate|accelerate|spring|… }. flowStart marks a prototype starting frame.`,
+  description: `Prototype reactions (figma-ui-flow Stage 6): trigger ON_CLICK/ON_HOVER/ON_PRESS/ON_DRAG/{afterTimeout} → action NAVIGATE/OVERLAY/SWAP/SCROLL_TO/CHANGE_TO (variant → interactive component)/BACK/CLOSE/URL/SET_VARIABLE/SET_VARIABLE_MODE, with transition { type: SMART_ANIMATE|DISSOLVE|PUSH|SLIDE_IN…, duration: ms or { var: "duration/base" }, easing: standard|decelerate|accelerate|spring|… }. flowStart marks a prototype starting frame.`,
   input: S.SetInteractionsInput,
   timeoutMs: () => 60000,
 });
 
 tool('bind_variables', {
-  description: `Fix raw values in bulk (figma-master GĐ7): binds solid fills/strokes, auto-layout gap/padding and corner radius under rootId to Semantic variables — the nearest in-scope colour within tolerance ΔE, exact numbers for spacing/radius, or an explicit map {"#2563EB": "color/action/primary", "16": "space/4"}. Primitives (scopes []) are never used. Ambiguous matches are listed, not guessed.
+  description: `Fix raw values in bulk (figma-ui-flow Stage 7): binds solid fills/strokes, auto-layout gap/padding and corner radius under rootId to Semantic variables — the nearest in-scope colour within tolerance ΔE, exact numbers for spacing/radius, or an explicit map {"#2563EB": "color/action/primary", "16": "space/4"}. Primitives (scopes []) are never used. Ambiguous matches are listed, not guessed.
 dryRun defaults to true: review, then call again with dryRun: false.`,
   input: S.BindVariablesInput,
   timeoutMs: () => 120000,
 });
 
 tool('rename_by_rule', {
-  description: `Rename layers under rootId (figma-master rule #4): explicit RegExp rules first, then (auto) role names for Figma default/blacklisted names only — text → label/<words>, vector frames → icon/glyph, image fills → image/placeholder, auto-layout → row/stack. Instance sublayers are skipped. dryRun defaults to true.`,
+  description: `Rename layers under rootId (figma-ui-flow rule #4): explicit RegExp rules first, then (auto) role names for Figma default/blacklisted names only — text → label/<words>, vector frames → icon/glyph, image fills → image/placeholder, auto-layout → row/stack. Instance sublayers are skipped. dryRun defaults to true.`,
   input: S.RenameByRuleInput,
   timeoutMs: () => 120000,
 });
 
 tool('annotate', {
-  description: 'Dev Mode annotations (figma-master GĐ8): markdown label for behaviour, logic, edge cases, motion specs and a11y labels, optionally pinning node properties (fills, itemSpacing, padding, …) and a category. Appends unless replace.',
+  description: 'Dev Mode annotations (figma-ui-flow Stage 8): markdown label for behaviour, logic, edge cases, motion specs and a11y labels, optionally pinning node properties (fills, itemSpacing, padding, …) and a category. Appends unless replace.',
   input: S.AnnotateInput,
   timeoutMs: () => 60000,
 });
 
 tool('set_dev_status', {
-  description: 'Mark sections or top-level frames "Ready for dev" / "Completed" (or NONE to clear) in Dev Mode (figma-master GĐ8). Only nodes directly on a page or in a section accept a status.',
+  description: 'Mark sections or top-level frames "Ready for dev" / "Completed" (or NONE to clear) in Dev Mode (figma-ui-flow Stage 8). Only nodes directly on a page or in a section accept a status.',
   input: S.SetDevStatusInput,
 });
 
 tool('export_assets', {
-  description: 'Export nodes as files into outDir (figma-master GĐ8): PNG/JPG at each scale (name@2x.png…), or SVG/PDF once. The server writes the files and returns their paths.',
+  description: 'Export nodes as files into outDir (figma-ui-flow Stage 8): PNG/JPG at each scale (name@2x.png…), or SVG/PDF once. The server writes the files and returns their paths.',
   input: S.ExportAssetsInput,
   readOnly: true,
   timeoutMs: () => 180000,

@@ -221,8 +221,8 @@ describe('MCP server', () => {
   });
 });
 
-describe('figma-master tools with server-side work', () => {
-  const example = join(__dirname, '..', '.claude', 'skills', 'figma-master', 'assets', 'tokens.example.json');
+describe('figma-ui-flow tools with server-side work', () => {
+  const example = join(__dirname, '..', '.claude', 'skills', 'figma-ui-flow', 'assets', 'tokens.example.json');
 
   it('import_tokens lints and plans on the server, then sends collections', async () => {
     const r = await client.callTool({ name: 'import_tokens', arguments: { path: example, dryRun: true } });

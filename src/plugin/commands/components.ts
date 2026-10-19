@@ -1,4 +1,4 @@
-// figma-master Giai đoạn 3 — a component set in one call: each variant is a
+// figma-ui-flow Stage 3 — a component set in one call: each variant is a
 // render_tree frame, combined with `Property=Value` names, then TEXT /
 // BOOLEAN / INSTANCE_SWAP properties wired to layers by name.
 import { planComponentSet } from '../../shared/components';

@@ -84,7 +84,7 @@ describe('plugin bundle', () => {
     expect(posted.find((m) => m.id === 'e')?.error).toMatch(/Syntax error/);
   });
 
-  it('dispatches every figma-master command (none is "Unknown command")', async () => {
+  it('dispatches every figma-ui-flow command (none is "Unknown command")', async () => {
     const { posted, send } = loadPlugin();
     const commands = [
       'search_design_system', 'create_styles', 'import_tokens', 'export_tokens', 'render_foundations',

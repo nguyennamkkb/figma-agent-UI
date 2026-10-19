@@ -1,4 +1,4 @@
-// figma-master luật #4 — clean up default and blacklisted layer names, by
+// figma-ui-flow rule #4 — clean up default and blacklisted layer names, by
 // explicit rules or role names (file-standards.md §2.3). dryRun by default.
 import { planRename, type LayerInfo } from '../../shared/rename';
 import type { RenameByRuleInput } from '../../shared/schemas';

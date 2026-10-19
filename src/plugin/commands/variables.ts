@@ -1,4 +1,4 @@
-// figma-master Giai đoạn 2 — variables in one call: collection, modes, values
+// figma-ui-flow Stage 2 — variables in one call: collection, modes, values
 // per mode, aliases and scopes. Validation happens in ../../shared/tokens.ts
 // before anything is written.
 import type { CreateVariablesInput } from '../../shared/schemas';

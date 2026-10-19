@@ -1,4 +1,4 @@
-// figma-master Giai đoạn 1 — the standard page skeleton and page maintenance.
+// figma-ui-flow Stage 1 — the standard page skeleton and page maintenance.
 // Safety rules (never delete the last page, reject name collisions, unknown
 // refs) live in ../../shared/pageplan.ts and are unit-tested there.
 import type { ManagePagesInput } from '../../shared/schemas';

@@ -1,4 +1,4 @@
-// Pure page planning for `manage_pages` (figma-master Giai đoạn 1: the standard
+// Pure page planning for `manage_pages` (figma-ui-flow Stage 1: the standard
 // file skeleton). No Figma API here, so the safety rules are unit-testable.
 
 export interface PageRef {

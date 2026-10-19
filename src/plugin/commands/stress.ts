@@ -1,4 +1,4 @@
-// figma-master Giai đoạn 3 Playground / handoff-qa D2: copies of a frame
+// figma-ui-flow Stage 3 Playground / handoff-qa D2: copies of a frame
 // under hostile content (long text, large type, narrow/wide, other mode),
 // side by side in one Section, plus a cheap overflow check per copy.
 import type { StressTestInput } from '../../shared/schemas';
