@@ -1,0 +1,176 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<style>
+  :root {
+    --bg: var(--figma-color-bg, #fff);
+    --bg2: var(--figma-color-bg-secondary, #f5f5f5);
+    --fg: var(--figma-color-text, #1e1e1e);
+    --muted: var(--figma-color-text-secondary, #6b6b6b);
+    --border: var(--figma-color-border, #e6e6e6);
+    --brand: var(--figma-color-bg-brand, #0d99ff);
+    --on-brand: var(--figma-color-text-onbrand, #fff);
+    --ok: var(--figma-color-text-success, #14ae5c);
+    --err: var(--figma-color-text-danger, #f24822);
+    --warn: var(--figma-color-text-warning, #b86200);
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; padding: 12px; font: 12px/1.4 Inter, -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--fg); }
+  .row { display: flex; gap: 6px; align-items: center; }
+  .status { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border: 1px solid var(--border); border-radius: 6px; margin-bottom: 10px; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex: none; }
+  .dot.ok { background: var(--ok); } .dot.err { background: var(--err); } .dot.wait { background: var(--warn); }
+  .status b { font-weight: 600; }
+  .status small { color: var(--muted); display: block; }
+  input, textarea { width: 100%; font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--border); border-radius: 5px; padding: 6px 8px; }
+  input:focus, textarea:focus { outline: 1px solid var(--brand); border-color: var(--brand); }
+  textarea { font: 11px/1.4 ui-monospace, Menlo, monospace; height: 110px; resize: vertical; }
+  button { font: inherit; font-weight: 600; border: 0; border-radius: 5px; padding: 7px 12px; cursor: pointer; background: var(--brand); color: var(--on-brand); white-space: nowrap; }
+  button.secondary { background: var(--bg2); color: var(--fg); border: 1px solid var(--border); }
+  label { display: block; color: var(--muted); margin: 10px 0 4px; }
+  details { margin-top: 10px; }
+  summary { cursor: pointer; color: var(--muted); }
+  #log { margin-top: 4px; max-height: 150px; overflow: auto; border: 1px solid var(--border); border-radius: 5px; }
+  #log div { display: flex; gap: 6px; padding: 4px 8px; border-bottom: 1px solid var(--border); font-family: ui-monospace, Menlo, monospace; font-size: 11px; }
+  #log div:last-child { border-bottom: 0; }
+  #log .t { color: var(--muted); } #log .bad { color: var(--err); } #log .good { color: var(--ok); }
+  #log .msg { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+  .empty { padding: 8px; color: var(--muted); }
+</style>
+</head>
+<body>
+  <div class="status">
+    <span id="dot" class="dot"></span>
+    <div><b id="state">Disconnected</b><small id="detail">Enter the token printed by the MCP server.</small></div>
+  </div>
+
+  <label for="token">Token (<code>~/.figma-agent/token</code>, or call <code>figma_status</code>)</label>
+  <div class="row">
+    <input id="token" type="password" placeholder="token" autocomplete="off" />
+    <button id="connect">Connect</button>
+  </div>
+
+  <label>Activity</label>
+  <div id="log"><div class="empty">No commands yet.</div></div>
+
+  <details>
+    <summary>Test render_tree locally</summary>
+    <textarea id="tree" spellcheck="false">{
+  "type": "frame", "name": "Card", "layout": "VERTICAL", "width": 320,
+  "padding": 20, "gap": 8, "radius": 16, "fill": "#FFFFFF", "effects": "md",
+  "children": [
+    { "type": "text", "text": "Hello from figma-agent", "fontSize": 18, "fontWeight": 700, "color": "#0F172A", "widthMode": "FILL" },
+    { "type": "text", "text": "Auto layout, wrapping text and shadows rendered from JSON.", "fontSize": 13, "color": "#64748B", "widthMode": "FILL" }
+  ]
+}</textarea>
+    <div class="row" style="margin-top:6px"><button id="render" class="secondary">Render</button></div>
+  </details>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const PORT = 3055;
+let ws = null;
+let info = null;
+let settings = {};
+let retry = 0;
+let retryTimer = null;
+let manualClose = false;
+const LOG_MAX = 40;
+const entries = [];
+
+function setState(kind, state, detail) {
+  $('dot').className = 'dot ' + kind;
+  $('state').textContent = state;
+  $('detail').textContent = detail || '';
+}
+
+function addLog(command, ok, text, ms) {
+  entries.unshift({ time: new Date().toLocaleTimeString(), command, ok, text, ms });
+  entries.length = Math.min(entries.length, LOG_MAX);
+  $('log').innerHTML = '';
+  for (const e of entries) {
+    const row = document.createElement('div');
+    const t = document.createElement('span'); t.className = 't'; t.textContent = e.time;
+    const c = document.createElement('span'); c.className = e.ok ? 'good' : 'bad'; c.textContent = (e.ok ? '✓ ' : '✗ ') + e.command;
+    const m = document.createElement('span'); m.className = 'msg'; m.textContent = (e.ms != null ? e.ms + 'ms ' : '') + (e.text || '');
+    m.title = e.text || '';
+    row.append(t, c, m);
+    $('log').append(row);
+  }
+}
+
+function toPlugin(msg) { parent.postMessage({ pluginMessage: msg }, '*'); }
+
+function connect() {
+  clearTimeout(retryTimer);
+  const token = $('token').value.trim();
+  if (!token) { setState('err', 'No token', 'Paste the token printed by the MCP server.'); return; }
+  if (ws) { manualClose = true; ws.close(); }
+  manualClose = false;
+  setState('wait', 'Connecting…', 'ws://localhost:' + PORT);
+  const sock = new WebSocket('ws://localhost:' + PORT + '/?token=' + encodeURIComponent(token));
+  ws = sock;
+  sock.onopen = () => {
+    retry = 0;
+    setState('ok', 'Connected', info ? info.fileName + ' · ' + info.currentPage.name : '');
+    if (info) sock.send(JSON.stringify({ type: 'hello', info }));
+  };
+  sock.onmessage = (ev) => {
+    let msg;
+    try { msg = JSON.parse(ev.data); } catch { return; }
+    if (msg.type === 'request') toPlugin(msg);
+  };
+  sock.onclose = (ev) => {
+    if (ws !== sock) return;
+    ws = null;
+    if (ev.code === 4001) { setState('err', 'Invalid token', 'Check ~/.figma-agent/token and press Connect.'); return; }
+    if (manualClose) { setState('', 'Disconnected', ''); return; }
+    const delay = Math.min(10000, 1000 * Math.pow(2, retry++));
+    setState('wait', 'Waiting for MCP server…', 'Is Claude Code running with figma-agent? Retrying in ' + Math.round(delay / 1000) + 's');
+    retryTimer = setTimeout(connect, delay);
+  };
+}
+
+$('connect').onclick = () => {
+  settings.token = $('token').value.trim();
+  toPlugin({ type: 'save-settings', settings });
+  retry = 0;
+  connect();
+};
+$('token').addEventListener('keydown', (e) => { if (e.key === 'Enter') $('connect').click(); });
+
+$('render').onclick = () => {
+  let tree;
+  try { tree = JSON.parse($('tree').value); } catch (e) { addLog('render_tree', false, 'Invalid JSON: ' + e.message); return; }
+  toPlugin({ type: 'request', id: 'local-' + Date.now(), command: 'render_tree', params: { tree, select: true } });
+};
+
+window.onmessage = (ev) => {
+  const msg = ev.data && ev.data.pluginMessage;
+  if (!msg) return;
+  if (msg.type === 'init') {
+    info = msg.info;
+    settings = msg.settings || {};
+    if (settings.token) { $('token').value = settings.token; connect(); }
+  } else if (msg.type === 'response') {
+    const local = String(msg.id).startsWith('local-');
+    const text = msg.ok ? (local ? JSON.stringify(msg.result) : '') : msg.error;
+    addLog(msg.command + (local ? ' (local)' : ''), msg.ok, text, msg.ms);
+    if (!local && ws && ws.readyState === WebSocket.OPEN) {
+      const { ms, command, ...wire } = msg;
+      ws.send(JSON.stringify(wire));
+    }
+  } else if (msg.type === 'event') {
+    info = msg.info;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      ws.send(JSON.stringify(msg));
+      setState('ok', 'Connected', info.fileName + ' · ' + info.currentPage.name);
+    }
+  }
+};
+
+toPlugin({ type: 'ready' });
+</script>
+</body>
+</html>

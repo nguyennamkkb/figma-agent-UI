@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "figma-agent": {
+      "command": "node",
+      "args": ["dist/server.mjs"]
+    },
+    "gemini-image-mcp": {
+      "command": "npx",
+      "args": ["-y", "github:nguyennamkkb/gemini-image-mcp"]
+    }
+  }
+}

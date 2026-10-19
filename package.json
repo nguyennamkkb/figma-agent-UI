@@ -1,0 +1,35 @@
+{
+  "name": "figma-agent-UI",
+  "version": "1.0.0",
+  "description": "Figma plugin + MCP server that lets an AI agent read, create, edit and screenshot designs",
+  "main": "code.js",
+  "scripts": {
+    "build": "npm run build:plugin && npm run build:server",
+    "build:plugin": "esbuild src/plugin/main.ts --bundle --format=iife --target=es2017 --outfile=code.js",
+    "build:server": "esbuild src/server/index.ts --bundle --platform=node --format=esm --target=node20 --packages=external --outfile=dist/server.mjs",
+    "watch": "esbuild src/plugin/main.ts --bundle --format=iife --target=es2017 --outfile=code.js --watch",
+    "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.server.json",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "test": "vitest run"
+  },
+  "author": "",
+  "license": "",
+  "devDependencies": {
+    "@eslint/js": "^9.39.4",
+    "@figma/eslint-plugin-figma-plugins": "*",
+    "@figma/plugin-typings": "*",
+    "@types/node": "^26.6.5",
+    "@types/ws": "^8.18.2",
+    "esbuild": "^0.28.2",
+    "eslint": "^9.39.4",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.57.1",
+    "vitest": "^5.0.5"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.32.1",
+    "ws": "^8.22.0",
+    "zod": "^4.6.7"
+  }
+}
