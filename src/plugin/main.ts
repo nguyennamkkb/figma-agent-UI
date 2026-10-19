@@ -3,6 +3,9 @@
 import type { ClientInfo, RequestMessage, ResponseMessage } from '../shared/protocol';
 import { PROTOCOL_VERSION } from '../shared/protocol';
 import { executeCode } from './commands/execute';
+import { auditDesign } from './commands/audit';
+import { managePages } from './commands/pages';
+import { createVariables } from './commands/variables';
 import {
   findNodes,
   getDesignSystem,
@@ -39,6 +42,9 @@ const commands: Record<string, Command> = {
   move_nodes: { mutates: true, run: moveNodes },
   clone_node: { mutates: true, run: cloneNode },
   execute_code: { mutates: true, run: executeCode },
+  audit_design: { mutates: false, run: auditDesign },
+  manage_pages: { mutates: true, run: managePages },
+  create_variables: { mutates: true, run: createVariables },
 };
 
 figma.showUI(__html__, { width: 360, height: 480, themeColors: true });
@@ -50,6 +56,7 @@ function clientInfo(): ClientInfo {
     fileName: figma.root.name,
     user: figma.currentUser?.name ?? null,
     currentPage: { id: figma.currentPage.id, name: figma.currentPage.name },
+    version: `${__PLUGIN_VERSION__} (${__PLUGIN_BUILD__})`,
   };
 }
 
@@ -60,8 +67,25 @@ async function run(req: RequestMessage): Promise<ResponseMessage> {
   if (!cmd) {
     return { type: 'response', id: req.id, ok: false, error: `Unknown command "${req.command}".`, safeToRetryWithoutCanvasRead: true };
   }
+  // `page` scopes the command to one page regardless of which page another
+  // agent switched to (the current page is file-global state). We switch,
+  // run, then hand the previous page back.
+  const raw = (req.params ?? {}) as Record<string, unknown>;
+  const target = typeof raw.page === 'string' && req.command !== 'set_current_page' ? raw.page : null;
+  const { page: _scope, ...params } = raw;
+  let previous: PageNode | null = null;
   try {
-    const result = await cmd.run((req.params ?? {}) as never);
+    if (target) {
+      const page = figma.root.children.find((x) => x.id === target || x.name === target);
+      if (!page) {
+        throw new Error(`Page "${target}" not found. Pages: ${figma.root.children.map((x) => x.name).join(', ')}.`);
+      }
+      if (page.id !== figma.currentPage.id) {
+        previous = figma.currentPage;
+        await figma.setCurrentPageAsync(page);
+      }
+    }
+    const result = await cmd.run(params as never);
     if (cmd.mutates) figma.commitUndo();
     return { type: 'response', id: req.id, ok: true, result };
   } catch (e) {
@@ -73,6 +97,14 @@ async function run(req: RequestMessage): Promise<ResponseMessage> {
       error: errorMessage(e),
       safeToRetryWithoutCanvasRead: !cmd.mutates || e instanceof RolledBackError,
     };
+  } finally {
+    if (previous) {
+      try {
+        await figma.setCurrentPageAsync(previous);
+      } catch {
+        // the page may have been deleted by this command; leave the new one
+      }
+    }
   }
 }
 

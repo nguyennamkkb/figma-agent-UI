@@ -11,6 +11,9 @@ export interface ClientInfo {
   fileName: string;
   user: string | null;
   currentPage: { id: string; name: string };
+  // Stamped at build time, e.g. "1.0.0 (a1b2c3d)" — lets the agent and the
+  // plugin panel tell a fresh build from a stale one.
+  version?: string;
 }
 
 export interface RequestMessage {

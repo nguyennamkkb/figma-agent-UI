@@ -9,6 +9,7 @@ const info: ClientInfo = {
   fileName: 'Test file',
   user: 'Tester',
   currentPage: { id: '0:1', name: 'Page 1' },
+  version: '1.0.0 (test)',
 };
 
 let bridge: Bridge | null = null;
@@ -71,7 +72,7 @@ describe('Bridge', () => {
     const b = await startBridge();
     await fakePlugin(b, (cmd, params) => ({ cmd, params }));
     await expect(b.request('get_node', { ids: ['1:2'] })).resolves.toEqual({ cmd: 'get_node', params: { ids: ['1:2'] } });
-    expect(b.status().files).toMatchObject([{ fileName: 'Test file', user: 'Tester' }]);
+    expect(b.status().files).toMatchObject([{ fileName: 'Test file', user: 'Tester', pluginVersion: '1.0.0 (test)' }]);
   });
 
   it('propagates plugin errors with the retry flag', async () => {

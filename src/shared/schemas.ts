@@ -286,6 +286,47 @@ export const ExecuteCodeInput = z.object({
   timeoutMs: z.number().int().min(1000).max(300000).default(30000),
 });
 
+// figma-master Giai đoạn 7: one read-only call returns the QA report.
+export const AuditInput = z.object({
+  rootId: NodeId.optional().describe('Audit this subtree; default: the current page'),
+  checks: z
+    .array(z.enum(['names', 'tokens', 'layout', 'a11y', 'hygiene']))
+    .optional()
+    .describe('Groups to run; default: all of them'),
+  limit: z.number().int().min(1).max(500).default(50).describe('Sample size per issue kind'),
+  format: z.enum(['json', 'markdown']).default('json').describe('markdown = the skill QA report template'),
+});
+
+// figma-master Giai đoạn 2: variables in one call (collection, modes,
+// aliases, scopes). Figma rejects addMode when the plan allows one mode only;
+// that case is reported as a warning, not a failure.
+export const CreateVariablesInput = z.object({
+  collection: z.string().min(1).describe('Collection name; created when missing'),
+  modes: z.array(z.string().min(1)).optional().describe('Mode names; the first is the default. Default: ["Default"]'),
+  variables: z
+    .array(
+      z.strictObject({
+        name: z.string().min(1).describe('Slash path, e.g. "color/blue/600" or "space/4"'),
+        type: z.enum(['COLOR', 'FLOAT', 'STRING', 'BOOLEAN']),
+        scopes: z.array(z.string()).optional().describe('e.g. ["FRAME_FILL","SHAPE_FILL"]; [] hides it from pickers (primitive)'),
+        values: z
+          .record(z.string(), z.union([z.string(), z.number(), z.boolean(), z.strictObject({ alias: z.string() })]))
+          .describe('One value per mode name: hex/number/string/boolean, or { alias: "other/name" }'),
+      }),
+    )
+    .min(1),
+});
+
+// figma-master Giai đoạn 1: the standard page skeleton and page maintenance.
+export const ManagePagesInput = z.object({
+  template: z.boolean().optional().describe('Create the missing pages of the 9-page master skeleton'),
+  create: z.array(z.string().min(1)).optional(),
+  rename: z.array(z.strictObject({ page: z.string(), to: z.string().min(1) })).optional(),
+  delete: z.array(z.string()).optional(),
+  order: z.array(z.string()).optional().describe('These pages first, in this order; the rest follow'),
+  dryRun: z.boolean().default(false).describe('Return the plan without touching the file'),
+});
+
 export type GetNodeInput = z.infer<typeof GetNodeInput>;
 export type GetSelectionInput = z.infer<typeof GetSelectionInput>;
 export type FindNodesInput = z.infer<typeof FindNodesInput>;
@@ -300,3 +341,6 @@ export type MoveNodesInput = z.infer<typeof MoveNodesInput>;
 export type CloneNodeInput = z.infer<typeof CloneNodeInput>;
 export type SelectNodesInput = z.infer<typeof SelectNodesInput>;
 export type ExecuteCodeInput = z.infer<typeof ExecuteCodeInput>;
+export type AuditInput = z.infer<typeof AuditInput>;
+export type ManagePagesInput = z.infer<typeof ManagePagesInput>;
+export type CreateVariablesInput = z.infer<typeof CreateVariablesInput>;

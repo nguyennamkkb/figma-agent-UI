@@ -45,6 +45,12 @@ const server = new McpServer({ name: 'figma-agent', version: '1.0.0' }, { instru
 const fileParam = {
   file: z.string().optional().describe('Target file name or key when several Figma files are connected'),
 };
+// Scopes a command to one page even when another agent switches the current
+// page mid-flight (the current page is global file state).
+const pageParam = z
+  .string()
+  .optional()
+  .describe('Run on this page (id or exact name), then restore the previous page');
 
 type Content = { type: 'text'; text: string } | { type: 'image'; data: string; mimeType: string };
 
@@ -69,13 +75,15 @@ interface ToolDef<T extends z.ZodObject> {
   description: string;
   input: T;
   readOnly?: boolean;
+  noPage?: boolean;
   timeoutMs?: (args: z.infer<T>) => number;
   prepare?: (args: z.infer<T>) => Promise<unknown>;
   format?: (result: unknown) => Content[];
 }
 
 function tool<T extends z.ZodObject>(name: string, def: ToolDef<T>) {
-  const input = def.input.extend(fileParam);
+  let input = def.input.extend(fileParam);
+  if (!def.noPage && !('page' in def.input.shape)) input = input.extend({ page: pageParam });
   server.registerTool(
     name,
     {
@@ -86,8 +94,9 @@ function tool<T extends z.ZodObject>(name: string, def: ToolDef<T>) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- the SDK infers args from the schema
     (async (args: any) => {
       try {
-        const { file, ...rest } = args as z.infer<T> & { file?: string };
-        const params = def.prepare ? await def.prepare(rest as z.infer<T>) : rest;
+        const { file, page, ...rest } = args as z.infer<T> & { file?: string; page?: string };
+        const base = def.prepare ? await def.prepare(rest as z.infer<T>) : (rest as z.infer<T>);
+        const params = page ? { ...(base as object), page } : base;
         const result = await bridge.request(name, params, {
           file,
           timeoutMs: def.timeoutMs?.(rest as z.infer<T>) ?? 30000,
@@ -112,6 +121,7 @@ server.registerTool(
     content: [
       text({
         ...bridge.status(),
+        server: { version: __SERVER_VERSION__, build: __SERVER_BUILD__ },
         token,
         howToConnect:
           'Figma desktop → Plugins → Development → figma-agent-UI. Paste the token in the plugin and press Connect.',
@@ -218,6 +228,32 @@ Rules: colors are 0..1 RGB with opacity on the paint; fills/strokes arrays are i
 Helpers h: solid(hex) → SolidPaint, rgb(hex), hex(rgb), getNode(id), loadFont(fontName), loadNodeFonts(text), resolveFont(family, style), serialize(node, depth), summary(node), freeSpot() → {x,y} for new top-level nodes.`,
   input: S.ExecuteCodeInput,
   timeoutMs: (a) => a.timeoutMs,
+});
+
+tool('audit_design', {
+  description: `Read-only QA audit of a page or subtree (figma-master Giai đoạn 7). Returns counts + samples per issue kind and a severity roll-up (Chặn / Nên sửa / Gợi ý).
+Checks: default/blacklisted layer names, fills not bound to a variable or style, text without a text style, frames with children but no auto layout, redundant wrappers, spacing off the 4/8 scale, contrast below WCAG (background gradient/image is reported as needs-check instead of a wrong ratio), interactive targets under 44pt, hidden layers, orphan styles.
+Use format: "markdown" to get the skill's QA report template ready to paste into the repo.`,
+  input: S.AuditInput,
+  readOnly: true,
+  timeoutMs: () => 60000,
+});
+
+tool('create_variables', {
+  description: `Create or extend a variable collection: modes, values per mode, aliases and scopes (figma-master Giai đoạn 2).
+Names use slash paths ("color/blue/600", "space/4"). COLOR values are "#RRGGBB"/"#RRGGBBAA", numbers for FLOAT, or { alias: "other/name" } to point at another variable. Set scopes: [] on primitives so they stay out of pickers; bind Semantic tokens to layers.
+If the file/plan allows one mode only, Figma rejects addMode: the call still creates the variables with the default mode and returns that as a warning.`,
+  input: S.CreateVariablesInput,
+  noPage: true,
+  timeoutMs: () => 120000,
+});
+
+tool('manage_pages', {
+  description: `Create, rename, delete and reorder pages (figma-master Giai đoạn 1). template: true creates the missing pages of the standard skeleton (Cover / Brief / Explore / Foundations / Components / Screens / Prototype / Ready for dev / Archive).
+Safety: never deletes the last page, refuses name collisions, reports unknown page refs in problems, and dryRun returns the plan without touching the file.`,
+  input: S.ManagePagesInput,
+  noPage: true,
+  timeoutMs: () => 60000,
 });
 
 async function main() {

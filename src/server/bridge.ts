@@ -158,6 +158,7 @@ export class Bridge {
         fileKey: c.info?.fileKey ?? null,
         user: c.info?.user ?? null,
         currentPage: c.info?.currentPage ?? null,
+        pluginVersion: c.info?.version ?? null,
         connectedAt: new Date(c.connectedAt).toISOString(),
       })),
     };

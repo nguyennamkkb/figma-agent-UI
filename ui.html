@@ -23,6 +23,7 @@
   .dot.ok { background: var(--ok); } .dot.err { background: var(--err); } .dot.wait { background: var(--warn); }
   .status b { font-weight: 600; }
   .status small { color: var(--muted); display: block; }
+  .status .version { font-family: ui-monospace, SFMono-Regular, monospace; font-size: 10px; opacity: .75; }
   input, textarea { width: 100%; font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--border); border-radius: 5px; padding: 6px 8px; }
   input:focus, textarea:focus { outline: 1px solid var(--brand); border-color: var(--brand); }
   textarea { font: 11px/1.4 ui-monospace, Menlo, monospace; height: 110px; resize: vertical; }
@@ -42,7 +43,7 @@
 <body>
   <div class="status">
     <span id="dot" class="dot"></span>
-    <div><b id="state">Disconnected</b><small id="detail">Enter the token printed by the MCP server.</small></div>
+    <div><b id="state">Disconnected</b><small id="detail">Enter the token printed by the MCP server.</small><small id="version" class="version">Plugin build: unknown</small></div>
   </div>
 
   <label for="token">Token (<code>~/.figma-agent/token</code>, or call <code>figma_status</code>)</label>
@@ -151,6 +152,7 @@ window.onmessage = (ev) => {
   if (!msg) return;
   if (msg.type === 'init') {
     info = msg.info;
+    if (info && info.version) $('version').textContent = 'Plugin ' + info.version;
     settings = msg.settings || {};
     if (settings.token) { $('token').value = settings.token; connect(); }
   } else if (msg.type === 'response') {
@@ -166,6 +168,7 @@ window.onmessage = (ev) => {
     if (ws && ws.readyState === WebSocket.OPEN) {
       ws.send(JSON.stringify(msg));
       setState('ok', 'Connected', info.fileName + ' · ' + info.currentPage.name);
+      if (info.version) $('version').textContent = 'Plugin ' + info.version;
     }
   }
 };

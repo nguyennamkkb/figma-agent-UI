@@ -45,7 +45,7 @@ beforeAll(async () => {
       plugin.send(
         JSON.stringify({
           type: 'hello',
-          info: { protocol: 1, fileKey: null, fileName: 'E2E', user: null, currentPage: { id: '0:1', name: 'Page 1' } },
+          info: { protocol: 1, fileKey: null, fileName: 'E2E', user: null, currentPage: { id: '0:1', name: 'Page 1' }, version: '1.0.0 (e2e)' },
         }),
       );
       setTimeout(resolve, 50);
@@ -65,7 +65,9 @@ describe('MCP server', () => {
     const names = tools.map((t) => t.name).sort();
     expect(names).toEqual(
       [
+        'audit_design',
         'clone_node',
+        'create_variables',
         'delete_nodes',
         'execute_code',
         'figma_status',
@@ -75,6 +77,7 @@ describe('MCP server', () => {
         'get_node',
         'get_selection',
         'list_fonts',
+        'manage_pages',
         'move_nodes',
         'render_tree',
         'screenshot',
@@ -91,7 +94,10 @@ describe('MCP server', () => {
   it('reports the connected file', async () => {
     const r = await client.callTool({ name: 'figma_status', arguments: {} });
     const body = JSON.parse((r.content as { text: string }[])[0].text);
-    expect(body.files).toMatchObject([{ fileName: 'E2E' }]);
+    expect(body.files).toMatchObject([{ fileName: 'E2E', pluginVersion: '1.0.0 (e2e)' }]);
+    // The server stamps its own build too, so a stale process is obvious.
+    expect(body.server.version).toMatch(/^\d+\.\d+\.\d+/);
+    expect(typeof body.server.build).toBe('string');
   });
 
   it('validates, fills defaults, inlines images and strips the file param', async () => {
@@ -133,5 +139,39 @@ describe('MCP server', () => {
     const r = await client.callTool({ name: 'delete_nodes', arguments: { ids: ['9:9'] } });
     expect(r.isError).toBe(true);
     expect((r.content as { text: string }[])[0].text).toContain('safeToRetryWithoutCanvasRead: false');
+  });
+
+  it('scopes writes to a page and forwards the audit/params to the plugin', async () => {
+    const { tools } = await client.listTools();
+
+    // Every write/read tool gets the page scope, except the ones that already
+    // own a `page` field or manage pages themselves.
+    const render = tools.find((t) => t.name === 'render_tree')!;
+    expect(JSON.stringify(render.inputSchema)).toContain('"page"');
+    expect(JSON.stringify(tools.find((t) => t.name === 'set_current_page')!.inputSchema)).not.toContain(
+      'Run on this page',
+    );
+    expect(JSON.stringify(tools.find((t) => t.name === 'manage_pages')!.inputSchema)).not.toContain('Run on this page');
+
+    await client.callTool({ name: 'render_tree', arguments: { page: '📱 Screens', tree: { type: 'frame' } } });
+    const renderSent = received.filter((x) => x.command === 'render_tree').at(-1)!;
+    expect(renderSent.params.page).toBe('📱 Screens');
+
+    await client.callTool({
+      name: 'audit_design',
+      arguments: { page: 'Page 1', checks: ['a11y'], limit: 5, format: 'markdown' },
+    });
+    const audit = received.filter((x) => x.command === 'audit_design').at(-1)!;
+    expect(audit.params).toMatchObject({ page: 'Page 1', checks: ['a11y'], limit: 5, format: 'markdown' });
+  });
+
+  it('keeps manage_pages free of the page scope and validates its input', async () => {
+    const ok = await client.callTool({ name: 'manage_pages', arguments: { template: true, dryRun: true } });
+    expect(ok.isError).toBeFalsy();
+    const sent = received.filter((x) => x.command === 'manage_pages').at(-1)!;
+    expect(sent.params.page).toBeUndefined();
+
+    const bad = await client.callTool({ name: 'manage_pages', arguments: { rename: [{ page: 'A' }] } });
+    expect(bad.isError).toBe(true);
   });
 });
