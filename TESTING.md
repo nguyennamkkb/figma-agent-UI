@@ -45,3 +45,17 @@ Prompt mẫu trong Claude Code:
 3. "Rà soát màn hình đang chọn: text bị cắt, spacing lệch, độ tương phản; sửa luôn."
 
 Đạt khi agent: kiểm tra file trước khi dựng, dựng bằng 1–2 lệnh `render_tree`, chụp `screenshot` và tự sửa lỗi nhìn thấy, không để lớp rác khi lỗi.
+
+## G. Kết quả kiểm thử thực tế (Figma desktop)
+
+Đã chạy đủ **16/16 tool** trên một page test riêng rồi xoá page đó (thiết kế gốc không đổi). Trạng thái: `render_tree` (frame/text/rect/ellipse/svg/gradient 135°/`component`/`instance` + `texts`/`{var}`/paint-text-effect style), `update_nodes` (batch + `failed` tách từng id), `move_nodes` (reparent), `clone_node` (parent + index), `delete_nodes`, `select_nodes`, `screenshot`, `get_node`, `find_nodes`, `get_selection`, `get_document_info`, `set_current_page`, `get_design_system`, `list_fonts`, `execute_code`.
+
+Ghi chú để không vấp lại:
+
+- Sai tên tham số sẽ bị Zod chặn trước khi tới Figma: `update_nodes` dùng `updates: [{ id, props }]` (không phải `ops`/`properties`).
+- Định dạng gradient trong DSL: `{ gradient: "LINEAR", angle: 135, stops: [{ color, position }] }`; ép style bằng `{ style: "Tên style" }`; text style bằng `textStyle`, effect style bằng `effects: { style }`.
+- **API Figma:** biến dùng `setValueForMode(modeId, value)` — `setValueByMode` không tồn tại. `figma.util.rgb` có, nhưng `figma.util.solid` **không** có ở build này → dùng helper `h.solid(hex)`.
+- Gói Figma hiện tại **giới hạn 1 mode mỗi collection**: `addMode` báo `Limited to 1 modes only` (lỗi rõ ràng, không hỏng gì).
+- `render_tree` lỗi giữa chừng (vd `widthMode: "FILL"` ở root) → dọn sạch, không để lớp rác, `safeToRetryWithoutCanvasRead: true`.
+- ⚠️ **`execute_code` không thể ngắt**: một vòng lặp vô hạn (`while(true)`) chặn luồng chính của plugin; server báo timeout 30 s nhưng Figma sẽ tự đóng sandbox, plugin mất kết nối và **phải chạy lại plugin** (Plugins → Development). Server/bridge vẫn sống. Vì vậy `timeoutMs` chỉ ngăn phía MCP chờ, không dừng được code trong plugin — đừng viết vòng lặp không có điều kiện kết thúc.
+- Plugin tự kết nối lại sau khi chạy lại (không cần khởi động lại server).

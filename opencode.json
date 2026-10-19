@@ -1,0 +1,13 @@
+{
+  "mcp": {
+    "servers": {
+      "figma-agent": {
+        "type": "local",
+        "command": [
+          "node",
+          "dist/server.mjs"
+        ]
+      }
+    }
+  }
+}
