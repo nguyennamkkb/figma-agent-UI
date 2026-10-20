@@ -399,10 +399,11 @@ export function inferScopes(name: string, type: VariableType, primitive: boolean
   if (type === 'FLOAT') {
     if (/(^|\/)(space|spacing|gap|inset|padding)(\/|$)/.test(n)) return ['GAP'];
     if (/(^|\/)radius(\/|$)/.test(n)) return ['CORNER_RADIUS'];
+    // Before the size rule: "border/width/thin" is a stroke weight, not a width.
+    if (/(^|\/)(border-width|border\/width|stroke)(\/|$)/.test(n)) return ['STROKE_FLOAT'];
     if (/(^|\/)(size|width|height)(\/|$)/.test(n)) return ['WIDTH_HEIGHT'];
-    if (/(^|\/)(font-size|text-size)(\/|$)/.test(n)) return ['FONT_SIZE'];
-    if (/(^|\/)(line-height)(\/|$)/.test(n)) return ['LINE_HEIGHT'];
-    if (/(^|\/)(border-width|stroke)(\/|$)/.test(n)) return ['STROKE_FLOAT'];
+    if (/(^|\/)(line-height|leading)(\/|$)/.test(n)) return ['LINE_HEIGHT'];
+    if (/(^|\/)(font-size|text-size|type|typography)(\/|$)/.test(n)) return ['FONT_SIZE'];
     if (/(^|\/)opacity(\/|$)/.test(n)) return ['OPACITY'];
     // duration/easing are prototype-only: hidden from layer pickers.
     if (/(^|\/)(duration|motion|easing)(\/|$)/.test(n)) return [];

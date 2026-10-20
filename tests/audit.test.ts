@@ -4,6 +4,7 @@ import {
   DEFAULT_NAME,
   SEVERITY,
   buildReport,
+  colorsDiffer,
   contrastRatio,
   contrastThreshold,
   contrastVerdict,
@@ -131,7 +132,25 @@ describe('report', () => {
 
   it('assigns a severity to every issue kind', () => {
     const kinds = Object.keys(SEVERITY);
-    expect(kinds).toHaveLength(18);
+    expect(kinds).toHaveLength(19);
     for (const k of kinds) expect(['block', 'should', 'nice']).toContain(SEVERITY[k as keyof typeof SEVERITY]);
+  });
+});
+
+describe('colorsDiffer (stale-paint)', () => {
+  it('flags a bound paint that kept its fallback colour', () => {
+    // Manual boundVariables left #FFFFFF while the variable is #1A1A26.
+    expect(colorsDiffer(rgb('#FFFFFF'), rgb('#1A1A26'))).toBe(true);
+    expect(colorsDiffer(rgb('#000000'), rgb('#55556B'))).toBe(true);
+  });
+
+  it('accepts the resolved colour, within 1/255 rounding', () => {
+    expect(colorsDiffer(rgb('#1A1A26'), rgb('#1A1A26'))).toBe(false);
+    const c = rgb('#1A1A26');
+    expect(colorsDiffer({ r: c.r + 0.002, g: c.g, b: c.b }, c)).toBe(false);
+  });
+
+  it('marks stale-paint as a blocker', () => {
+    expect(SEVERITY['stale-paint']).toBe('block');
   });
 });

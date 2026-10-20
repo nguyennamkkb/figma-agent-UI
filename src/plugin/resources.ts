@@ -36,9 +36,14 @@ export class Resources {
     ]);
     const byId = new Map(collections.map((c) => [c.id, c.name]));
     const map = new Map<string, Variable>();
+    // A bare name shared by Primitives and Semantic ("space/9") must bind the
+    // Semantic one: layers never bind primitives, and Primitives is usually
+    // created first. "Collection/name" still reaches either.
+    const isPrimitive = (v: Variable) => /primitive/i.test(byId.get(v.variableCollectionId) ?? '');
     for (const v of vars) {
       map.set(`${byId.get(v.variableCollectionId)}/${v.name}`, v);
-      if (!map.has(v.name)) map.set(v.name, v);
+      const seen = map.get(v.name);
+      if (!seen || (isPrimitive(seen) && !isPrimitive(v))) map.set(v.name, v);
     }
     return map;
   }
