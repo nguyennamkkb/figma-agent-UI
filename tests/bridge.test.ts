@@ -166,6 +166,14 @@ describe('Bridge', () => {
     expect(b.status().preferredFile).toBe('key-b');
   });
 
+  it('reports a pinned draft (no fileKey) by name', async () => {
+    const b = await startBridge();
+    await fakePlugin(b, () => 'A', 'secret', 'Untitled');
+    await fakePlugin(b, () => 'B', 'secret', 'file2', { preferredFileKey: 'file2' });
+    await expect(b.request('x', {})).resolves.toBe('B');
+    expect(b.status().preferredFile).toBe('file2');
+  });
+
   it('tells an old plugin which commands it misses', async () => {
     const b = await startBridge({ supportedCommands: () => ['get_document_info', 'render_tree'] });
     await fakePlugin(b, () => 'ok', 'secret', 'Test file', { commands: ['get_document_info'] });

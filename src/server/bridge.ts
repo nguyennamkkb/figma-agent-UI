@@ -227,10 +227,11 @@ export class Bridge {
   }
 
   // The file the user pinned in the panel (null when nothing is pinned).
+  // Drafts have no fileKey and are pinned by name, so report the name then.
   private preferredFileKey(): string | null {
     const open = [...this.clients.values()].filter((c) => c.ws.readyState === WebSocket.OPEN);
     const pinned = open.find((c) => this.isPinned(c));
-    return pinned?.info?.fileKey ?? null;
+    return pinned?.info?.fileKey ?? pinned?.info?.fileName ?? null;
   }
 
   // A file is "pinned" when the panel named it. Untitled drafts have no

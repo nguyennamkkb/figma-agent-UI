@@ -1,6 +1,8 @@
 // Name-based lookups for design-system assets. One instance lives for the
 // duration of a single command so repeated references hit a cache.
 
+import { findNode } from './util';
+
 export class Resources {
   private variables?: Promise<Map<string, Variable>>;
   private collections?: Promise<VariableCollection[]>;
@@ -104,7 +106,7 @@ function findStyle<T extends BaseStyle>(styles: T[], name: string, kind: string)
 
 async function findComponent(ref: string): Promise<ComponentNode | ComponentSetNode> {
   if (/^I?\d+:\d+/.test(ref)) {
-    const node = await figma.getNodeByIdAsync(ref);
+    const node = await findNode(ref);
     if (node && (node.type === 'COMPONENT' || node.type === 'COMPONENT_SET')) return node;
     throw new Error(`Node ${ref} is not a component or component set.`);
   }

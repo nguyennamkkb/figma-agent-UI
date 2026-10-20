@@ -8,7 +8,7 @@ import type {
 import { applyPlacement, applyProps, type ApplyCtx } from '../apply';
 import { Resources } from '../resources';
 import { summary } from '../serialize';
-import { getContainer, getSceneNode } from '../util';
+import { findNode, getContainer, getSceneNode } from '../util';
 
 // Applies every update; failures are reported per node instead of aborting
 // the batch, so the agent knows exactly which ids changed.
@@ -36,7 +36,7 @@ export async function deleteNodes(p: DeleteNodesInput) {
   const deleted: string[] = [];
   const missing: string[] = [];
   for (const id of p.ids) {
-    const node = await figma.getNodeByIdAsync(id);
+    const node = await findNode(id).catch(() => null);
     if (!node || node.type === 'DOCUMENT' || node.type === 'PAGE') {
       missing.push(id);
       continue;
