@@ -39,6 +39,8 @@
 | Setting `figma.currentPage` throws / sync getter throws | Use `await figma.setCurrentPageAsync(page)`, `getNodeByIdAsync`. |
 | Colours completely wrong | 0–255 used instead of 0–1; use `h.solid('#hex')`. |
 | Bound fill does not stick | Assign the new paint array returned by `setBoundVariableForPaint`. |
+| Layer shows the wrong colour although `boundVariables` is right (e.g. white background on a dark token) | The paint kept a stale colour: Figma re-resolves the colour only when the **binding changes**, so a paint written with the binding it already had (clone paint → edit `color` → reassign, or `{…paint, boundVariables}` by hand) keeps its own colour. `audit_design` reports it as `stale-paint` (blocker). Fix: `update_nodes{fill/stroke: {var}}`, or `setBoundVariableForPaint(h.solid(<resolved hex>), 'color', v)`. Never write `boundVariables` by hand. |
+| `v.name = '…'` does nothing, no error | Renaming a variable is not supported from the plugin here; rename in the Figma UI or create a new variable. |
 | `setValueByMode is not a function` | It is `setValueForMode(modeId, value)`. |
 
 ## Audit false positives (judge, then say so)
@@ -46,3 +48,11 @@
 - `small-target` on a non-interactive row (table rows, labels): the real target is the card/button around it.
 - `no-autolayout` on an SVG icon frame: vectors, not content — fine.
 - `contrast: needs-check` over an image/gradient: check the screenshot; add an overlay gradient or a solid backing if in doubt.
+
+Not false positives, though they look like it:
+
+- `primitive-bound` on a **Semantic** token: the detail says `scopes []`. A variable with no scopes is hidden from Figma's pickers and counts as a primitive, whatever its collection. Fix the data: give it its role scope (`GAP`, `CORNER_RADIUS`, `FONT_SIZE`, `STROKE_FLOAT`, `WIDTH_HEIGHT`). Only prototype-only tokens (`duration/*`, `easing/*`) keep `[]`.
+- `contrast` with a ratio you can't explain: compute it against the colour the screenshot shows, not the token. A `stale-paint` backdrop makes the audit right and the token wrong.
+- Verify a suspected false positive with a probe (the same binding on a test frame, audited before and after) before dismissing it, and screenshot it. Delete the probe afterwards.
+
+The purple dashed frame and radius 5 of a component set are chrome; the audit skips them.

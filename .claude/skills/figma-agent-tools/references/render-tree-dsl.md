@@ -61,6 +61,9 @@ Other keys: `widthMode`/`heightMode` (`FIXED|HUG|FILL`), `min/maxWidth`, `min/ma
 ## 4. Sizing rules (the source of most failures)
 
 - Auto-layout frames without `width`/`height` **hug** their content.
+- A frame **without `layout`** keeps a given `width` + `height`. With neither it shrinks to its children (a 44×44 icon button becomes 22×22). With only one it gets **100** on the other axis (`height: 44` alone → 100×44: a pill instead of a circle). Its children sit at (0,0) and are never centred. For an icon slot or round button use `layout: "HORIZONTAL"`, `justify: "CENTER"`, `align: "CENTER"`, plus both sizes.
+- A frame dropped into a **Section** (no auto layout) lands at (0,0) on top of its siblings: wrap the set in an auto-layout frame, or give `x`/`y`.
+- `{var: "space/9"}` resolves by name. When Primitives and Semantic share a name the bare name binds the non-primitive one; write `"Primitives/space/9"` only for foundations charts that show the primitive tier.
 - `widthMode: "FILL"` only inside an auto-layout parent, never on the root (explicit error, safe retry).
 - Text wraps only with a width — `widthMode: "FILL"` or fixed `width`. A long label in a row needs `FILL` on the text, otherwise it overflows.
 - Compose with `gap`, `padding`, `justify`, `align`; `x`/`y` only on `absolute: true` children, `layout: "NONE"` parents or the root.

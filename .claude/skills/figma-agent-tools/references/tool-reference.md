@@ -57,6 +57,9 @@ Source of truth: tool descriptions in `src/server/index.ts` and input schemas in
 
 - Variant names become `Size=md, State=Default`. Validation (duplicates, `=`/`,` in values, missing combos, > 50 variants, mixed size vocabularies) fails **before** anything is written.
 - `targets` are layer names that must exist in **every** variant's tree.
+- A failing call removes everything it drew (verified). Duplicates come from an earlier call that **succeeded**: `get_node` the section before retrying a set under a new name.
+- Each variant root is a component: give it `widthMode: "FIXED"` + `width` (or HUG). `FILL` fails unless `parentId` is an auto-layout frame.
+- The set gets a purple dashed stroke and radius 5, like sets made in the Figma UI; `audit_design` ignores that chrome.
 - Use instances afterwards: `{type: "instance", component: "Button", variant: {State: "Default"}, texts: {Label: "…"}, properties: {"Has icon": true}}`.
 
 ## 5. Verify and fix
@@ -64,7 +67,7 @@ Source of truth: tool descriptions in `src/server/index.ts` and input schemas in
 | Tool | Key params | Returns / notes |
 |---|---|---|
 | `screenshot` | `id` (**string**), `scale` 0.5, `maxSize` 1024 | PNG. Screenshot the node you just wrote. Raise `scale` to 1 for detail checks. |
-| `audit_design` | `rootId`, `checks` (`names`,`tokens`,`layout`,`a11y`,`hygiene`,`content`), `limit` 50, `format` `json|markdown` | `counts`, `severity` (Blocker / Should fix / Nice to have; JSON keys `block` / `should` / `nice`), `samples` with ids. Kinds: default/blacklisted names, raw fill/stroke/radius, primitive bound directly, text without style, no auto layout, redundant wrapper, off-scale spacing, contrast (gradient/image backdrop = `needs-check`), small target < 44pt, hidden layers, lorem, outside section, variant explosion, orphan styles/tokens. Heuristic: `small-target` on non-interactive rows and SVG icons reported as `no-autolayout` are false positives — judge and say so. |
+| `audit_design` | `rootId` (audited itself, then its subtree), `checks` (`names`,`tokens`,`layout`,`a11y`,`hygiene`,`content`), `limit` 50, `format` `json|markdown` | `counts`, `severity` (Blocker / Should fix / Nice to have; JSON keys `block` / `should` / `nice`), `samples` with ids. Kinds: default/blacklisted names, raw fill/stroke/radius, primitive bound directly (a Primitives variable, or any variable with `scopes []` — the detail says which), `stale-paint` (blocker: a bound paint whose colour is not the variable's value, so the layer renders the old colour), text without style, no auto layout, redundant wrapper, off-scale spacing, contrast (gradient/image backdrop = `needs-check`), small target < 44pt, hidden layers, lorem, outside section, variant explosion, orphan styles/tokens. Heuristic: `small-target` on non-interactive rows and SVG icons reported as `no-autolayout` are false positives — judge and say so. |
 | `stress_test` | `id`, `cases` (`long-text`,`large-text`,`narrow`,`wide`,`empty-text`), `modes`, `page` | Section `Stress / <name>` with copies + `overflow[]` per case. Screenshot `sectionId`, then **delete the section**. |
 | `bind_variables` | `rootId`, `fields`, `map {"#2563EB": "color/action/primary", "16": "space/4"}`, `auto`, `tolerance` ΔE 2, **`dryRun` true** | Changes, `ambiguous` (add them to `map`), `unmatched`. Never binds primitives; skips instances and sections. Second call with `dryRun: false` writes. |
 | `rename_by_rule` | `rootId`, `rules[{match RegExp, to, types}]`, `auto`, **`dryRun` true** | Only default/blacklisted names are auto-renamed (`label/…`, `icon/glyph`, `image/placeholder`, `row`/`stack`). |
