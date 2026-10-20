@@ -25,6 +25,7 @@ export type IssueKind =
   | 'raw-radius'
   | 'primitive-bound'
   | 'stale-paint'
+  | 'icon-offcenter'
   | 'lorem'
   | 'outside-section'
   | 'variant-explosion';
@@ -49,6 +50,7 @@ export const SEVERITY: Record<IssueKind, Severity> = {
   'primitive-bound': 'should',
   // The binding looks right but Figma paints the stale colour: broken render.
   'stale-paint': 'block',
+  'icon-offcenter': 'should',
   lorem: 'should',
   'outside-section': 'nice',
   'variant-explosion': 'should',
@@ -199,7 +201,7 @@ export function toQaMarkdown(report: AuditReport, opts: { file?: string; date?: 
     'default-name': 'A', 'blacklisted-name': 'A', 'hidden-layer': 'A', 'detached-instance': 'A',
     'outside-section': 'A', 'variant-explosion': 'A',
     'raw-fill': 'B', 'raw-text': 'B', 'orphan-token': 'B', 'raw-stroke': 'B', 'raw-radius': 'B', 'primitive-bound': 'B', 'stale-paint': 'B',
-    'no-autolayout': 'C', 'redundant-wrapper': 'C', 'off-scale-spacing': 'C',
+    'no-autolayout': 'C', 'redundant-wrapper': 'C', 'off-scale-spacing': 'C', 'icon-offcenter': 'C',
     contrast: 'E', 'small-target': 'E',
     lorem: 'F',
   };
@@ -267,6 +269,8 @@ function fixHint(kind: IssueKind): string {
       return 'Bind `radius/*` variable (bind_variables)';
     case 'primitive-bound':
       return 'Đổi sang Semantic token; nếu biến đã ở Semantic mà scopes rỗng thì đặt lại scopes';
+    case 'icon-offcenter':
+      return 'Slot icon: layout HORIZONTAL + justify/align CENTER, padding đối xứng';
     case 'stale-paint':
       return 'Bind lại bằng update_nodes `{var}` hoặc setBoundVariableForPaint (không gán boundVariables thủ công)';
     case 'lorem':

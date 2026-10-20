@@ -4,6 +4,7 @@
 import { planComponentSet } from '../../shared/components';
 import type { CreateComponentSetInput } from '../../shared/schemas';
 import type { ApplyCtx } from '../apply';
+import { iconWarnings } from '../icons';
 import { solid } from '../paints';
 import { Resources } from '../resources';
 import { freeSpot, getContainer, RolledBackError } from '../util';
@@ -104,6 +105,7 @@ export async function createComponentSet(p: CreateComponentSetInput) {
       }
     }
 
+    warnings.push(...iconWarnings([set]));
     return {
       setId: set.id,
       name: set.name,

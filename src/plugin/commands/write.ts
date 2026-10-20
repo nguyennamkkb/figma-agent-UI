@@ -6,6 +6,7 @@ import type {
   UpdateNodesInput,
 } from '../../shared/schemas';
 import { applyPlacement, applyProps, type ApplyCtx } from '../apply';
+import { iconWarnings } from '../icons';
 import { Resources } from '../resources';
 import { summary } from '../serialize';
 import { findNode, getContainer, getSceneNode } from '../util';
@@ -16,12 +17,16 @@ export async function updateNodes(p: UpdateNodesInput) {
   const ctx: ApplyCtx = { res: new Resources(), defaultFont: 'Inter' };
   const updated: string[] = [];
   const failed: { id: string; error: string }[] = [];
+  const touched: BaseNode[] = [];
   for (const u of p.updates) {
     try {
       const node = await getSceneNode(u.id);
       await applyProps(node, u.props, ctx, false);
       applyPlacement(node, u.props, false);
       updated.push(u.id);
+      // The node may be the slot or the icon inside it: check both.
+      touched.push(node);
+      if (node.parent) touched.push(node.parent);
     } catch (e) {
       failed.push({ id: u.id, error: e instanceof Error ? e.message : String(e) });
     }
@@ -29,7 +34,8 @@ export async function updateNodes(p: UpdateNodesInput) {
   if (updated.length === 0 && failed.length > 0) {
     throw new Error(`No node updated. ${failed.map((f) => `${f.id}: ${f.error}`).join(' | ')}`);
   }
-  return { updated, failed };
+  const warnings = iconWarnings(touched);
+  return { updated, failed, ...(warnings.length ? { warnings } : {}) };
 }
 
 export async function deleteNodes(p: DeleteNodesInput) {

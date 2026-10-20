@@ -132,7 +132,7 @@ describe('report', () => {
 
   it('assigns a severity to every issue kind', () => {
     const kinds = Object.keys(SEVERITY);
-    expect(kinds).toHaveLength(19);
+    expect(kinds).toHaveLength(20);
     for (const k of kinds) expect(['block', 'should', 'nice']).toContain(SEVERITY[k as keyof typeof SEVERITY]);
   });
 });

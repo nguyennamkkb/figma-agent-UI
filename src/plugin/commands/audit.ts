@@ -17,12 +17,13 @@ import {
   type RGB,
 } from '../../shared/audit';
 import { toHex } from '../../shared/values';
+import { offCentreIcons } from '../icons';
 import { getNode } from '../util';
 
 const CHECK_GROUPS: Record<string, string[]> = {
   names: ['default-name', 'blacklisted-name'],
   tokens: ['raw-fill', 'raw-text', 'raw-stroke', 'raw-radius', 'primitive-bound', 'stale-paint'],
-  layout: ['no-autolayout', 'redundant-wrapper', 'off-scale-spacing'],
+  layout: ['no-autolayout', 'redundant-wrapper', 'off-scale-spacing', 'icon-offcenter'],
   a11y: ['contrast', 'small-target'],
   hygiene: ['hidden-layer', 'orphan-token', 'outside-section', 'variant-explosion'],
   content: ['lorem'],
@@ -34,6 +35,8 @@ const CHECK_GROUPS: Record<string, string[]> = {
 const INTERACTIVE = /^(Button|Tab(\/|$)|Chip|Link|Input|Field|Row|Item|Toggle|Checkbox|Radio|Segment|FAB)/;
 
 const isScene = (n: BaseNode): n is SceneNode => 'visible' in n;
+
+const VECTOR_TYPES = new Set<string>(['VECTOR', 'BOOLEAN_OPERATION', 'ELLIPSE', 'LINE', 'RECTANGLE', 'STAR', 'POLYGON']);
 
 function solidColor(node: SceneNode): RGB | null {
   const paints = 'fills' in node && Array.isArray(node.fills) ? node.fills : [];
@@ -154,7 +157,10 @@ export async function auditDesign(p: AuditInput) {
     // A2 / D7 — auto layout
     if (enabled.has('no-autolayout') && n.type === 'FRAME') {
       const f = n as FrameNode;
-      if (f.layoutMode === 'NONE' && f.children.length > 1 && !/^(decor|overlay)\//.test(f.name)) {
+      // An SVG icon frame holds only vectors: auto layout would break the
+      // drawing, so it is not a finding.
+      const vectorsOnly = f.children.every((c) => VECTOR_TYPES.has(c.type));
+      if (f.layoutMode === 'NONE' && f.children.length > 1 && !vectorsOnly && !/^(decor|overlay)\//.test(f.name)) {
         push('no-autolayout', `${f.children.length} lớp con nhưng layout NONE`);
       }
     }
@@ -295,6 +301,15 @@ export async function auditDesign(p: AuditInput) {
     ]);
     for (const s of [...paint, ...text, ...effect, ...grid]) {
       if (!used.has(s.id)) issues.push({ id: s.id, kind: 'orphan-token', name: s.name, detail: 'style không được dùng' });
+    }
+  }
+
+  // Icon slots whose glyph is not on the slot centre (measured ink).
+  if (enabled.has('icon-offcenter')) {
+    for (const i of offCentreIcons(root.type === 'PAGE' ? root.children : [root])) {
+      const n = nodes.find((x) => x.id === i.id);
+      const rect = n && 'x' in n ? { x: Math.round(n.x), y: Math.round(n.y), w: Math.round(n.width), h: Math.round(n.height) } : undefined;
+      issues.push({ id: i.id, kind: 'icon-offcenter', name: i.name, detail: i.detail, rect });
     }
   }
 

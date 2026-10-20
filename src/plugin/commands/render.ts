@@ -3,6 +3,7 @@ import { parseColor } from '../../shared/values';
 import { applyPlacement, applyProps, type ApplyCtx } from '../apply';
 import { resolveFill } from '../paints';
 import { Resources } from '../resources';
+import { iconWarnings } from '../icons';
 import { freeSpot, getContainer, isAutoLayout, RolledBackError } from '../util';
 
 export async function renderTree(p: RenderTreeInput) {
@@ -24,11 +25,15 @@ export async function renderTree(p: RenderTreeInput) {
       figma.currentPage.selection = [root];
       figma.viewport.scrollAndZoomIntoView([root]);
     }
+    // Measured, not guessed: an icon off its slot centre is invisible in the
+    // numbers the agent reads back, so say it here.
+    const warnings = iconWarnings([root]);
     return {
       rootId: root.id,
       created: state.count,
       bounds: { x: root.x, y: root.y, width: root.width, height: root.height },
       ids,
+      ...(warnings.length ? { warnings } : {}),
     };
   } catch (e) {
     if (state.root && !state.root.removed) state.root.remove();
