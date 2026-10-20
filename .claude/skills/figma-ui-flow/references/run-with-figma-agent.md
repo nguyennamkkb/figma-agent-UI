@@ -6,7 +6,7 @@ The bridge between the workflow (this skill) and the tools (the `figma-agent-too
 1. Connection and version
 2. Tool mapping table
 3. Recipes by stage
-4. Screen build loop: level → tool
+4. Screen build loop: pass → tool
 5. Limitations: tell the user
 
 ---
@@ -46,8 +46,8 @@ The bridge between the workflow (this skill) and the tools (the `figma-agent-too
 | 3 | Search first | `search_design_system{query: "button"}` |
 | 3 | Component set + properties | `create_component_set{name, variants: [{props, tree}], properties}` |
 | 3 | Playground | `stress_test{id, cases, modes}` → `screenshot{id: sectionId}` |
-| 4 | 2–3 directions | One section per direction in `🧪 Explore`, each screen in it follows §4 (polished just enough to compare) → **stop at the gate** |
-| 5 | Screens by flow | Empty section `render_tree{page: "📱 Screens", tree: {type: "section", name: "<Flow>"}}`, then **each screen per §4** with `parentId` = section; screen name `Flow / Screen / State` |
+| 4 | 2–3 directions | One section per direction in `🧪 Explore`, each screen in it is a Sketch per §4 (Pass 1–2, just enough to compare) → **stop at the gate** |
+| 5 | Screens by flow | Empty section `render_tree{page: "📱 Screens", tree: {type: "section", name: "<Flow>"}}`, then **each screen per §4** (first one New build, the rest From template) with `parentId` = section; screen name `Flow / Screen / State` |
 | 5 | Dark mode | Frame with `variableModes: {"Semantic": "Dark"}` (requires a multi-mode plan) |
 | 6 | Prototype | `set_interactions{items: [{id, reactions: [{action: "NAVIGATE", destination, transition: {duration: {var: "duration/base"}, easing: "standard"}}]}], flowStart}` |
 | 6 | Interactive component | `set_interactions` on a variant with `action: "CHANGE_TO"`, `destination` = target variant |
@@ -61,18 +61,17 @@ The bridge between the workflow (this skill) and the tools (the `figma-agent-too
 
 Every write tool accepts `page` (id or name). When running multiple agents in parallel, always pass `page` instead of using `set_current_page`.
 
-## 4. Screen build loop: level → tool
+## 4. Screen build loop: pass → tool
 
-Process and checklists: `build-loop.md`. Mechanics: `figma-agent-tools` SKILL.md §4.
+Process, modes and checklists: `build-loop.md`. Mechanics: `figma-agent-tools` SKILL.md §4.
 
-| Level | Write | Check |
+| Pass | Write | Check |
 |---|---|---|
-| L0 Prepare | — (images: `gemini-image-mcp` `image_generate{savePath}`) | `search_design_system`, `get_design_system`, `list_fonts` |
-| L1 Frame | `render_tree{tree: frame + empty regions}` (1 write) | `get_node{ids:[rootId], depth:1}`, `screenshot{id: rootId}` |
-| L2 Regions → blocks | `render_tree{parentId: <region>, tree}` — 1 write per region | `screenshot{id: <region>}` |
-| L3 Components | `create_component_set` (Components page) → `delete_nodes` + `render_tree{parentId, index, tree: {type: "instance"}}` | `get_node` on the instance, `screenshot` |
-| L4 Content | `update_nodes{updates: [...]}` in batches | `screenshot{id, scale: 1}` |
-| L5 Verify | `update_nodes`, `rename_by_rule`, `bind_variables` (dryRun → real) | `audit_design{rootId}`, `stress_test{id}` → `screenshot{id: sectionId}` → `delete_nodes` the section |
+| 0 Prepare | — (images: `gemini-image-mcp` `image_generate{savePath}`) | `search_design_system`, `get_design_system`, `list_fonts` |
+| 1 Layout | `render_tree{tree: frame + regions + sized placeholder blocks}` (1–2 writes) | `get_node{ids:[rootId], depth: 2}` → one `screenshot{id: rootId}` |
+| 2 Fill | `create_component_set` for repeated blocks → `render_tree{parentId: <placeholder or region>, index?}` per cluster (`delete_nodes` the placeholder when replacing it) → `update_nodes` in batches | `get_node` (or the write's `bounds`) after each write; one `screenshot{id: rootId}` at the end; extra screenshots only for unusual blocks |
+| 3 Lock | `update_nodes`, `rename_by_rule`, `bind_variables` (dryRun → real) | `audit_design{rootId}`, `stress_test{id}` → `screenshot{id: sectionId}` → `delete_nodes` the section → final `screenshot{id, scale: 1}` |
+| From template | `clone_node{id: <screen that met DoD>, parentId}` → `update_nodes` / `render_tree{parentId, index}` for what differs | `get_node` on the edits; `screenshot` of the changed areas; then Pass 3 |
 
 Easy-to-confuse parameters (`ids` array vs `id` string, dryRun defaults, ms vs seconds…): `figma-agent-tools/references/tool-reference.md`.
 

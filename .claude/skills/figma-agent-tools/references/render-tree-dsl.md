@@ -5,7 +5,7 @@
 2. Node vocabulary
 3. Paints and effects people get wrong
 4. Sizing rules (the source of most failures)
-5. Building level by level
+5. Building in passes
 6. update_nodes
 
 ---
@@ -67,27 +67,32 @@ Other keys: `widthMode`/`heightMode` (`FIXED|HUG|FILL`), `min/maxWidth`, `min/ma
 - Push a footer down with `justify: "SPACE_BETWEEN"` on the parent, or give the middle region `heightMode: "FILL"`.
 - Canvases: 390×844 (iPhone 15), 393×852, 360×800 (Android), 1440 desktop. Mobile side padding 16–24.
 
-## 5. Building level by level
+## 5. Building in passes
 
-The build loop in figma-ui-flow writes one level or one region per call:
+The build loop in figma-ui-flow locks the layout first, then fills it:
 
 ```jsonc
-// L1 — frame + empty named regions (allowed in one call)
+// Pass 1 — frame + regions + sized placeholder blocks (1 call)
 { "tree": { "type": "frame", "name": "Paywall / Timeline", "width": 390, "height": 844,
   "layout": "VERTICAL", "fill": { "var": "color/bg/default" }, "layoutGrids": { "preset": "mobile" },
   "children": [
     { "type": "frame", "name": "Header",  "layout": "HORIZONTAL", "widthMode": "FILL", "padding": [54, 24, 8, 24], "justify": "SPACE_BETWEEN", "align": "CENTER" },
-    { "type": "frame", "name": "Content", "layout": "VERTICAL",   "widthMode": "FILL", "heightMode": "FILL", "padding": [0, 24], "gap": 24 },
-    { "type": "frame", "name": "Footer",  "layout": "VERTICAL",   "widthMode": "FILL", "padding": [12, 24, 34, 24], "gap": 8 }
+    { "type": "frame", "name": "Content", "layout": "VERTICAL",   "widthMode": "FILL", "heightMode": "FILL", "padding": [0, 24], "gap": 24, "children": [
+      { "type": "frame", "name": "Hero",     "widthMode": "FILL", "height": 208, "fill": "#FF00001A" },
+      { "type": "frame", "name": "Timeline", "widthMode": "FILL", "height": 216, "layout": "VERTICAL", "gap": 16, "fill": "#FF00001A" } ] },
+    { "type": "frame", "name": "Footer",  "layout": "VERTICAL",   "widthMode": "FILL", "padding": [12, 24, 34, 24], "gap": 8, "children": [
+      { "type": "frame", "name": "CTA", "widthMode": "FILL", "height": 56, "fill": "#FF00001A" } ] }
   ] } }
 
-// L2 — one region per call, into the id returned for "Paywall / Timeline/Content"
-{ "parentId": "<Content id>", "tree": { "type": "frame", "name": "Timeline", "layout": "VERTICAL", "widthMode": "FILL", "children": [ … ] } }
+// Pass 2 — fill a placeholder in place (it already has its layout) …
+{ "parentId": "<Timeline id>", "tree": { "type": "instance", "component": "Timeline step", "widthMode": "FILL" } }
+// … or replace one: delete_nodes the placeholder, then insert at its index
+{ "parentId": "<Footer id>", "index": 0, "tree": { "type": "instance", "component": "Button", "variant": { "Variant": "Primary" }, "widthMode": "FILL" } }
 ```
 
-- Empty frames show nothing in a screenshot: give regions a temporary tint (`fill: "#FF00001A"`) during L1 if you need to see them, then `update_nodes` the fill back (or to the token) at L2.
-- Read the frame back with `get_node{ids:[rootId], depth: 1}` to confirm `widthMode`/`heightMode`/padding before filling it.
-- Need a block in the middle of a region later? `render_tree{parentId, index}`.
+- Placeholder tints show the layout in the Pass 1 screenshot; clear them (`update_nodes` fill → token, or `[]`) when filling.
+- Read the frame back with `get_node{ids:[rootId], depth: 2}` to confirm sizing modes and that everything fits before filling.
+- A frame with a `width` inside auto layout also needs `widthMode: "FIXED"`, or it hugs its content.
 
 ## 6. update_nodes
 

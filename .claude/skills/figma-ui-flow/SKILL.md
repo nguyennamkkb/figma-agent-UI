@@ -1,6 +1,6 @@
 ---
 name: figma-ui-flow
-description: Tool-agnostic, "master"-level workflow and knowledge for building UI in Figma — 11 core rules, an 8-stage process with approval gates (brief → foundations/tokens → components → explore 2–3 directions → build screens → prototype → QA → handoff), and a mandatory OUTSIDE-IN screen build loop (frame → regions → blocks → components → content, each level in Auto Layout, checked and fixed before moving to the next level, one screen finished before starting another). Use when the user wants to design/draw/build screens or UI flows, create a design system or component library, explore creative directions, clean up or standardize a file, review/QA, prepare a developer handoff, or assess Figma skill level — even when they only say "draw this screen for me", "design a paywall", "create an app UI", "this Figma file is a mess", including Vietnamese requests such as "vẽ giúp tôi màn hình này", "thiết kế paywall", "tạo UI app", "file Figma lộn xộn quá". Concrete tool operations live in the figma-agent-tools skill.
+description: Tool-agnostic, "master"-level workflow and knowledge for building UI in Figma — 11 core rules, an 8-stage process with approval gates (brief → foundations/tokens → components → explore 2–3 directions → build screens → prototype → QA → handoff), and a mandatory OUTSIDE-IN screen build loop in three passes (layout with sized placeholders → fill with components and content → lock with audit/stress), numeric checks after every write and one screenshot per pass, three modes (Sketch / From template / New build), one screen finished before starting another. Use when the user wants to design/draw/build screens or UI flows, create a design system or component library, explore creative directions, clean up or standardize a file, review/QA, prepare a developer handoff, or assess Figma skill level — even when they only say "draw this screen for me", "design a paywall", "create an app UI", "this Figma file is a mess", including Vietnamese requests such as "vẽ giúp tôi màn hình này", "thiết kế paywall", "tạo UI app", "file Figma lộn xộn quá". Concrete tool operations live in the figma-agent-tools skill.
 ---
 
 # figma-ui-flow — Workflow and knowledge for building UI in Figma
@@ -16,8 +16,8 @@ Let `SKILL_DIR` be the directory containing this file.
 
 | When you need | Read |
 |---|---|
-| **Building any screen** — the outside-in loop, Definition of Done | `references/build-loop.md` |
-| Session has `figma-agent` tools (`figma_status`, `render_tree`…): stage/level → tool | `references/run-with-figma-agent.md` + the `figma-agent-tools` skill |
+| **Building any screen** — the three-pass outside-in loop, modes, check budget, Definition of Done | `references/build-loop.md` |
+| Session has `figma-agent` tools (`figma_status`, `render_tree`…): stage/pass → tool | `references/run-with-figma-agent.md` + the `figma-agent-tools` skill |
 | Session only has the official Figma MCP (`use_figma`…) | `references/remote-figma-mcp.md` |
 | Page structure, layer/frame naming, Auto Layout, grids | `references/file-standards.md` |
 | Variables, tokens, styles, components, variants, libraries | `references/design-system.md` |
@@ -50,8 +50,8 @@ Do not read everything at once. Each stage below states which file it needs.
 7. **Every state is drawn.** Default, pressed, disabled, loading, empty, error, long content, large text, dark mode.
 8. **Keep draft and approved areas separate.** Explore on the `🧪 Explore` page; only approved work goes into `✅ Ready`.
 9. **Non-destructive.** The agent does not delete or overwrite the user's work; edit on a copy or branch, and confirm before changing anything out of scope.
-10. **Verify visually.** After every write, screenshot the node just written and compare it with the intent. Never report "done" without looking.
-11. **One screen at a time, outside-in.** Frame → regions → blocks → components → content; one write per level, checked and fixed before moving to the next level. Start the next screen only once the current one meets the Definition of Done. Details: `references/build-loop.md`.
+10. **Check numbers every write, eyes every pass.** After every write, read back sizes (`get_node`): fixed sizes kept, children fit, FILL/HUG as planned. At the end of each pass, screenshot the screen and compare it with the intent; screenshot an individual block only when it is visually unusual. Never report "done" without looking.
+11. **One screen at a time, outside-in, in three passes.** Pass 1 Layout (frame + regions + sized placeholder blocks, locked while empty) → Pass 2 Fill (components first, then content by cluster) → Pass 3 Lock (audit + stress → DoD). Pick the mode first: Sketch, From template, or New build. Start the next screen only once the current one meets the Definition of Done. Details: `references/build-loop.md`.
 
 ## The 8-stage process
 
@@ -116,14 +116,13 @@ Read `references/creative-process.md`.
 
 Read `references/build-loop.md` — **mandatory** for every screen.
 
-1. **L0 Prepare:** screen goal, real content, a text region map, an inventory of reusable components/tokens.
-2. **L1 Frame:** root frame at the correct platform size (`file-standards.md` section 4) + named empty regions with correct Auto Layout and sizing → check.
-3. **L2 Regions → blocks:** one write per region → check alignment, spacing rhythm, hierarchy.
-4. **L3 Components:** repeated/standard elements become instances (if none exist yet, build the component first — Stage 3).
-5. **L4 Content & details:** real text, icons, images, states.
-6. **L5 Verify & fix:** audit + stress + screenshot, fix until it meets the **Definition of Done**.
-7. Screen meets DoD → report in one line → only then move to the next screen. State variants (empty, loading, error, long text, large text, dark) are subsequent screens, duplicated from the screen that met DoD and then edited where they differ.
-8. Arrange left → right by flow, group with Sections, name them `Flow / Screen / State`.
+1. **Pick the mode:** **Sketch** (quick idea, Stage 4), **From template** (a similar screen exists: clone and edit what differs), **New build** (complex, no template). First screen of a set = New build, the rest = From template.
+2. **Pass 0 Prepare:** screen goal, one primary CTA, real content, a region map down to block sizes, which blocks repeat (→ components), images generated up front.
+3. **Pass 1 Layout (1–2 writes):** root frame at the platform size (`file-standards.md` section 4) + named regions + **sized placeholder blocks** carrying their final Auto Layout. Numeric check, then one screenshot: the screen should already read as the final layout in grey boxes.
+4. **Pass 2 Fill:** components first for anything repeated ≥ 3 times (Stage 3), then fill placeholders **by cluster** (several blocks per write) and add real text, icons, images in batches. Numeric check after each write; one screenshot at the end of the pass, extra ones only for unusual blocks.
+5. **Pass 3 Lock:** audit + stress + one final screenshot, fix until it meets the **Definition of Done** (skipped in Sketch).
+6. Screen meets DoD → report in one line → only then move to the next screen, in From-template mode. State variants (empty, loading, error, long text, large text, dark) are From-template screens of the one that met DoD.
+7. Arrange left → right by flow, group with Sections, name them `Flow / Screen / State`.
 
 ### Stage 6 — Prototype and motion
 
@@ -164,7 +163,7 @@ Read `references/handoff-qa.md` sections 4–6.
 - All states and dark mode are present (if the project has modes).
 - Body text contrast ≥ 4.5:1, large text and UI elements ≥ 3:1.
 - Agent: screenshotted and reviewed the final result; deleted nothing out of scope.
-- Every screen went through L0 → L5 and met the Definition of Done before the next screen started.
+- Every screen went through Pass 1 → 3 (Sketch: 1 → 2) and met the Definition of Done before the next screen started.
 - Passed the human approval gates corresponding to the stages that were run.
 
 ## Common pitfalls
@@ -174,6 +173,7 @@ Read `references/handoff-qa.md` sections 4–6.
 - **Dark mode by duplicating screens** → use modes on the Semantic collection.
 - **Groups instead of Frames** → Groups have no Auto Layout, padding, or clipping; use Groups only for illustrations.
 - **"Creative" = adding effects** → creativity lies in how content is organized and the emotion it evokes; effects only serve the idea.
-- **Agent writes a big chunk before checking** (a whole screen, or all 3 screens, in one write) → errors pile on errors and fixing costs many times more. Write one level, check, then write the next.
-- **Polishing before the gate** → building out all 3 directions in detail before the user has chosen. In Stage 4, build only to L2–L4, just enough to compare directions, then stop.
+- **Agent writes a big chunk before checking** (a whole finished screen, or all 3 screens, in one write) → errors pile on errors and fixing costs many times more. Lock the layout with placeholders first, then fill.
+- **Checking too densely** (a screenshot after every small block) → slow and token-heavy, and most shots find nothing. Check numbers every write with `get_node`, look once per pass.
+- **Polishing before the gate** → building out all 3 directions in detail before the user has chosen. In Stage 4, build each direction in Sketch mode (Pass 1–2), just enough to compare, then stop.
 - **Copying a famous app verbatim** → references must state which principle is being taken, not the surface.

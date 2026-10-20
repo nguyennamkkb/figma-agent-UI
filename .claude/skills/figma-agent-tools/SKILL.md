@@ -5,12 +5,12 @@ description: Operator's manual for every figma-agent MCP tool (figma_status, get
 
 # figma-agent-tools — how to drive the figma-agent MCP
 
-This skill is about **mechanics**: which tool, which parameters, what comes back, what breaks. *What* to build and *in which order* lives in **figma-ui-flow** (`../figma-ui-flow/references/build-loop.md` is the mandatory outside-in loop for screens).
+This skill is about **mechanics**: which tool, which parameters, what comes back, what breaks. *What* to build and *in which order* lives in **figma-ui-flow** (`../figma-ui-flow/references/build-loop.md` is the mandatory three-pass outside-in loop for screens).
 
 | Need | Read |
 |---|---|
 | Every tool: purpose, key params, return value, pitfalls | `references/tool-reference.md` |
-| Full `render_tree` / `update_nodes` vocabulary, building level by level | `references/render-tree-dsl.md` |
+| Full `render_tree` / `update_nodes` vocabulary, building in passes | `references/render-tree-dsl.md` |
 | `execute_code` recipes (variables, binding, auto layout, text, components) | `references/plugin-api-recipes.md` |
 | An error message, a stuck plugin, version mismatch, plan limits | `references/troubleshooting.md` |
 
@@ -47,22 +47,24 @@ This skill is about **mechanics**: which tool, which parameters, what comes back
 
 Order of preference: dedicated tool → `render_tree`/`update_nodes` → `execute_code`. Dedicated tools validate input, return ids and clean up on failure; `execute_code` does none of that.
 
-## 4. Building level by level (mechanics for figma-ui-flow's build loop)
+## 4. Building in passes (mechanics for figma-ui-flow's build loop)
 
 ```text
-L1  render_tree{tree: <screen frame + empty named regions>}            → rootId, ids
-    get_node{ids:[rootId], depth:1}  + screenshot{id: rootId}           → check sizing
-L2  render_tree{parentId: ids["Screen/Content"], tree: <one block>}     → one region per call
-    screenshot{id: <region id>}
-L3  render_tree instance {type:"instance", component:"Button", …}  or create_component_set first
-L4  update_nodes{updates:[{id, props:{text|fill|…}}]}                    → content and details
-L5  audit_design{rootId} → stress_test{id: rootId} → update_nodes fixes → screenshot
+Pass 1  render_tree{tree: <frame + regions + sized placeholder blocks>}   → rootId, ids
+        get_node{ids:[rootId], depth:2}  →  one screenshot{id: rootId}
+Pass 2  create_component_set{…}  for blocks repeated ≥ 3×
+        render_tree{parentId: ids["Screen/Content/Hero"], tree}          → fill a placeholder in place
+        delete_nodes + render_tree{parentId: <region>, index, tree}      → or replace it (instance, image)
+        update_nodes{updates:[…]}                                        → text, icons, colours in batches
+        get_node / write bounds after each write → one screenshot{id: rootId} at the end
+Pass 3  audit_design{rootId} → stress_test{id: rootId} → update_nodes fixes → screenshot{id, scale: 1}
 ```
 
 - `render_tree` with `parentId` appends into that frame (`index` to insert at a position). The new subtree's `ids` keys start at the subtree root, not the screen.
-- A region built at L1 as an empty frame needs its final sizing then: `widthMode: "FILL"` inside the vertical root, `heightMode: "FILL"` for the scrolling content, `HUG` for header/footer.
-- Replace a placeholder block rather than editing it into shape: `delete_nodes` + `render_tree{parentId, index}` at the same index.
-- Screenshot the region you just wrote (`screenshot{id}`), not the whole page: cheaper and sharper.
+- Give regions their final sizing in Pass 1: `widthMode: "FILL"` inside the vertical root, `heightMode: "FILL"` for the scrolling content, `HUG` for header/footer. Placeholder blocks get a fixed size, a temporary tint (`#FF00001A`) and, if they will hold children, their final `layout`/`gap`/`padding`.
+- A frame given a `width` inside auto layout must also get `widthMode: "FIXED"`, otherwise it hugs its content and clips absolute children (same for height).
+- One write may fill several neighbouring placeholders: wrap them in the region's call, or send consecutive calls without screenshots in between.
+- A placeholder's fixed height was an estimate: set `heightMode: "HUG"` once real content defines it.
 
 ## 5. Errors and retries
 
@@ -82,8 +84,10 @@ The body of an async function with `figma` and `h` in scope; top-level `await`, 
 - New top-level nodes at `h.freeSpot()`. Never `figma.closePlugin()`. Return `{createdNodeIds, mutatedNodeIds}`.
 - Recipes: `references/plugin-api-recipes.md`.
 
-## 7. Verify every write
+## 7. Verify: numbers every write, eyes per pass
 
-- `screenshot` the node you just wrote and read it for clipped/overflowing text, wrong wrapping, overlaps, misalignment, uneven spacing, weak contrast, leftover placeholders.
-- Fix the specific node with `update_nodes`; don't rebuild. Screenshot again; stop when the picture is right.
-- `audit_design` findings are heuristics: `small-target` on a non-interactive row and `needs-check` contrast over an image are judged by eye, and say so in the report.
+- **After every write:** read sizes back — the write's `bounds`, or `get_node{ids, depth: 2}` on the written subtree. Check: fixed sizes kept (no unintended HUG), children fit their parent, heights + gaps + padding add up, long text has a width, FILL/HUG as planned. Fix the specific node with `update_nodes`; don't rebuild.
+- **At the end of each pass:** `screenshot` the screen (`scale` 1–1.5) and read it for clipped/overflowing text, wrong wrapping, overlaps, misalignment, uneven spacing, weak contrast, leftover placeholders.
+- **Extra screenshot only for unusual blocks:** rotation, absolute or overlapping layers, custom shapes, text over images, meaningful gradients/shadows — or a number you can't explain. Screenshot that block (`screenshot{id}`), not the page.
+- `stress_test` lists text that overflows its own clip area only; a HUG text clipped by an ancestor is missed. Always screenshot the stress section.
+- `audit_design` findings are heuristics: `small-target` on a non-interactive label and contrast sampled behind an opaque plate or over an image are judged by eye, and say so in the report.
