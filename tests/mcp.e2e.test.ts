@@ -23,14 +23,28 @@ beforeAll(async () => {
     new StdioClientTransport({
       command: process.execPath,
       args: [SERVER],
-      env: { ...process.env, FIGMA_AGENT_PORT: String(PORT), FIGMA_AGENT_TOKEN: TOKEN } as Record<string, string>,
+      env: {
+        ...process.env,
+        FIGMA_AGENT_PORT: String(PORT),
+        // A range of 1 keeps the port deterministic (no fallback).
+        FIGMA_AGENT_PORT_RANGE: '1',
+        FIGMA_AGENT_TOKEN: TOKEN,
+        // Never write to the user's real ~/.figma-agent/port from a test.
+        FIGMA_AGENT_PORT_FILE: join(tmpdir(), `figma-agent-port-${process.pid}`),
+      } as Record<string, string>,
       stderr: 'ignore',
     }),
   );
 
+  // The plugin reports the commands it supports (protocol v2): the server
+  // refuses to send anything else.
+  const { tools } = await client.listTools();
+  const commands = tools.map((t) => t.name).filter((n) => n !== 'figma_status' && n !== 'figma_doctor');
+
   plugin = new WebSocket(`ws://localhost:${PORT}/?token=${TOKEN}`);
   plugin.on('message', (data) => {
     const msg = JSON.parse(String(data));
+    if (msg.type !== 'request') return; // "notice" messages are not replies
     received.push({ command: msg.command, params: msg.params });
     const reply = (body: object) => plugin.send(JSON.stringify({ type: 'response', id: msg.id, ...body }));
     if (msg.command === 'screenshot') {
@@ -71,7 +85,15 @@ beforeAll(async () => {
       plugin.send(
         JSON.stringify({
           type: 'hello',
-          info: { protocol: 1, fileKey: null, fileName: 'E2E', user: null, currentPage: { id: '0:1', name: 'Page 1' }, version: '1.0.0 (e2e)' },
+          info: {
+            protocol: 2,
+            fileKey: null,
+            fileName: 'E2E',
+            user: null,
+            currentPage: { id: '0:1', name: 'Page 1' },
+            version: '1.0.0 (e2e)',
+            commands,
+          },
         }),
       );
       setTimeout(resolve, 50);
@@ -102,6 +124,7 @@ describe('MCP server', () => {
         'execute_code',
         'export_assets',
         'export_tokens',
+        'figma_doctor',
         'figma_status',
         'find_nodes',
         'get_design_system',
@@ -218,6 +241,34 @@ describe('MCP server', () => {
     const r = await client.callTool({ name: 'figma_status', arguments: {} });
     const body = JSON.parse((r.content as { text: string }[])[0].text);
     expect(body.versionCheck).toMatch(/⚠️.*E2E = 1\.0\.0 \(e2e\).*mở lại/);
+  });
+
+  it('masks the token unless it is asked for', async () => {
+    const masked = await client.callTool({ name: 'figma_status', arguments: {} });
+    const raw = (masked.content as { text: string }[])[0].text;
+    const body = JSON.parse(raw);
+    expect(raw).not.toContain(TOKEN);
+    expect(body.token).toBe(`…${TOKEN.slice(-4)}`);
+    // The plugin reports every command → nothing is missing.
+    expect(body.missingCommands).toEqual([]);
+    expect(body.protocol).toBe(2);
+    expect(body.portRange).toBe(1);
+
+    const full = await client.callTool({ name: 'figma_status', arguments: { includeToken: true } });
+    expect(JSON.parse((full.content as { text: string }[])[0].text).token).toBe(TOKEN);
+  });
+
+  it('figma_doctor reports every check without throwing', async () => {
+    const r = await client.callTool({ name: 'figma_doctor', arguments: {} });
+    expect(r.isError).toBeFalsy();
+    const body = JSON.parse((r.content as { text: string }[])[0].text);
+    expect(typeof body.ok).toBe('boolean');
+    expect(Array.isArray(body.checks)).toBe(true);
+    expect(body.checks.length).toBeGreaterThanOrEqual(5);
+    expect(body.checks.map((c: { id: string }) => c.id)).toEqual(
+      expect.arrayContaining(['server', 'port', 'token', 'plugin', 'version', 'capability', 'manifest']),
+    );
+    expect(Array.isArray(body.nextSteps)).toBe(true);
   });
 });
 
