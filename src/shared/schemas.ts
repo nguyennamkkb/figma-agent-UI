@@ -64,8 +64,7 @@ const Sizing = z.enum(['FIXED', 'HUG', 'FILL']);
 
 export const GridSpec = z.strictObject({
   pattern: z.enum(['COLUMNS', 'ROWS', 'GRID']),
-  count: z.number().int().min(1).optional().describe('Columns/rows; default 4 columns'),
-  gutter: z.number().min(0).optional().describe('Default 16'),
+  count: z.union([z.number().int().min(1), z.literal('auto')]).optional().describe('Columns/rows; default 4 columns, "auto" = Infinity'),
   margin: z.number().min(0).optional().describe('Outer margin (STRETCH) or offset; default 16'),
   size: z.number().min(1).optional().describe('Column/row width for non-STRETCH alignment, or GRID cell size'),
   alignment: z.enum(['STRETCH', 'CENTER', 'MIN', 'MAX']).optional(),
@@ -93,9 +92,10 @@ const baseProps = {
   minHeight: NumOrVar.optional(),
   maxHeight: NumOrVar.optional(),
   absolute: z.boolean().optional().describe('Absolute position inside an auto-layout parent'),
+  locked: z.boolean().optional().describe('Lock layer against canvas selection/drag'),
+  rotation: z.number().optional().describe('Degrees, counter-clockwise'),
   opacity: NumOrVar.optional().describe('0..1'),
   visible: z.boolean().optional(),
-  rotation: z.number().optional(),
   fill: Fill.optional(),
   stroke: Stroke.optional(),
   radius: Side4(NumOrVar).optional().describe('Number, or [topLeft, topRight, bottomRight, bottomLeft]'),

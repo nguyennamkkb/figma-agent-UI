@@ -4,7 +4,7 @@ import { parseColor } from './values';
 
 export interface GridSpec {
   pattern: 'COLUMNS' | 'ROWS' | 'GRID';
-  count?: number;
+  count?: number | 'auto';
   gutter?: number;
   margin?: number;
   size?: number;
@@ -38,8 +38,7 @@ export function toLayoutGrid(g: GridSpec): PlainGrid {
     pattern: g.pattern,
     alignment,
     gutterSize: g.gutter ?? 16,
-    count: g.count ?? (g.pattern === 'COLUMNS' ? 4 : 1),
-    // STRETCH uses offset as the outer margin; fixed-size grids use sectionSize.
+    count: g.count === 'auto' ? Infinity : (g.count ?? (g.pattern === 'COLUMNS' ? 4 : 1)),
     ...(alignment === 'STRETCH' ? { offset: g.margin ?? 16 } : { offset: g.margin ?? 0, sectionSize: g.size }),
     visible,
     color,

@@ -47,7 +47,7 @@ Source of truth: tool descriptions in `src/server/index.ts` and input schemas in
 | `manage_pages` | `template` (9-page skeleton), `create`, `rename[{page,to}]`, `delete`, `order`, `dryRun` false | Run `dryRun: true` first to show the plan. |
 | `import_tokens` | `tokens` (JSON) **or** `path` (absolute, read by the server), `dryRun`, `onExisting` `skip`, `allowLintErrors` | Lints exactly like `figma-ui-flow/scripts/check_tokens.py` before touching Figma; errors stop the import. Top-level group → collection (`primitives` → `Primitives`), `$extensions.modes` → modes, `{primitives.color.white}` → alias, scopes inferred (primitives `[]`). |
 | `create_variables` | `collection`, `modes` (first = default), `variables[{name, type COLOR|FLOAT|STRING|BOOLEAN, scopes, values{mode: value | {alias}}}]`, `onExisting` `error` | Alias as `"color/gray/900"` or `"Primitives/color/gray/900"`. Free plan: one mode per collection → extra modes come back as warnings. |
-| `create_styles` | `styles[{kind: text|paint|effect|grid, name, …}]`, `onExisting` | Text styles may bind `fontSize: {var}`. New styles are removed if any spec fails. |
+| `create_styles` | `styles[{kind: text|paint|effect|grid, name, …}]`, `onExisting` | Text styles may bind `fontSize: {var}`. Effect needs `effects: […]` (not flat x/y/blur keys). New styles are removed if any spec fails. |
 | `render_foundations` | `collections`, `page` (e.g. `"🎨 Foundations"`) | Swatches, type specimen, spacing ruler, radius, elevation — all bound to the real variables/styles. Compact result (rootId + counts). |
 | `export_tokens` | `format` `json|css|swift|kotlin`, `collections`, `path` | Code text; written to `path` by the server when given. Motion durations stay in ms. |
 
@@ -74,7 +74,7 @@ Source of truth: tool descriptions in `src/server/index.ts` and input schemas in
 | Tool | Key params | Notes |
 |---|---|---|
 | `set_interactions` | `items[{id, reactions[{trigger, action, destination, transition{type, duration ms or {var}, easing}}], replace}]`, `flowStart{id, name}` | Actions NAVIGATE / OVERLAY / SWAP / SCROLL_TO / CHANGE_TO (variant → interactive component) / BACK / CLOSE / URL / SET_VARIABLE / SET_VARIABLE_MODE. Easing names: `standard`, `decelerate`, `accelerate`, `spring`, `linear`, `cubic-bezier()`. Durations in ms (converted to seconds). |
-| `annotate` | `items[{id, label (markdown), properties[], category}]`, `replace` | Behaviour, edge cases, motion specs, a11y labels. |
+| `annotate` | `items[{id, label (markdown), properties[], category}]`, `replace` | Behaviour, edge cases, motion specs, a11y labels. `category` must match a file category (Development/Interaction/Accessibility/Content); invalid names list the valid ones. `properties` uses plural API names (`fills`, not `fill`); invalid names list all 33 valid ones. |
 | `set_dev_status` | `ids` (sections or top-level frames), `status` `READY_FOR_DEV|COMPLETED|NONE` | Nested frames are rejected. |
 | `export_assets` | `ids`, `format` PNG/JPG/SVG/PDF, `scales` [1,2,3], `outDir` (absolute) | Server writes `name@2x.png`…; returns paths. |
 

@@ -3,9 +3,10 @@
 import type { AnnotateInput, ExportAssetsInput, SetDevStatusInput } from '../../shared/schemas';
 import { getSceneNode } from '../util';
 
+const ANNOTATION_PROPS: readonly AnnotationPropertyType[] = ['width', 'height', 'maxWidth', 'minWidth', 'maxHeight', 'minHeight', 'fills', 'strokes', 'effects', 'strokeWeight', 'cornerRadius', 'textStyleId', 'textAlignHorizontal', 'fontFamily', 'fontStyle', 'fontSize', 'fontWeight', 'lineHeight', 'letterSpacing', 'itemSpacing', 'padding', 'layoutMode', 'alignItems', 'opacity', 'mainComponent', 'gridRowGap', 'gridColumnGap', 'gridRowCount', 'gridColumnCount', 'gridRowAnchorIndex', 'gridColumnAnchorIndex', 'gridRowSpan', 'gridColumnSpan'];
+
 export async function annotate(p: AnnotateInput) {
   const categories = p.items.some((i) => i.category) ? await figma.annotations.getAnnotationCategoriesAsync() : [];
-  const done: { id: string; annotations: number }[] = [];
   for (const item of p.items) {
     const node = await getSceneNode(item.id);
     if (!('annotations' in node)) throw new Error(`${node.type} ${node.id} không nhận annotation`);
@@ -14,6 +15,11 @@ export async function annotate(p: AnnotateInput) {
       const c = categories.find((x) => x.label.toLowerCase() === item.category!.toLowerCase());
       if (!c) throw new Error(`Không có annotation category "${item.category}". Có: ${categories.map((x) => x.label).join(', ') || '(none)'}.`);
       categoryId = c.id;
+    }
+    for (const prop of item.properties ?? []) {
+      if (!(ANNOTATION_PROPS as readonly string[]).includes(prop)) {
+        throw new Error(`Annotation property "${prop}" không hợp lệ. Dùng: ${ANNOTATION_PROPS.join(', ')}.`);
+      }
     }
     const annotation: Annotation = {
       labelMarkdown: item.label,

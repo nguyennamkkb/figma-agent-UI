@@ -1,6 +1,3 @@
-// Compact, agent-friendly JSON for nodes: hex colors, DSL-like layout names,
-// variable/style names instead of ids, and a node budget instead of
-// unbounded recursion.
 import { toHex } from '../shared/values';
 import { round2 } from './util';
 
@@ -45,7 +42,13 @@ export class Serializer {
       out.align = ALIGN_NAME[n.counterAxisAlignItems];
       if (n.layoutWrap === 'WRAP') Object.assign(out, { wrap: true, counterGap: n.counterAxisSpacing });
     }
-    if ('clipsContent' in n && n.type !== 'INSTANCE' && n.clipsContent && n.type === 'FRAME') out.clip = true;
+    if ('clipsContent' in n && n.type !== 'INSTANCE' && n.type === 'FRAME') out.clip = n.clipsContent;
+    if ('layoutGrids' in n && Array.isArray(n.layoutGrids) && n.layoutGrids.length > 0) {
+      const grids = 'gridStyleId' in n && typeof n.gridStyleId === 'string' && n.gridStyleId
+        ? { style: await this.style(n.gridStyleId) }
+        : n.layoutGrids.map(serializeGrid);
+      (out as Json).layoutGrids = grids;
+    }
 
     if ('fills' in n) {
       const fills = await this.paints(n.fills, 'fillStyleId' in n ? n.fillStyleId : '');
@@ -57,6 +60,9 @@ export class Serializer {
         width: mixed(n.strokeWeight),
         align: n.strokeAlign,
       };
+      if ('dashPattern' in n && Array.isArray(n.dashPattern) && n.dashPattern.length > 0) {
+        (out.stroke as Json).dash = [...n.dashPattern];
+      }
     }
     if ('cornerRadius' in n) {
       const r = mixed(n.cornerRadius);
@@ -117,6 +123,10 @@ export class Serializer {
     const ls = n.letterSpacing;
     if (ls !== figma.mixed && ls.value !== 0) out.letterSpacing = ls.unit === 'PERCENT' ? `${round2(ls.value)}%` : ls.value;
     if (n.textAlignHorizontal !== 'LEFT') out.textAlign = n.textAlignHorizontal;
+    if (n.textAlignVertical !== 'TOP') out.verticalAlign = n.textAlignVertical;
+    if (n.textCase !== figma.mixed && n.textCase !== 'ORIGINAL') out.textCase = n.textCase;
+    if (n.textDecoration !== figma.mixed && n.textDecoration !== 'NONE') out.decoration = n.textDecoration;
+    if (n.textTruncation === 'ENDING' && typeof n.maxLines === 'number') out.maxLines = n.maxLines;
     out.autoResize = n.textAutoResize;
     if (typeof n.textStyleId === 'string' && n.textStyleId) out.textStyle = await this.style(n.textStyleId);
   }
@@ -127,7 +137,7 @@ export class Serializer {
     const visible = paints.filter((p) => p.visible !== false);
     if (visible.length === 0) return undefined;
     const list = await Promise.all(visible.map((p) => this.paint(p)));
-    list.reverse(); // top-most first, like the DSL
+    list.reverse();
     return list.length === 1 ? list[0] : list;
   }
 
@@ -139,10 +149,12 @@ export class Serializer {
     }
     if (p.type.startsWith('GRADIENT_')) {
       const g = p as GradientPaint;
-      return {
+      const out: Json = {
         gradient: g.type.replace('GRADIENT_', ''),
         stops: g.gradientStops.map((s) => ({ color: toHex(s.color), position: round2(s.position) })),
       };
+      if (g.type === 'GRADIENT_LINEAR') out.angle = gradientAngle(g.gradientTransform);
+      return out;
     }
     if (p.type === 'IMAGE') return { image: `hash:${p.imageHash}`, scaleMode: p.scaleMode };
     return { type: p.type };
@@ -151,7 +163,7 @@ export class Serializer {
   private async bound(bv: Record<string, unknown>): Promise<Record<string, unknown>> {
     const out: Record<string, unknown> = {};
     for (const [field, value] of Object.entries(bv)) {
-      if (field === 'fills' || field === 'strokes') continue; // reported on the paint itself
+      if (field === 'fills' || field === 'strokes') continue;
       const aliases = (Array.isArray(value) ? value : [value]) as { id?: string }[];
       const names = await Promise.all(aliases.filter((a) => a?.id).map((a) => this.varName(a.id!)));
       if (names.length) out[field] = names.length === 1 ? names[0] : names;
@@ -198,6 +210,20 @@ function mixed<T>(v: T | PluginAPI['mixed']): T | 'MIXED' {
   return v === figma.mixed ? 'MIXED' : (v as T);
 }
 
+function serializeGrid(g: LayoutGrid): Json {
+  if (g.pattern === 'GRID') return { pattern: g.pattern, size: g.sectionSize };
+  const out: Json = { pattern: g.pattern, count: g.count === Infinity ? 'auto' : g.count, gutter: g.gutterSize, alignment: g.alignment };
+  if (g.offset !== undefined) out.margin = g.offset;
+  if (g.sectionSize !== undefined) out.size = g.sectionSize;
+  return out;
+}
+
+function gradientAngle(t: Transform): number {
+  const phi = Math.atan2(t[0][1], t[0][0]);
+  const deg = (phi * 180) / Math.PI + 90;
+  return Math.round((((deg % 360) + 360) % 360) * 10) / 10;
+}
+
 function effect(e: Effect): unknown {
   if (e.type === 'DROP_SHADOW' || e.type === 'INNER_SHADOW') {
     return {
@@ -214,7 +240,6 @@ function effect(e: Effect): unknown {
   return { type: e.type };
 }
 
-// Short one-line description for lists.
 export function summary(n: BaseNode): Json {
   const out: Json = { id: n.id, name: n.name, type: n.type };
   if ('x' in n) {
