@@ -669,7 +669,7 @@ function portOrder() {
   return order;
 }
 
-function openPort(port, token) {
+function openPort(port, token, id) {
   return new Promise((resolve) => {
     let sock;
     try {
@@ -679,17 +679,26 @@ function openPort(port, token) {
       return;
     }
     let settled = false;
+    // On timeout the scan moves on, but the socket keeps connecting: Chromium
+    // throttles WebSocket handshakes after repeated failures (the empty ports
+    // of earlier scans), and closing a socket that is merely delayed counts as
+    // one more failure, so every later attempt is delayed even longer and the
+    // panel never reaches a live server.
     const timer = setTimeout(() => {
       if (settled) return;
       settled = true;
-      try { sock.close(); } catch (_e) { /* ignore */ }
       resolve(null);
     }, PORT_TIMEOUT);
     sock.onopen = () => {
-      if (settled) return;
-      settled = true;
       clearTimeout(timer);
-      resolve(sock);
+      if (!settled) {
+        settled = true;
+        resolve(sock);
+        return;
+      }
+      // Opened after its scan gave up on it: adopt it if nothing newer did.
+      if (id === scanId && !ws) adopt(sock, port);
+      else { try { sock.close(); } catch (_e) { /* ignore */ } }
     };
     sock.onerror = () => {
       if (settled) return;
@@ -735,7 +744,7 @@ async function connect() {
   setState('wait', 'Đang tìm server…', 'Thử các cổng ' + portLabel() + '.');
   const order = portOrder();
   for (const port of order) {
-    const sock = await openPort(port, token);
+    const sock = await openPort(port, token, id);
     if (id !== scanId || ws) {
       if (sock) { try { sock.close(); } catch (_e) { /* ignore */ } }
       return;
@@ -751,6 +760,9 @@ async function connect() {
 }
 
 function adopt(sock, port) {
+  // A late socket can open after the scan already armed a retry; that retry
+  // would close this connection.
+  clearTimeout(retryTimer);
   ws = sock;
   connectedPort = port;
   connectedAt = new Date();
