@@ -21,13 +21,26 @@ npm run build          # code.js (plugin) + dist/server.mjs (MCP server)
 3. Lấy token: `cat ~/.figma-agent/token` (tạo ở lần chạy đầu), hoặc gọi tool `figma_status`.
 4. Trong Figma chạy plugin **figma-agent-UI**, dán token → **Connect**. Token được lưu, lần sau plugin tự kết nối.
 
-Biến môi trường: `FIGMA_AGENT_TOKEN` (cố định token), `FIGMA_AGENT_PORT` (mặc định 3055, đổi thì phải sửa `devAllowedDomains` trong manifest và `PORT` trong `ui.html`), `FIGMA_AGENT_MAX_OUTPUT` (giới hạn ký tự kết quả, mặc định 20000).
+Biến môi trường: `FIGMA_AGENT_TOKEN` (cố định token), `FIGMA_AGENT_PORT` + `FIGMA_AGENT_PORT_RANGE` (mặc định 3055, dải 3055–3075), `FIGMA_AGENT_PORT_FILE` (nơi ghi port thật, mặc định `~/.figma-agent/port`), `FIGMA_AGENT_MANIFEST` (đường dẫn `manifest.json` cho `figma_doctor`), `FIGMA_AGENT_MAX_OUTPUT` (giới hạn ký tự kết quả, mặc định 20000).
+
+### Khi nhiều MCP client chạy cùng lúc
+
+Cổng **không còn cố định**. Server dò port trống trong dải 3055–3075 và ghi port thật vào `~/.figma-agent/port`; panel plugin cũng dò đúng dải đó nên tự tìm thấy server. Client thứ hai lấy port trống tiếp theo thay vì làm server chết.
+
+> `devAllowedDomains` trong `manifest.json` liệt kê **21 cổng** `ws://localhost:3055…3075`. Sửa `manifest.json` ⇒ **phải import lại plugin trong Figma** (Figma cache manifest lúc import).
+
+### Timeout
+
+- openCode: `timeout` trong `opencode.json` là thời gian **lấy danh sách tool**, không phải thời gian chạy tool → không cần chỉnh.
+- Claude Code: mặc định rất dài (`MCP_TOOL_TIMEOUT`), idle 30 phút với stdio → không cần chỉnh. Nếu đặt `timeout` riêng cho server trong `.mcp.json`, đặt ≥ 300000 cho các tool dài (`import_tokens`, `render_foundations`, `execute_code`).
+
+> Ghi chú: `directTools` trong `.mcp.json` **không** được Claude Code hỗ trợ (đã kiểm tra binary + tài liệu) — giữ lại để tương thích client khác, nhưng với Claude Code nó không có tác dụng.
 
 ## Tool
 
 | Nhóm | Tool |
 |---|---|
-| Kết nối | `figma_status` (kèm `versionCheck`: cảnh báo khi plugin trong Figma khác bản build của server) |
+| Kết nối | `figma_status` (kèm `versionCheck`: cảnh báo khi plugin trong Figma khác bản build của server; token được **mask**, thêm `includeToken: true` để lấy đầy đủ), `figma_doctor` (chẩn đoán 1 lệnh: port, token, plugin, version, capability, manifest — mỗi lỗi kèm cách sửa) |
 | Đọc | `get_document_info`, `set_current_page`, `get_selection`, `get_node`, `find_nodes`, `get_design_system` (`usedIn`: token đang bind trong một node), `list_fonts`, `search_design_system` |
 | Tạo | `render_tree`: dựng cả màn hình từ cây JSON (section/frame/auto layout/layout grid, text, rect, ellipse, svg, image, instance) |
 | Sửa | `update_nodes`, `delete_nodes`, `move_nodes`, `clone_node`, `select_nodes` |
@@ -40,7 +53,9 @@ Biến môi trường: `FIGMA_AGENT_TOKEN` (cố định token), `FIGMA_AGENT_PO
 
 Mọi tool nhận `page` (id/tên) để chạy trên page đó rồi trả page cũ, nên nhiều agent chạy song song không ghi nhầm page.
 
-**Phiên bản:** mỗi lần nâng cấp plugin thì tăng `version` trong `package.json`. `npm run build` gắn version + commit vào cả plugin và server. Bảng plugin hiện `Plugin <version> (<commit>)`, còn `figma_status` báo ⚠️ khi plugin đang mở là bản cũ: đóng và mở lại plugin trong Figma.
+**Phiên bản:** mỗi lần nâng cấp plugin thì tăng `version` trong `package.json`. `npm run build` gắn version + commit vào cả plugin và server. Bảng plugin hiện `Plugin <version> (<commit>)`, còn `figma_status` báo ⚠️ khi plugin đang mở là bản cũ: đóng và mở lại plugin trong Figma. Server cũng **tự nhận diện lệnh thiếu**: plugin báo danh sách lệnh nó hỗ trợ, nên gọi tool chưa có sẽ ra thông báo *"plugin là bản cũ, thiếu lệnh X"* thay vì "Unknown command".
+
+**Panel plugin (300×300):** panel mặc định nhỏ gọn 300×300. Menu `⋯` gộp mọi thứ: đổi kích thước (S 240×240 · M 300×300 · L 420×560), thu phóng 80–150%, chọn file đích cho agent, developer mode, và chi tiết kết nối (port, user, phiên bản, file key, số lệnh). Nhật ký lệnh ở giữa panel, có lọc / xoá / sao chép / mở rộng JSON. Mọi thành phần nằm trong luồng — không có gì chồng lên nhau.
 
 Agent có 2 skill (Claude Code tự nạp): `.claude/skills/figma-agent-tools/` là sổ tay mọi tool MCP (tham số, kết quả, lỗi, công thức `execute_code`, ảnh gemini); `.claude/skills/figma-ui-flow/` là luồng và kiến thức tạo UI: 11 luật, 8 giai đoạn có gate, và vòng dựng màn từ ngoài vào trong (`references/build-loop.md`: khung → vùng → khối → component → nội dung, kiểm tra từng tầng, đạt Definition of Done mới sang màn khác). Ví dụ DSL: `examples/fintech-wallet.json` (dán vào ô *Test render_tree locally* trong plugin để thử không cần agent).
 

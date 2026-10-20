@@ -5,9 +5,22 @@
 Chuẩn bị: `npm run build`, mở một file Figma nháp, chạy plugin, Connect. Trong Claude Code, `/mcp` phải thấy `figma-agent` connected.
 
 ## A. Kết nối (P0/P1)
-- [ ] Plugin hiện **Connected · <tên file> · <page>**. Sai token thì hiện *Invalid token*.
-- [ ] Tắt Claude Code: plugin chuyển *Waiting for MCP server…* và tự kết nối lại khi mở lại.
+- [ ] Plugin hiện **Đã kết nối · <tên file>**. Sai token thì hiện *Token sai* và form token tự mở.
+- [ ] Tắt Claude Code: plugin chuyển *Chờ MCP server…* và tự kết nối lại khi mở lại.
 - [ ] `figma_status` liệt kê đúng file. Mở 2 file, gọi tool với `file` → đúng file.
+- [ ] Mở 2 file mà **không** truyền `file` → server báo rõ "nhiều file đang mở" chứ không đoán bừa. Ghim file trong panel (menu → *File đích*) → tool điều khiển đúng file đã ghim.
+- [ ] Bật Claude Code thứ hai: server thứ hai lấy port 3056, `figma_status` báo `port` khác, plugin vẫn kết nối (panel tự dò dải 3055–3075).
+- [ ] `figma_doctor` → 7 check, mọi lỗi đều có `fix`; `token` trong `figma_status` bị mask (chỉ 4 ký tự cuối) trừ khi truyền `includeToken: true`.
+- [ ] **Sau khi sửa `manifest.json`: import lại plugin trong Figma** rồi `figma_doctor` check `manifest` phải xanh.
+
+## A2. Panel plugin (300×300)
+- [ ] Panel mở ra đúng **300×300**, header 1 dòng: dot + trạng thái + tên file + nút `⋯`.
+- [ ] Menu `⋯` mở/đóng được, **không phủ lên** header hay log; mở token thì menu tự đóng.
+- [ ] Đổi kích thước S/M/L → panel đổi đúng, nhớ lại sau khi đóng/mở plugin. Chọn L khi Figma không đủ chỗ → panel giữ size cũ và hiện thông báo.
+- [ ] Thu phóng 80/100/150% → mọi thứ scale đồng bộ, không tràn ngang, nhớ lại sau khi đóng/mở.
+- [ ] Khi chưa kết nối: form token hiện sẵn; khi đã kết nối và log rỗng: toolbar ẩn hẳn, chỉ còn header + log trống.
+- [ ] Developer mode (menu) → khối "Test render_tree locally" hiện; tắt → footer biến mất.
+- [ ] Bật/tắt theme Figma sáng/tối → panel đọc được, accent đủ contrast.
 
 ## B. Đọc
 - [ ] `get_document_info` đúng tên page, top-level frame.

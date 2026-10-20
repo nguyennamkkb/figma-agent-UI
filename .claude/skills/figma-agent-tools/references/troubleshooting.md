@@ -4,9 +4,13 @@
 
 | Symptom | Cause / fix |
 |---|---|
-| `figma_status` → `files: []` | Plugin not open or not connected. User: Figma → Plugins → Development → figma-agent-UI, paste `token`, Connect. |
-| `listening: false` / port 3055 in use | Another figma-agent server (e.g. another client's MCP) holds the port. Find it (`lsof -i :3055`), ask the user before stopping it, then reconnect the MCP (`/mcp`). |
-| `versionCheck` ⚠️, or `Unknown command: <tool>` | Plugin build ≠ server build. User closes and reopens the plugin; after a plugin upgrade the version in `package.json` is bumped so the panel shows it. |
+| Every tool fails with "Port 3055-3075 … lsof" | No free port in the range. Another MCP client holds them. Close it (`lsof -i :3055-3075`) or set `FIGMA_AGENT_PORT`. The server stays up and reports the reason — it does not die. |
+| `figma_status` → `files: []` | Plugin not open or not connected. User: Figma → Plugins → Development → figma-agent-UI, paste `token`, Connect. Run `figma_doctor` for a full check. |
+| `figma_doctor` → check `manifest` fails | `devAllowedDomains` does not cover the port the server is on. Edit `manifest.json`, then **re-import the plugin in Figma** (Figma caches the manifest). |
+| `figma_doctor` → check `capability` fails | The plugin build in Figma is older than the server. `npm run build`, then close and reopen the plugin. |
+| `Unknown command "<tool>"` | Plugin build ≠ server build. User closes and reopens the plugin; after a plugin upgrade the version in `package.json` is bumped so the panel shows it. |
+| `figma_status` → `missingCommands: [...]` | Same as above, listed explicitly: the plugin does not implement those commands yet. Rebuild + reopen the plugin. |
+| Several Figma files open, no file chosen | The server refuses to guess. Pass the `file` param, or pin the target file in the plugin panel (menu → "File đích"). |
 | Every call times out after an `execute_code` | The sandbox is stuck in a loop: Figma will close the plugin. User reopens it; rewrite the code with bounded loops. |
 | gemini `workerCount: 0` | Studio tab closed or bridge restarted. User opens/reloads `pageUrl` (or the Gemini Canvas tab); `image_generate` can auto-open it. |
 

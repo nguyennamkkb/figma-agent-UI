@@ -1,5 +1,8 @@
 # Kế hoạch tích hợp: AI Agent ⇄ Figma Plugin
 
+> **Cập nhật 2026-10-20 (v1.2.0).** Tài liệu này mô tả thiết kế gốc. Phần nâng cấp kết nối + UI mới nằm ở [`PLAN-connection-ui.md`](./PLAN-connection-ui.md) (checklist chi tiết từng việc, kèm xử lý ngoại lệ).
+> Thay đổi chính so với bản gốc: cổng **không còn cố định** (server dò 3055–3075, panel tự dò theo), thêm tool **`figma_doctor`**, `figma_status` **mask token**, plugin báo danh sách lệnh để server nói chính xác "plugin bản cũ", panel **300×300** có zoom/resize. Tool: 16 → **33**.
+
 Mục tiêu: Claude Code (hoặc bất kỳ MCP client nào) **đọc, tạo, sửa và tự kiểm tra** thiết kế trên Figma thông qua plugin này, phủ được đa số chức năng của Plugin API.
 
 ## 1. Kiến trúc

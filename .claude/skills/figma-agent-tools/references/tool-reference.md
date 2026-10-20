@@ -18,7 +18,8 @@ Source of truth: tool descriptions in `src/server/index.ts` and input schemas in
 
 | Tool | Key params | Returns / notes |
 |---|---|---|
-| `figma_status` | — | `files[]` (fileName, currentPage, pluginVersion), `server.version/build`, `versionCheck`, `token`. Call first. |
+| `figma_status` | `includeToken` (default false) | `files[]` (fileName, currentPage, pluginVersion), `server.version/build`, `versionCheck`, `port`/`portRange`/`ports`, `preferredFile`, `missingCommands`, `protocol`, and the **masked** `token` (last 4 chars). Pass `includeToken: true` only when you really need the full token. Call first. |
+| `figma_doctor` | — | One-shot diagnosis of the server↔plugin link: 7 checks (server, port, token, plugin, version, capability, manifest), each with `ok` + `fix`, plus `nextSteps`. Never fails. Call it when a tool reports no connection, an unknown command, or a timeout. |
 | `get_document_info` | — | File name, pages, current page, selection, top-level layers (id, name, type, x, y, w, h). |
 | `get_design_system` | `include` (`variables`,`styles`,`components`,`library`), `componentLimit` 200, `usedIn: nodeId` | Variables with modes/values, paint/text/effect/grid styles, local components with properties. `usedIn` = only what is bound inside that node (the remote MCP's `get_variable_defs`). |
 | `search_design_system` | `query`, `kinds` (`component`,`variable`,`style`), `includeLibraries`, `limit` 20 | Ranked matches; variables show collection, resolved value, primitive or not, alias target. **Call before creating any component, token or style.** |
