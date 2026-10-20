@@ -16,3 +16,4 @@ code.js
 
 # ảnh sinh tự động khi thử MCP image
 /generated-images/
+.gstack/
