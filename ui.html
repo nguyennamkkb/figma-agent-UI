@@ -676,11 +676,15 @@ function portLabel(order) {
  * WebSocket, and Chromium slows down new ones after many failures.
  */
 function portOrder(wide) {
+  // The hub port always comes first: a port remembered from a pre-hub server
+  // (3057…) would otherwise keep the panel on that server while every agent
+  // talks to the hub, and the hub would see no file.
   const remembered = Number(settings.port);
-  const order = [];
-  if (Number.isInteger(remembered) && PORTS.indexOf(remembered) >= 0) order.push(remembered);
-  const rest = wide ? PORTS : PORTS.slice(0, 1);
-  for (const port of rest) if (order.indexOf(port) < 0) order.push(port);
+  const order = [PORTS[0]];
+  if (Number.isInteger(remembered) && PORTS.indexOf(remembered) >= 0 && order.indexOf(remembered) < 0) {
+    order.push(remembered);
+  }
+  if (wide) for (const port of PORTS) if (order.indexOf(port) < 0) order.push(port);
   return order;
 }
 
