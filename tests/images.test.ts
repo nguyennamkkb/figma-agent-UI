@@ -32,4 +32,18 @@ describe('images', () => {
     expect(out.tree.children[0]).toEqual({ type: 'image', imageBase64: PNG.toString('base64'), width: 10 });
     expect(out.tree.children[1]).toEqual({ type: 'rect', fill: { image: 'hash:abc' } });
   });
+
+  it('inlines images inside component set variants', async () => {
+    const src = `data:image/png;base64,${PNG.toString('base64')}`;
+    const out = await inlineImages({
+      name: 'Card',
+      variants: [
+        { props: { State: 'Default' }, tree: { type: 'frame', fill: { image: src, scaleMode: 'FILL' }, children: [] } },
+        { props: { State: 'Active' }, tree: { type: 'frame', fill: [{ image: src }, { gradient: 'LINEAR', angle: 90, stops: [] }], children: [{ type: 'image', src, width: 10 }] } },
+      ],
+    });
+    expect(out.variants[0].tree.fill).toEqual({ imageBase64: PNG.toString('base64'), scaleMode: 'FILL' });
+    expect(out.variants[1].tree.fill[0]).toEqual({ imageBase64: PNG.toString('base64') });
+    expect(out.variants[1].tree.children[0]).toEqual({ type: 'image', imageBase64: PNG.toString('base64'), width: 10 });
+  });
 });
