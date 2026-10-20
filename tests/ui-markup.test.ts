@@ -114,7 +114,7 @@ describe('ui.html markup', () => {
   it('retries by itself when no server answers the first probe', () => {
     // Regression guard: the first probe finding no server used to give up
     // for good, so the panel stayed dead until the user pressed "Kết nối".
-    const connect = html.match(/async function connect\(\)[\s\S]*?\n\}/);
+    const connect = html.match(/async function connect\(\w*\)[\s\S]*?\n\}/);
     expect(connect, 'cannot find connect()').not.toBeNull();
     expect(connect![0]).toMatch(/scheduleRetry\(\)/);
     // The retry has to be armed from the failed-probe path, not only from

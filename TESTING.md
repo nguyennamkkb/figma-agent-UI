@@ -9,7 +9,9 @@ Chuẩn bị: `npm run build`, mở một file Figma nháp, chạy plugin, Conne
 - [ ] Tắt Claude Code: plugin chuyển *Chờ MCP server…* và tự kết nối lại khi mở lại.
 - [ ] `figma_status` liệt kê đúng file. Mở 2 file, gọi tool với `file` → đúng file.
 - [ ] Mở 2 file mà **không** truyền `file` → server báo rõ "nhiều file đang mở" chứ không đoán bừa. Ghim file trong panel (menu → *File đích*) → tool điều khiển đúng file đã ghim.
-- [ ] Bật Claude Code thứ hai: server thứ hai lấy port 3056, `figma_status` báo `port` khác, plugin vẫn kết nối (panel tự dò dải 3055–3075).
+- [ ] Bật thêm agent (Claude Code thứ hai, Pi…): `lsof -nP -iTCP:3055-3075 -sTCP:LISTEN` chỉ thấy **một** cổng 3055. `figma_status` ở agent mới báo `role: "agent"` và thấy đúng file; agent đầu báo `role: "hub"`, `agents` tăng.
+- [ ] Tắt agent đang làm hub: trong vài giây một agent còn lại thành `hub`, plugin tự kết nối lại, tool ở agent kia chạy tiếp.
+- [ ] Cổng 3055 bị figma-agent bản cũ chiếm: agent mới **không** mở 3056, `figma_doctor` báo check `port` đỏ kèm cách sửa.
 - [ ] `figma_doctor` → 7 check, mọi lỗi đều có `fix`; `token` trong `figma_status` bị mask (chỉ 4 ký tự cuối) trừ khi truyền `includeToken: true`.
 - [ ] **Sau khi sửa `manifest.json`: import lại plugin trong Figma** rồi `figma_doctor` check `manifest` phải xanh.
 

@@ -251,8 +251,10 @@ describe('MCP server', () => {
     expect(body.token).toBe(`…${TOKEN.slice(-4)}`);
     // The plugin reports every command → nothing is missing.
     expect(body.missingCommands).toEqual([]);
-    expect(body.protocol).toBe(2);
+    expect(body.protocol).toBe(3);
     expect(body.portRange).toBe(1);
+    // Alone on its port, the server hosts the hub.
+    expect(body.role).toBe('hub');
 
     const full = await client.callTool({ name: 'figma_status', arguments: { includeToken: true } });
     expect(JSON.parse((full.content as { text: string }[])[0].text).token).toBe(TOKEN);

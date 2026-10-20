@@ -41,12 +41,25 @@ const portRange = Number(process.env.FIGMA_AGENT_PORT_RANGE ?? DEFAULT_PORT_RANG
 // `tool()`). Used to tell the user which commands their plugin build misses.
 const PLUGIN_COMMANDS = new Set<string>();
 
+// One port for every agent on the machine: the first server hosts the hub,
+// later ones join it. FIGMA_AGENT_HUB=0 restores one port per server.
+const hub = process.env.FIGMA_AGENT_HUB !== '0';
+
 const bridge = new Bridge({
   port,
   portRange,
   token,
   log,
+  hub,
+  build: `${__SERVER_VERSION__} (${__SERVER_BUILD__})`,
   supportedCommands: () => [...PLUGIN_COMMANDS],
+  onListening: (actualPort) => {
+    try {
+      writePortFile(actualPort);
+    } catch (e) {
+      log(`warning: could not write ~/.figma-agent/port (${e instanceof Error ? e.message : String(e)})`);
+    }
+  },
 });
 
 const INSTRUCTIONS = `Tools that read, create, edit and screenshot designs in the Figma file where the "figma-agent-UI" plugin is open.
@@ -228,19 +241,30 @@ server.registerTool(
     const first = status.ports[0] ?? port;
     const last = status.ports[status.ports.length - 1] ?? port;
     checks.push(
-      status.listening
+      status.role === 'agent'
         ? {
             id: 'port',
             ok: true,
             title: 'WebSocket bridge',
-            detail: `Đang listen ở ws://localhost:${status.port} (dải candidate ${first}-${last}).`,
+            detail: `Dùng chung hub ở ws://localhost:${status.port} (pid ${status.hub?.pid ?? '?'}, build ${status.hub?.build ?? '?'}); server này không mở cổng riêng.`,
+          }
+        : status.listening
+        ? {
+            id: 'port',
+            ok: true,
+            title: 'WebSocket bridge',
+            detail: hub
+              ? `Đang làm hub ở ws://localhost:${status.port}, ${status.agents} agent khác dùng chung.`
+              : `Đang listen ở ws://localhost:${status.port} (dải candidate ${first}-${last}).`,
           }
         : {
             id: 'port',
             ok: false,
             title: 'WebSocket bridge',
             detail: status.error ?? 'Bridge chưa listen.',
-            fix: `Đóng các tiến trình đang chiếm port ${first}-${last} rồi khởi động lại server (hoặc đặt FIGMA_AGENT_PORT). Kiểm tra: lsof -i :${first}-${last}`,
+            fix: hub
+              ? `Khởi động lại agent đang giữ cổng ${first} (figma-agent bản cũ chưa có hub), hoặc đóng tiến trình đang chiếm nó. Kiểm tra: lsof -i :${first}`
+              : `Đóng các tiến trình đang chiếm port ${first}-${last} rồi khởi động lại server (hoặc đặt FIGMA_AGENT_PORT). Kiểm tra: lsof -i :${first}-${last}`,
           },
     );
 
@@ -641,14 +665,6 @@ function writePortFile(actualPort: number) {
 
 async function main() {
   await bridge.start();
-  const status = bridge.status();
-  if (status.listening) {
-    try {
-      writePortFile(status.port);
-    } catch (e) {
-      log(`warning: could not write ~/.figma-agent/port (${e instanceof Error ? e.message : String(e)})`);
-    }
-  }
   log(`token: ${token}  (stored in ~/.figma-agent/token, override with FIGMA_AGENT_TOKEN)`);
   log('copy the token: pbcopy < ~/.figma-agent/token');
   await server.connect(new StdioServerTransport());

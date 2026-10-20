@@ -7,7 +7,7 @@
 // old" instead of "Unknown command"), the file the user pinned in the panel,
 // and server → plugin notices (the list of connected files).
 
-export const PROTOCOL_VERSION = 2;
+export const PROTOCOL_VERSION = 3;
 
 /** First port the bridge tries. */
 export const DEFAULT_PORT = 3055;
@@ -85,3 +85,47 @@ export type NoticeMessage = {
 };
 
 export type ServerToPlugin = RequestMessage | NoticeMessage;
+
+// ---------------------------------------------------------------------------
+// Protocol v3: one hub, many agents.
+//
+// The first MCP server binds DEFAULT_PORT and becomes the hub; the plugin
+// connects to it as before. Every later MCP server (another agent on this
+// machine) connects to the hub with `?role=agent` instead of opening a port,
+// and sends its commands through the hub.
+
+/** Lowest protocol a hub must speak for an agent to join it. */
+export const HUB_PROTOCOL = 3;
+
+/** A connected file as the hub reports it to agents. */
+export interface HubFile {
+  fileName: string | null;
+  fileKey: string | null;
+  user: string | null;
+  currentPage: { id: string; name: string } | null;
+  pluginVersion: string | null;
+  connectedAt: string;
+  /** Commands the plugin build reports (empty when it does not report them). */
+  commands: string[];
+}
+
+export interface HubState {
+  pid: number;
+  build: string;
+  files: HubFile[];
+  preferredFile: string | null;
+  /** Agents connected to the hub, not counting the hub itself. */
+  agents: number;
+}
+
+export type AgentToHub =
+  | { type: 'agent-hello'; protocol: number; build: string; pid: number }
+  | { type: 'agent-request'; id: string; command: string; params: unknown; file?: string; timeoutMs: number };
+
+export type HubToAgent =
+  | { type: 'welcome'; protocol: number; state: HubState }
+  | { type: 'hub-state'; state: HubState }
+  | ({ type: 'agent-response' } & (
+      | { id: string; ok: true; result: unknown }
+      | { id: string; ok: false; error: string; safeToRetryWithoutCanvasRead: boolean }
+    ));
