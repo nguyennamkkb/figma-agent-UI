@@ -21,6 +21,7 @@
 | `render_tree` "unknown key …" | Strict schema; rename the key (see `render-tree-dsl.md`). Rolled back — retry is safe. |
 | "FILL needs an auto-layout parent" | `widthMode/heightMode: "FILL"` on the root or under a `layout: "NONE"` parent. |
 | Text overflows its row | Text has no width: add `widthMode: "FILL"` (or a fixed width) so it wraps. |
+| Icon stuck in a corner of its slot / `warnings: icon-offcenter` | Read the cause in the warning: slot without `layout`, `justify`/`align` not both `CENTER` (`END` + `START` = top-right), uneven `padding`, or a glyph off-centre in its own box (text arrow, unbalanced viewBox). Fix that slot with `update_nodes{layout:"HORIZONTAL", justify:"CENTER", align:"CENTER", padding:0}`; recipe in `render-tree-dsl.md` § Icon slot. |
 | Footer not at the bottom | Parent needs `justify: "SPACE_BETWEEN"`, or the middle region `heightMode: "FILL"`. |
 | Failure with `safeToRetryWithoutCanvasRead: false` | Canvas may be half-changed: `get_node` the target, then decide. |
 | `RolledBackError` from tokens/styles/components | Input validated before writing; nothing changed. Fix and retry. |
@@ -46,7 +47,7 @@
 ## Audit false positives (judge, then say so)
 
 - `small-target` on a non-interactive row (table rows, labels): the real target is the card/button around it.
-- `no-autolayout` on an SVG icon frame: vectors, not content — fine.
+- `no-autolayout` on an SVG icon frame: no longer reported (frames of vectors only are skipped).
 - `contrast: needs-check` over an image/gradient: check the screenshot; add an overlay gradient or a solid backing if in doubt.
 
 Not false positives, though they look like it:

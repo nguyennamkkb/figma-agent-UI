@@ -50,6 +50,17 @@ Other keys: `widthMode`/`heightMode` (`FIXED|HUG|FILL`), `min/maxWidth`, `min/ma
 
 `section`: `{type: "section", name, children: [frames], gap 200, padding 80, fill}` — screens of one flow, auto-placed left to right.
 
+### Icon slot (icon button, list leading icon, tab icon)
+
+```jsonc
+{ "type": "frame", "name": "icon-button/back", "width": 44, "height": 44, "widthMode": "FIXED", "heightMode": "FIXED",
+  "layout": "HORIZONTAL", "justify": "CENTER", "align": "CENTER",      // both CENTER, always
+  "radius": 999, "fill": { "var": "surface/raised" },
+  "children": [ { "type": "svg", "svg": "<svg …24×24 viewBox…>", "width": 24, "height": 24, "color": "#…" } ] }
+```
+
+Off-centre icons come from: no `layout` (icon stuck at 0,0), `justify`/`align` left at START or swapped (`justify: "END", align: "START"` = top-right), uneven `padding` (`[0,0,8,8]` pushes it up-right), a slot resized later without auto layout, or a glyph that is itself off-centre (a text arrow `→`, an SVG whose path is not centred in its viewBox). `justify` is the slot's own primary axis: horizontal in a HORIZONTAL slot, vertical in a VERTICAL one — set both to CENTER and the axis does not matter. Use SVG, not text characters, for icons. `render_tree`, `update_nodes` and `create_component_set` measure every icon slot (≤ 64×64 frame with one icon) they touch and return `warnings: ["icon-offcenter …"]` with the cause; fix that slot before moving on.
+
 ## 3. Paints and effects people get wrong
 
 ```jsonc

@@ -76,7 +76,7 @@ When unsure, use **New build** for the first screen of a set and **From template
 
 - **Goal:** the screen looks real.
 - **Components first.** Any block that repeats ≥ 3 times, or a standard element (button, list row, key, chip), becomes a component *before* you fill it in (`search_design_system` → `create_component_set`). Fixing it later is then one edit, not N.
-- **Fill by cluster, not by region.** One write may fill several neighbouring blocks: replace each placeholder (`delete_nodes` + `render_tree{parentId, index}`, or `render_tree{parentId: <placeholder>}` and clear its tint). Then real text, icons and images in batches with `update_nodes`. A placeholder's fixed height was only a layout estimate: switch it to `heightMode: "HUG"` once its content defines the height.
+- **Fill by cluster, not by region.** One write may fill several neighbouring blocks: replace each placeholder (`delete_nodes` + `render_tree{parentId, index}`, or `render_tree{parentId: <placeholder>}` and clear its tint). Then real text, icons and images in batches with `update_nodes`. A placeholder's fixed height was only a layout estimate: switch it to `heightMode: "HUG"` once its content defines the height. Every icon sits in a slot with `layout` + `justify: "CENTER"` + `align: "CENTER"` and no uneven padding; a write that returns `warnings: icon-offcenter` is fixed before the next write.
 - **Check:** numeric check (§3) after each write; an extra screenshot only for unusual blocks; **one screenshot of the screen** at the end of the pass.
 - **Pass when:** no placeholder or tint is left, repeated blocks are instances, and the screenshot shows nothing temporary.
 
@@ -88,7 +88,7 @@ When unsure, use **New build** for the first screen of a set and **From template
   2. `stress_test{id: <screen>, cases: [long-text, large-text]}` (+ `modes` if Dark exists) → one screenshot of the section → delete the section. **Read the screenshot, not only the `overflow` list:** text that hugs its width and is clipped by an ancestor frame (a centred title cut on both sides) is not reported. The fix is usually `widthMode: "FILL"` on the text so it wraps.
   3. Fix: `update_nodes`; default names with `rename_by_rule`; raw values where tokens exist with `bind_variables` (dryRun first).
   4. Re-run only the checks that failed, then **one final screenshot** at `scale: 1`.
-- **Triage:** false positives (small target on a non-tappable label or on an indicator inside a tappable row — a radio or chevron in a 72-high list row, an SVG icon "without Auto Layout", contrast sampled behind an opaque plate) are stated as reviewed and dismissed.
+- **Triage:** false positives (small target on a non-tappable label or on an indicator inside a tappable row — a radio or chevron in a 72-high list row, contrast sampled behind an opaque plate) are stated as reviewed and dismissed.
 
 ## 8. Rules of the loop
 
