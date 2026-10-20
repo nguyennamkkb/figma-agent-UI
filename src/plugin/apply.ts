@@ -216,7 +216,8 @@ export function applyPlacement(node: SceneNode, p: AnyProps, isNew: boolean): vo
   const isText = node.type === 'TEXT';
   let wm = p.widthMode;
   let hm = p.heightMode;
-  if (isNew) {
+  // A new instance keeps its component's sizing; only new frames/text default to HUG.
+  if (isNew && node.type !== 'INSTANCE') {
     if (wm === undefined && p.width === undefined && (selfAL || isText)) wm = 'HUG';
     if (hm === undefined && p.height === undefined && (selfAL || isText)) hm = 'HUG';
   }
@@ -239,6 +240,11 @@ export function applyPlacement(node: SceneNode, p: AnyProps, isNew: boolean): vo
     const text = node as TextNode;
     if (text.layoutSizingHorizontal === 'HUG') text.textAutoResize = 'WIDTH_AND_HEIGHT';
     else if (hm !== 'FIXED' && p.height === undefined) text.textAutoResize = 'HEIGHT';
+    // Changing textAutoResize turns truncation off: re-apply maxLines.
+    if (p.maxLines !== undefined) {
+      text.textTruncation = 'ENDING';
+      text.maxLines = p.maxLines;
+    }
   }
 }
 
