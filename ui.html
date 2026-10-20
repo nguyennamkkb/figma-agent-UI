@@ -311,7 +311,7 @@
 <script>
 /* @ports-start */const PORTS = [3055,3056,3057,3058,3059,3060,3061,3062,3063,3064,3065,3066,3067,3068,3069,3070,3071,3072,3073,3074,3075];/* @ports-end */
 const $ = (id) => document.getElementById(id);
-const PORT_TIMEOUT = 400;
+const PORT_TIMEOUT = 1000;
 const SCALE_MIN = 0.8;
 const SCALE_MAX = 1.5;
 const SCALE_STEP = 0.1;
@@ -328,6 +328,7 @@ let info = null;
 let settings = {};
 let retry = 0;
 let retryTimer = null;
+let scanId = 0;
 let manualClose = false;
 let connectedPort = null;
 let connectedAt = null;
@@ -726,10 +727,19 @@ async function connect() {
     ws = null;
   }
   manualClose = false;
+  // focus, visibilitychange, the retry timer and the button can all start a
+  // scan. Only the newest one may report or adopt: a stale scan that began
+  // while the server was down would otherwise finish later, show "no server"
+  // over a live connection and arm a retry that tears it down again.
+  const id = ++scanId;
   setState('wait', 'Đang tìm server…', 'Thử các cổng ' + portLabel() + '.');
   const order = portOrder();
   for (const port of order) {
     const sock = await openPort(port, token);
+    if (id !== scanId || ws) {
+      if (sock) { try { sock.close(); } catch (_e) { /* ignore */ } }
+      return;
+    }
     if (!sock) continue;
     adopt(sock, port);
     return;
