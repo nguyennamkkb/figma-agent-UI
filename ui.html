@@ -91,6 +91,11 @@
   }
   #file-info::before { content: '·'; color: var(--muted); flex: none; }
   #file-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #version {
+    flex: none; color: var(--muted); font-size: 0.75rem;
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+  }
+  #version:empty { display: none; }
   .zoom { display: flex; align-items: center; gap: 0.1rem; flex: none; }
   #zoom-value { font-variant-numeric: tabular-nums; min-width: 2.8rem; padding: 0.25rem 0.2rem; }
 
@@ -220,6 +225,7 @@
     <div id="file-info">
       <span id="file-name">—</span>
     </div>
+    <span id="version"></span>
     <button id="menu-btn" class="icon" aria-haspopup="dialog" aria-expanded="false" aria-label="Menu" title="Menu">⋯</button>
   </header>
 
@@ -657,15 +663,24 @@ async function pasteText(input) {
 
 /* ---------------- connection ---------------- */
 
-function portLabel() {
+function portLabel(order) {
+  if (order && order.length <= 2) return order.join(', ');
   return PORTS[0] + '–' + PORTS[PORTS.length - 1];
 }
 
-function portOrder() {
+/**
+ * Every agent now shares one hub on the first port, so the remembered port and
+ * the first one are normally all there is to try. The whole range is probed
+ * only when asked (Connect button, plugin start, every few retries) for
+ * servers that still run one port each: every empty port is a failed
+ * WebSocket, and Chromium slows down new ones after many failures.
+ */
+function portOrder(wide) {
   const remembered = Number(settings.port);
   const order = [];
   if (Number.isInteger(remembered) && PORTS.indexOf(remembered) >= 0) order.push(remembered);
-  for (const port of PORTS) if (order.indexOf(port) < 0) order.push(port);
+  const rest = wide ? PORTS : PORTS.slice(0, 1);
+  for (const port of rest) if (order.indexOf(port) < 0) order.push(port);
   return order;
 }
 
@@ -718,11 +733,12 @@ function openPort(port, token, id) {
  */
 function scheduleRetry() {
   const delay = Math.min(10000, 1000 * Math.pow(2, retry++));
-  retryTimer = setTimeout(connect, delay);
+  const wide = retry % 5 === 0;
+  retryTimer = setTimeout(() => connect(wide), delay);
   return delay;
 }
 
-async function connect() {
+async function connect(wide) {
   clearTimeout(retryTimer);
   const token = String($('token').value || '').trim();
   if (!token) {
@@ -741,8 +757,8 @@ async function connect() {
   // while the server was down would otherwise finish later, show "no server"
   // over a live connection and arm a retry that tears it down again.
   const id = ++scanId;
-  setState('wait', 'Đang tìm server…', 'Thử các cổng ' + portLabel() + '.');
-  const order = portOrder();
+  const order = portOrder(wide === true);
+  setState('wait', 'Đang tìm server…', 'Thử cổng ' + portLabel(order) + '.');
   for (const port of order) {
     const sock = await openPort(port, token, id);
     if (id !== scanId || ws) {
@@ -756,7 +772,7 @@ async function connect() {
   // No server on any port: keep retrying on our own.
   const delay = scheduleRetry();
   setState('err', 'Không tìm thấy MCP server',
-    'Không có server ở cổng ' + portLabel() + '. Tự thử lại sau ' + Math.round(delay / 1000) + 's.');
+    'Không có server ở cổng ' + portLabel(order) + '. Tự thử lại sau ' + Math.round(delay / 1000) + 's.');
 }
 
 function adopt(sock, port) {
@@ -865,6 +881,11 @@ function updateDetails() {
   $('d-page').textContent = info && info.currentPage ? info.currentPage.name : '—';
   $('d-user').textContent = info && info.user ? info.user : '—';
   $('d-version').textContent = info && info.version ? info.version : '—';
+  // "1.2.0 (7c81ced+dirty)" → "v1.2.0" in the header; the build is in the
+  // tooltip and in the connection details.
+  const version = info && info.version ? info.version : '';
+  $('version').textContent = version ? 'v' + version.split(' ')[0] : '';
+  $('version').title = version ? 'Plugin ' + version : '';
   $('d-filekey').textContent = info && info.fileKey ? info.fileKey : '—';
   $('d-since').textContent = connectedAt ? connectedAt.toLocaleTimeString() : '—';
   $('d-count').textContent = String(commandCount);
@@ -950,7 +971,7 @@ $('connect').onclick = () => {
   saveSettings();
   $('token-state').textContent = 'đã lưu ✓';
   retry = 0;
-  connect();
+  connect(true);
 };
 
 // Chromium throttles timers in a panel that is not in front. When the user
@@ -1001,7 +1022,7 @@ window.onmessage = (ev) => {
       applySize(size.width, size.height);
       appliedSize = { width: size.width, height: size.height };
     }
-    if (settings.token) connect();
+    if (settings.token) connect(true);
     // No token yet: the token form is the only thing worth showing.
     else openPanel('token-panel');
     // The socket may have opened before "init" arrived; make sure the server
