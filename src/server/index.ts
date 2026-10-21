@@ -13,6 +13,7 @@ import { DEFAULT_PORT, DEFAULT_PORT_RANGE, PROTOCOL_VERSION } from '../shared/pr
 import * as S from '../shared/schemas';
 import { exportTokens, planTokenImport, type DtcgTree, type ExportCollection, type ExportTextStyle } from '../shared/tokens';
 import { slug } from '../shared/rename';
+import sharp from 'sharp';
 import { Bridge, PluginError } from './bridge';
 import { inlineImages } from './images';
 
@@ -108,7 +109,7 @@ interface ToolDef<T extends z.ZodObject> {
   noPage?: boolean;
   timeoutMs?: (args: z.infer<T>) => number;
   prepare?: (args: z.infer<T>) => Promise<unknown>;
-  format?: (result: unknown, args: z.infer<T>) => Content[];
+  format?: (result: unknown, args: z.infer<T>) => Content[] | Promise<Content[]>;
 }
 
 function tool<T extends z.ZodObject>(name: string, def: ToolDef<T>) {
@@ -132,7 +133,7 @@ function tool<T extends z.ZodObject>(name: string, def: ToolDef<T>) {
           file,
           timeoutMs: def.timeoutMs?.(rest as z.infer<T>) ?? 30000,
         });
-        return { content: def.format ? def.format(result, rest as z.infer<T>) : [text(result)] };
+        return { content: def.format ? await def.format(result, rest as z.infer<T>) : [text(result)] };
       } catch (e) {
         return failure(e);
       }
@@ -437,14 +438,14 @@ tool('list_fonts', {
 
 tool('screenshot', {
   description:
-    'PNG of a node (default: first selected). Use it to verify your work: look for clipped text, overlaps, misalignment and spacing issues.',
+    'WebP screenshot of a node (default: first selected). Use it to verify your work: look for clipped text, overlaps, misalignment and spacing issues.',
   input: S.ScreenshotInput,
   readOnly: true,
   timeoutMs: () => 60000,
-  format: (r) => {
-    const { base64, mimeType, ...meta } = r as { base64: string; mimeType: string };
-    return [{ type: 'image', data: base64, mimeType }, text(meta)];
-  },
+  format: async (r) => {
+    const { base64, ...meta } = r as { base64: string; mimeType: string };
+    const webp = await sharp(Buffer.from(base64, 'base64')).webp({ quality: 85 }).toBuffer();
+    return [{ type: 'image', data: webp.toString('base64'), mimeType: 'image/webp' }, text(meta)];
 });
 
 tool('select_nodes', {
