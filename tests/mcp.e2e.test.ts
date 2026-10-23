@@ -10,6 +10,8 @@ import { WebSocket } from 'ws';
 
 const SERVER = join(__dirname, '..', 'dist', 'server.mjs');
 const PORT = 3999;
+// 1×1 PNG: the server decodes screenshots with sharp, so it must be a real image.
+const PNG_1PX = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8DwHwAFBQIAX8jx0gAAAABJRU5ErkJggg==';
 const TOKEN = 'e2e-token';
 const received: { command: string; params: Record<string, unknown> }[] = [];
 
@@ -48,7 +50,7 @@ beforeAll(async () => {
     received.push({ command: msg.command, params: msg.params });
     const reply = (body: object) => plugin.send(JSON.stringify({ type: 'response', id: msg.id, ...body }));
     if (msg.command === 'screenshot') {
-      reply({ ok: true, result: { nodeId: '1:2', mimeType: 'image/png', base64: 'iVBORw0KGgo=', width: 10, height: 10 } });
+      reply({ ok: true, result: { nodeId: '1:2', mimeType: 'image/png', base64: PNG_1PX, width: 1, height: 1 } });
     } else if (msg.command === 'export_tokens') {
       reply({
         ok: true,
@@ -193,7 +195,8 @@ describe('MCP server', () => {
   it('returns screenshots as image content', async () => {
     const r = await client.callTool({ name: 'screenshot', arguments: { id: '1:2' } });
     const content = r.content as { type: string; data?: string; mimeType?: string }[];
-    expect(content[0]).toEqual({ type: 'image', data: 'iVBORw0KGgo=', mimeType: 'image/png' });
+    expect(content[0]).toMatchObject({ type: 'image', mimeType: 'image/webp' });
+    expect(Buffer.from(content[0].data!, 'base64').subarray(8, 12).toString()).toBe('WEBP');
     expect(content[1].type).toBe('text');
   });
 
