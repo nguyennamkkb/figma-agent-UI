@@ -84,3 +84,7 @@ Kiểm thử thủ công trong Figma: xem `TESTING.md`.
 - Server chỉ nghe trên `127.0.0.1`/`::1` và yêu cầu token (`~/.figma-agent/token`, quyền 600).
 - `execute_code` có toàn quyền trên file đang mở; plugin hiển thị nhật ký mọi lệnh. Nên thử trên bản sao file quan trọng. Mỗi lệnh ghi là một bước undo (Cmd+Z).
 - `localhost` chỉ có trong `devAllowedDomains`, nên khi publish plugin sẽ không có quyền mạng.
+
+## Giấy phép
+
+MIT © 2026 Nguyen Luong Nam. Xem [LICENSE](LICENSE).
