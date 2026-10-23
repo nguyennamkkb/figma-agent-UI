@@ -24,6 +24,8 @@ export type IssueKind =
   | 'raw-stroke'
   | 'raw-radius'
   | 'primitive-bound'
+  | 'stale-paint'
+  | 'icon-offcenter'
   | 'lorem'
   | 'outside-section'
   | 'variant-explosion';
@@ -46,6 +48,9 @@ export const SEVERITY: Record<IssueKind, Severity> = {
   'raw-stroke': 'should',
   'raw-radius': 'should',
   'primitive-bound': 'should',
+  // The binding looks right but Figma paints the stale colour: broken render.
+  'stale-paint': 'block',
+  'icon-offcenter': 'should',
   lorem: 'should',
   'outside-section': 'nice',
   'variant-explosion': 'should',
@@ -58,6 +63,13 @@ export const DEFAULT_NAME = /^(Frame|Rectangle|Ellipse|Group|Vector|Text|Line|Po
 
 // `file-standards.md` §2.4 forbids these outright.
 export const BLACKLISTED_NAME = /^(Copy( of .*)?|Final([- ]?final)*([- ]?v\d+)?|Untitled|Group \d+ copy)$/i;
+
+// A bound paint whose own colour is not the variable's value: Figma renders
+// the paint colour, so the layer shows the stale one. Within 1/255 is equal.
+export function colorsDiffer(paint: RGB, value: RGB): boolean {
+  const eps = 1 / 255;
+  return Math.abs(paint.r - value.r) > eps || Math.abs(paint.g - value.g) > eps || Math.abs(paint.b - value.b) > eps;
+}
 const DATE_IN_NAME = /(\d{4}-\d{2}-\d{2})|(\d{1,2}\/\d{1,2}\/\d{2,4})/;
 
 export function nameProblem(name: string): 'default-name' | 'blacklisted-name' | null {
@@ -188,8 +200,8 @@ export function toQaMarkdown(report: AuditReport, opts: { file?: string; date?: 
   const groupOf: Record<string, string> = {
     'default-name': 'A', 'blacklisted-name': 'A', 'hidden-layer': 'A', 'detached-instance': 'A',
     'outside-section': 'A', 'variant-explosion': 'A',
-    'raw-fill': 'B', 'raw-text': 'B', 'orphan-token': 'B', 'raw-stroke': 'B', 'raw-radius': 'B', 'primitive-bound': 'B',
-    'no-autolayout': 'C', 'redundant-wrapper': 'C', 'off-scale-spacing': 'C',
+    'raw-fill': 'B', 'raw-text': 'B', 'orphan-token': 'B', 'raw-stroke': 'B', 'raw-radius': 'B', 'primitive-bound': 'B', 'stale-paint': 'B',
+    'no-autolayout': 'C', 'redundant-wrapper': 'C', 'off-scale-spacing': 'C', 'icon-offcenter': 'C',
     contrast: 'E', 'small-target': 'E',
     lorem: 'F',
   };
@@ -256,7 +268,11 @@ function fixHint(kind: IssueKind): string {
     case 'raw-radius':
       return 'Bind `radius/*` variable (bind_variables)';
     case 'primitive-bound':
-      return 'Đổi sang Semantic token — Primitive không bind thẳng vào layer';
+      return 'Đổi sang Semantic token; nếu biến đã ở Semantic mà scopes rỗng thì đặt lại scopes';
+    case 'icon-offcenter':
+      return 'Slot icon: layout HORIZONTAL + justify/align CENTER, padding đối xứng';
+    case 'stale-paint':
+      return 'Bind lại bằng update_nodes `{var}` hoặc setBoundVariableForPaint (không gán boundVariables thủ công)';
     case 'lorem':
       return 'Thay bằng nội dung thật';
     case 'outside-section':

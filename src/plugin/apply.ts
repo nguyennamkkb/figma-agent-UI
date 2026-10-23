@@ -1,6 +1,3 @@
-// Applies DSL properties to a node. Shared by render_tree (new nodes) and
-// update_nodes (existing nodes). Ordering follows the Plugin API rules:
-// layout mode → text/fonts → paints → resize → (append) → sizing modes.
 import type { AnyProps, NumOrVar } from '../shared/schemas';
 import { GRID_PRESETS, toLayoutGrid } from '../shared/grids';
 import { expandSides, parseLetterSpacing, parseLineHeight, weightToStyle } from '../shared/values';
@@ -25,15 +22,14 @@ async function setNum(node: SceneNode, field: BindField, v: NumOrVar, ctx: Apply
   (node as Bindable).setBoundVariable(field, await ctx.res.variable(v.var));
 }
 
-// Everything except placement inside the parent (see applyPlacement).
 export async function applyProps(node: SceneNode, p: AnyProps, ctx: ApplyCtx, isNew: boolean): Promise<void> {
   if (p.name !== undefined) node.name = p.name;
   if (p.visible !== undefined) node.visible = p.visible;
+  if (p.locked !== undefined) node.locked = p.locked;
   if (p.rotation !== undefined && 'rotation' in node) node.rotation = p.rotation;
   if (p.opacity !== undefined && 'opacity' in node) {
     await setNum(node, 'opacity', p.opacity, ctx, (n) => ((node as BlendMixin).opacity = n));
   }
-
   if ('layoutMode' in node) await applyFrame(node as FrameNode, p, ctx);
   if (node.type === 'TEXT') await applyText(node, p, ctx, isNew);
   if (node.type === 'INSTANCE') await applyInstance(node, p, ctx);
@@ -188,16 +184,19 @@ async function applySize(node: SceneNode, p: AnyProps, ctx: ApplyCtx) {
   if (p.width !== undefined && typeof p.width !== 'number') await setNum(node, 'width', p.width, ctx, () => {});
   if (p.height !== undefined && typeof p.height !== 'number') await setNum(node, 'height', p.height, ctx, () => {});
   if (before && 'layoutSizingHorizontal' in node) {
-    try {
-      if (p.width === undefined && before.h !== 'FIXED') node.layoutSizingHorizontal = before.h;
-      if (p.height === undefined && before.v !== 'FIXED') node.layoutSizingVertical = before.v;
-    } catch {
-      // The previous mode may no longer be valid; keep FIXED.
+    if (p.width === undefined && before.h !== 'FIXED') {
+      try {
+        node.layoutSizingHorizontal = before.h;
+      } catch { node.layoutSizingHorizontal = 'FIXED'; }
+    }
+    if (p.height === undefined && before.v !== 'FIXED') {
+      try {
+        node.layoutSizingVertical = before.v;
+      } catch { node.layoutSizingVertical = 'FIXED'; }
     }
   }
 }
 
-// Positioning and sizing modes; must run after the node is in its parent.
 export function applyPlacement(node: SceneNode, p: AnyProps, isNew: boolean): void {
   const parentAL = isAutoLayout(node.parent);
   if (p.absolute !== undefined) {
@@ -216,7 +215,7 @@ export function applyPlacement(node: SceneNode, p: AnyProps, isNew: boolean): vo
   const isText = node.type === 'TEXT';
   let wm = p.widthMode;
   let hm = p.heightMode;
-  if (isNew) {
+  if (isNew && node.type !== 'INSTANCE') {
     if (wm === undefined && p.width === undefined && (selfAL || isText)) wm = 'HUG';
     if (hm === undefined && p.height === undefined && (selfAL || isText)) hm = 'HUG';
   }
@@ -234,11 +233,14 @@ export function applyPlacement(node: SceneNode, p: AnyProps, isNew: boolean): vo
   if (wm !== undefined) node.layoutSizingHorizontal = wm;
   if (hm !== undefined) node.layoutSizingVertical = hm;
 
-  // Text wraps only with a fixed/fill width and auto height.
   if (isText && (isNew || wm !== undefined || p.width !== undefined)) {
     const text = node as TextNode;
     if (text.layoutSizingHorizontal === 'HUG') text.textAutoResize = 'WIDTH_AND_HEIGHT';
     else if (hm !== 'FIXED' && p.height === undefined) text.textAutoResize = 'HEIGHT';
+    if (p.maxLines !== undefined) {
+      text.textTruncation = 'ENDING';
+      text.maxLines = p.maxLines;
+    }
   }
 }
 

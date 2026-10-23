@@ -212,6 +212,10 @@ describe('planTokenImport', () => {
     expect(inferScopes('color/border/strong', 'COLOR', false)).toEqual(['STROKE_COLOR']);
     expect(inferScopes('radius/lg', 'FLOAT', false)).toEqual(['CORNER_RADIUS']);
     expect(inferScopes('duration/base', 'FLOAT', false)).toEqual([]);
+    // Stroke weight, not a width; type scale steps are font sizes.
+    expect(inferScopes('border/width/thin', 'FLOAT', false)).toEqual(['STROKE_FLOAT']);
+    expect(inferScopes('type/title-md', 'FLOAT', false)).toEqual(['FONT_SIZE']);
+    expect(inferScopes('size/touch-target', 'FLOAT', false)).toEqual(['WIDTH_HEIGHT']);
     expect(inferScopes('color/blue/600', 'COLOR', true)).toEqual([]);
   });
 });

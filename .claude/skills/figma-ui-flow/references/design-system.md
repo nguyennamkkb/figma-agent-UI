@@ -29,7 +29,8 @@ Component   (specific to one component, when it needs independent customization)
 
 Rules:
 - Layers **bind only to Semantic** (or Component) tokens. Never bind a Primitive directly — otherwise dark mode and brand switching won't apply.
-- Set Primitives to `scopes = []` so they don't appear in the picker; give Semantic tokens the correct scope (fill, text, stroke, gap, radius…).
+- Set Primitives to `scopes = []` so they don't appear in the picker; give **every** Semantic token the correct scope (fill, text, stroke, gap, radius, font size, stroke weight…). A Semantic token left at `scopes = []` is hidden from designers and is treated as a primitive by the audit. Only prototype-only tokens (duration, easing) stay at `[]`.
+- Semantic and Primitives may share a name (`space/4` in both); a bare `{var: "space/4"}` binds the Semantic one.
 - Add the Component tier only when a component must change independently of the system (e.g. the brand allows the CTA button its own color). Don't pre-create it for every component — it triples the maintenance load.
 
 ## 2. Names and value scales

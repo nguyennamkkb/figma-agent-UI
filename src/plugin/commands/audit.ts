@@ -4,6 +4,7 @@
 import type { AuditInput } from '../../shared/schemas';
 import {
   buildReport,
+  colorsDiffer,
   contrastVerdict,
   isOffScale,
   isRedundantWrapper,
@@ -15,12 +16,14 @@ import {
   type Issue,
   type RGB,
 } from '../../shared/audit';
+import { toHex } from '../../shared/values';
+import { offCentreIcons } from '../icons';
 import { getNode } from '../util';
 
 const CHECK_GROUPS: Record<string, string[]> = {
   names: ['default-name', 'blacklisted-name'],
-  tokens: ['raw-fill', 'raw-text', 'raw-stroke', 'raw-radius', 'primitive-bound'],
-  layout: ['no-autolayout', 'redundant-wrapper', 'off-scale-spacing'],
+  tokens: ['raw-fill', 'raw-text', 'raw-stroke', 'raw-radius', 'primitive-bound', 'stale-paint'],
+  layout: ['no-autolayout', 'redundant-wrapper', 'off-scale-spacing', 'icon-offcenter'],
   a11y: ['contrast', 'small-target'],
   hygiene: ['hidden-layer', 'orphan-token', 'outside-section', 'variant-explosion'],
   content: ['lorem'],
@@ -32,6 +35,8 @@ const CHECK_GROUPS: Record<string, string[]> = {
 const INTERACTIVE = /^(Button|Tab(\/|$)|Chip|Link|Input|Field|Row|Item|Toggle|Checkbox|Radio|Segment|FAB)/;
 
 const isScene = (n: BaseNode): n is SceneNode => 'visible' in n;
+
+const VECTOR_TYPES = new Set<string>(['VECTOR', 'BOOLEAN_OPERATION', 'ELLIPSE', 'LINE', 'RECTANGLE', 'STAR', 'POLYGON']);
 
 function solidColor(node: SceneNode): RGB | null {
   const paints = 'fills' in node && Array.isArray(node.fills) ? node.fills : [];
@@ -96,21 +101,30 @@ export async function auditDesign(p: AuditInput) {
   const issues: Issue[] = [];
   const nodes: SceneNode[] = [];
 
-  if (root.type === 'PAGE' || 'children' in root) {
-    const walk = (n: BaseNode) => {
-      if (!isScene(n)) return;
-      nodes.push(n);
-      for (const c of (n as ChildrenMixin).children ?? []) walk(c);
-    };
-    for (const child of (root as ChildrenMixin).children) walk(child);
-  }
+  const walk = (n: BaseNode) => {
+    if (!isScene(n)) return;
+    nodes.push(n);
+    for (const c of (n as ChildrenMixin).children ?? []) walk(c);
+  };
+  // A page is a container only; a rootId node is audited itself too, so a
+  // single frame or component set is not reported as "0 scanned".
+  if (root.type === 'PAGE') for (const child of root.children) walk(child);
+  else walk(root);
 
-  // Primitives (scopes [] or a "Primitive…" collection) must not be bound to layers.
+  // Primitives (scopes [] or a "Primitive…" collection) must not be bound to
+  // layers. Say which rule matched: a Semantic token with scopes [] is a data
+  // bug (hidden from the pickers), not a wrong binding.
   const primitives = new Map<string, string>();
-  if (enabled.has('primitive-bound')) {
+  const localVars = new Map<string, Variable>();
+  if (enabled.has('primitive-bound') || enabled.has('stale-paint')) {
     const [vars, colls] = await Promise.all([figma.variables.getLocalVariablesAsync(), figma.variables.getLocalVariableCollectionsAsync()]);
-    const primColl = new Set(colls.filter((c) => /primitive/i.test(c.name)).map((c) => c.id));
-    for (const v of vars) if (primColl.has(v.variableCollectionId) || v.scopes.length === 0) primitives.set(v.id, v.name);
+    const collName = new Map(colls.map((c) => [c.id, c.name]));
+    for (const v of vars) {
+      localVars.set(v.id, v);
+      const coll = collName.get(v.variableCollectionId) ?? '?';
+      if (/primitive/i.test(coll)) primitives.set(v.id, `bind thẳng primitive "${coll}/${v.name}"`);
+      else if (v.scopes.length === 0) primitives.set(v.id, `"${coll}/${v.name}" có scopes [] (bị ẩn khỏi picker) nên bị coi là primitive — đặt lại scopes`);
+    }
   }
   const page = root.type === 'PAGE' ? root : null;
   const pageHasSections = !!page && page.children.some((c) => c.type === 'SECTION');
@@ -143,7 +157,10 @@ export async function auditDesign(p: AuditInput) {
     // A2 / D7 — auto layout
     if (enabled.has('no-autolayout') && n.type === 'FRAME') {
       const f = n as FrameNode;
-      if (f.layoutMode === 'NONE' && f.children.length > 1 && !/^(decor|overlay)\//.test(f.name)) {
+      // An SVG icon frame holds only vectors: auto layout would break the
+      // drawing, so it is not a finding.
+      const vectorsOnly = f.children.every((c) => VECTOR_TYPES.has(c.type));
+      if (f.layoutMode === 'NONE' && f.children.length > 1 && !vectorsOnly && !/^(decor|overlay)\//.test(f.name)) {
         push('no-autolayout', `${f.children.length} lớp con nhưng layout NONE`);
       }
     }
@@ -208,21 +225,42 @@ export async function auditDesign(p: AuditInput) {
       if (sev) issues.push({ id: n.id, kind: 'small-target', name: n.name, detail: `${Math.round(n.width)}×${Math.round(n.height)} < 44pt`, rect, severity: sev });
     }
 
-    // B — strokes and radius bound to tokens too
-    if (enabled.has('raw-stroke') && 'strokes' in n && Array.isArray(n.strokes)) {
+    // B — strokes and radius bound to tokens too. A component set's dashed
+    // purple frame and radius 5 are its chrome (create_component_set draws
+    // them like the Figma UI does), not design values.
+    const chrome = n.type === 'COMPONENT_SET';
+    if (enabled.has('raw-stroke') && !chrome && 'strokes' in n && Array.isArray(n.strokes)) {
       const styleId = 'strokeStyleId' in n ? n.strokeStyleId : '';
       const boundStrokes = ((n as SceneNode & { boundVariables?: Record<string, unknown[]> }).boundVariables?.strokes ?? []) as unknown[];
       n.strokes.forEach((paint, i) => {
         if (paint.type === 'SOLID' && paint.visible !== false && !boundStrokes[i] && !styleId) push('raw-stroke', `stroke[${i}] không bind variable/style`);
       });
     }
-    if (enabled.has('raw-radius') && 'cornerRadius' in n && typeof n.cornerRadius === 'number' && n.cornerRadius > 0) {
+    if (enabled.has('raw-radius') && !chrome && 'cornerRadius' in n && typeof n.cornerRadius === 'number' && n.cornerRadius > 0) {
       if (!bound(n, 'topLeftRadius') && !bound(n, 'cornerRadius')) push('raw-radius', `radius ${n.cornerRadius} không bind variable`);
     }
     if (enabled.has('primitive-bound')) {
       for (const vid of boundIds(n)) {
         const meta = primitives.get(vid);
-        if (meta) push('primitive-bound', `bind thẳng primitive "${meta}"`);
+        if (meta) push('primitive-bound', meta);
+      }
+    }
+    // The binding is valid but the paint kept its old colour (manual
+    // `boundVariables` in execute_code): Figma renders the stale colour and
+    // every check that reads boundVariables passes. Local variables only.
+    if (enabled.has('stale-paint')) {
+      for (const field of ['fills', 'strokes'] as const) {
+        const paints = field in n ? (n as GeometryMixin)[field] : null;
+        if (!Array.isArray(paints)) continue;
+        paints.forEach((paint: Paint, i: number) => {
+          const alias = paint.type === 'SOLID' ? paint.boundVariables?.color : undefined;
+          const v = alias ? localVars.get(alias.id) : undefined;
+          if (!v || paint.type !== 'SOLID') return;
+          const value = v.resolveForConsumer(n).value as RGB | undefined;
+          if (value && typeof value === 'object' && 'r' in value && colorsDiffer(paint.color, value)) {
+            push('stale-paint', `${field}[${i}] bind "${v.name}" = ${toHex(value)} nhưng paint vẫn là ${toHex(paint.color)} → Figma vẽ màu cũ`);
+          }
+        });
       }
     }
 
@@ -263,6 +301,15 @@ export async function auditDesign(p: AuditInput) {
     ]);
     for (const s of [...paint, ...text, ...effect, ...grid]) {
       if (!used.has(s.id)) issues.push({ id: s.id, kind: 'orphan-token', name: s.name, detail: 'style không được dùng' });
+    }
+  }
+
+  // Icon slots whose glyph is not on the slot centre (measured ink).
+  if (enabled.has('icon-offcenter')) {
+    for (const i of offCentreIcons(root.type === 'PAGE' ? root.children : [root])) {
+      const n = nodes.find((x) => x.id === i.id);
+      const rect = n && 'x' in n ? { x: Math.round(n.x), y: Math.round(n.y), w: Math.round(n.width), h: Math.round(n.height) } : undefined;
+      issues.push({ id: i.id, kind: 'icon-offcenter', name: i.name, detail: i.detail, rect });
     }
   }
 

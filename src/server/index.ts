@@ -2,16 +2,18 @@
 // MCP server (stdio) exposing Figma tools. It hosts the WebSocket bridge the
 // plugin connects to. stdout belongs to MCP: log to stderr only.
 import { randomBytes } from 'node:crypto';
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, isAbsolute, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
 import { z } from 'zod';
-import { DEFAULT_PORT } from '../shared/protocol';
+import { DEFAULT_PORT, DEFAULT_PORT_RANGE, PROTOCOL_VERSION } from '../shared/protocol';
 import * as S from '../shared/schemas';
 import { exportTokens, planTokenImport, type DtcgTree, type ExportCollection, type ExportTextStyle } from '../shared/tokens';
 import { slug } from '../shared/rename';
+import sharp from 'sharp';
 import { Bridge, PluginError } from './bridge';
 import { inlineImages } from './images';
 
@@ -34,12 +36,37 @@ function loadToken(): string {
 
 const token = loadToken();
 const port = Number(process.env.FIGMA_AGENT_PORT ?? DEFAULT_PORT);
-const bridge = new Bridge({ port, token, log });
+const portRange = Number(process.env.FIGMA_AGENT_PORT_RANGE ?? DEFAULT_PORT_RANGE);
+
+// Commands the server sends to the plugin (one per tool registered with
+// `tool()`). Used to tell the user which commands their plugin build misses.
+const PLUGIN_COMMANDS = new Set<string>();
+
+// One port for every agent on the machine: the first server hosts the hub,
+// later ones join it. FIGMA_AGENT_HUB=0 restores one port per server.
+const hub = process.env.FIGMA_AGENT_HUB !== '0';
+
+const bridge = new Bridge({
+  port,
+  portRange,
+  token,
+  log,
+  hub,
+  build: `${__SERVER_VERSION__} (${__SERVER_BUILD__})`,
+  supportedCommands: () => [...PLUGIN_COMMANDS],
+  onListening: (actualPort) => {
+    try {
+      writePortFile(actualPort);
+    } catch (e) {
+      log(`warning: could not write ~/.figma-agent/port (${e instanceof Error ? e.message : String(e)})`);
+    }
+  },
+});
 
 const INSTRUCTIONS = `Tools that read, create, edit and screenshot designs in the Figma file where the "figma-agent-UI" plugin is open.
 Workflow: (1) inspect first: get_document_info, get_design_system, get_selection; reuse existing components, variables and styles instead of hardcoding values.
-(2) build screens outside-in, one level per write: screen frame + empty named regions (render_tree) → each region's blocks (render_tree{parentId}) → components/instances → content (update_nodes); auto layout everywhere; execute_code only for what no tool covers.
-(3) verify after every write (screenshot the node, get_node for sizing), fix the specific node, then go one level deeper; finish a screen (audit_design + stress_test clean) before starting the next one.
+(2) build screens outside-in in three passes: layout = screen frame + named regions + sized placeholder blocks in one render_tree → fill = components for repeated blocks, then placeholders filled by cluster (render_tree{parentId}) and content in batches (update_nodes) → lock = audit_design + stress_test; auto layout everywhere; execute_code only for what no tool covers.
+(3) check numbers after every write (write bounds or get_node: fixed sizes kept, children fit, FILL/HUG as planned) and look once per pass (screenshot the screen; extra screenshots only for unusual blocks); fix the specific node; finish a screen (audit_design + stress_test clean) before starting the next one, and build similar screens by cloning it.
 Flow and quality bar: skill figma-ui-flow; tool details: skill figma-agent-tools. Design-system work: search_design_system before creating anything; manage_pages{template} for the file skeleton; import_tokens / create_variables / create_styles for foundations; create_component_set for variants; set_interactions for prototypes; audit_design → bind_variables / rename_by_rule to fix; annotate / set_dev_status / export_tokens / export_assets for handoff.
 Every write returns node ids: keep them, there is no other state. If a write fails with safeToRetryWithoutCanvasRead=false, read the canvas before retrying.`;
 
@@ -82,10 +109,11 @@ interface ToolDef<T extends z.ZodObject> {
   noPage?: boolean;
   timeoutMs?: (args: z.infer<T>) => number;
   prepare?: (args: z.infer<T>) => Promise<unknown>;
-  format?: (result: unknown, args: z.infer<T>) => Content[];
+  format?: (result: unknown, args: z.infer<T>) => Content[] | Promise<Content[]>;
 }
 
 function tool<T extends z.ZodObject>(name: string, def: ToolDef<T>) {
+  PLUGIN_COMMANDS.add(name);
   let input = def.input.extend(fileParam);
   if (!def.noPage && !('page' in def.input.shape)) input = input.extend({ page: pageParam });
   server.registerTool(
@@ -105,7 +133,7 @@ function tool<T extends z.ZodObject>(name: string, def: ToolDef<T>) {
           file,
           timeoutMs: def.timeoutMs?.(rest as z.infer<T>) ?? 30000,
         });
-        return { content: def.format ? def.format(result, rest as z.infer<T>) : [text(result)] };
+        return { content: def.format ? await def.format(result, rest as z.infer<T>) : [text(result)] };
       } catch (e) {
         return failure(e);
       }
@@ -117,28 +145,247 @@ function tool<T extends z.ZodObject>(name: string, def: ToolDef<T>) {
 server.registerTool(
   'figma_status',
   {
-    description: 'Bridge status and connected Figma files. Call first if any tool reports no connection.',
-    inputSchema: z.object({}),
+    description:
+      'Bridge status and connected Figma files. Call first if any tool reports no connection. The token is masked; pass includeToken: true to get it in full.',
+    inputSchema: z.object({
+      includeToken: z.boolean().optional().describe('Return the full token (masked by default)'),
+    }),
     annotations: { readOnlyHint: true },
   },
-  async () => {
+  async (args) => {
     const status = bridge.status();
     // A plugin built from another commit is still running in Figma: new tools
     // will be "Unknown command" until it is reopened.
     const stale = status.files.filter((f) => f.pluginVersion !== SERVER_STAMP);
+    const missingCommands = bridge.missingCommands([...PLUGIN_COMMANDS]);
     return {
       content: [
         text({
           ...status,
           server: { version: __SERVER_VERSION__, build: __SERVER_BUILD__ },
+          protocol: PROTOCOL_VERSION,
           versionCheck: stale.length
             ? `⚠️ Plugin khác phiên bản server ${SERVER_STAMP}: ${stale.map((f) => `${f.fileName} = ${f.pluginVersion ?? 'unknown'}`).join(', ')}. Đóng plugin rồi mở lại (Plugins → Development → figma-agent-UI).`
             : status.files.length
               ? `✅ Plugin và server cùng phiên bản ${SERVER_STAMP}`
               : undefined,
-          token,
+          missingCommands,
+          // The token is a secret: only the last 4 characters are shown unless
+          // the caller explicitly asks for the full value.
+          token: args?.includeToken === true ? token : maskToken(token),
           howToConnect:
             'Figma desktop → Plugins → Development → figma-agent-UI. Paste the token in the plugin and press Connect.',
+        }),
+      ],
+    };
+  },
+);
+
+type DoctorCheckId = 'server' | 'port' | 'token' | 'plugin' | 'version' | 'capability' | 'manifest';
+
+interface DoctorCheck {
+  id: DoctorCheckId;
+  ok: boolean;
+  title: string;
+  detail: string;
+  fix?: string;
+}
+
+function maskToken(value: string): string {
+  return `…${value.slice(-4)}`;
+}
+
+// manifest.json sits next to the server bundle (dist/server.mjs → ../).
+function manifestPath(): string | null {
+  const override = process.env.FIGMA_AGENT_MANIFEST;
+  if (override) return override;
+  for (const rel of ['../manifest.json', '../../manifest.json']) {
+    const p = fileURLToPath(new URL(rel, import.meta.url));
+    if (existsSync(p)) return p;
+  }
+  return null;
+}
+
+// Does the manifest allow a WebSocket to this port?
+function coversPort(entries: string[], target: number): { covered: boolean; note?: string } {
+  for (const entry of entries) {
+    if (entry === '*') return { covered: true, note: 'wildcard "*" — mọi domain được phép' };
+    if (entry.includes('*')) return { covered: true, note: `wildcard "${entry}" — mọi domain được phép` };
+    const m = entry.match(/^wss?:\/\/[^/]*?(?::(\d+))?(?:\/|$)/);
+    if (!m) continue;
+    if (!m[1]) return { covered: true, note: `"${entry}" không chỉ định port — phủ mọi port` };
+    if (Number(m[1]) === target) return { covered: true };
+  }
+  return { covered: false };
+}
+
+server.registerTool(
+  'figma_doctor',
+  {
+    description:
+      'Diagnose the link between the MCP server and the Figma plugin: port, token, connected files, plugin build, missing commands and manifest. Never fails — every problem comes back as a check with a fix.',
+    inputSchema: z.object({}),
+    annotations: { readOnlyHint: true },
+  },
+  async () => {
+    const checks: DoctorCheck[] = [];
+    const status = bridge.status();
+    const missing = bridge.missingCommands([...PLUGIN_COMMANDS]);
+
+    checks.push({
+      id: 'server',
+      ok: true,
+      title: 'MCP server',
+      detail: `figma-agent ${__SERVER_VERSION__} (build ${__SERVER_BUILD__}), protocol v${PROTOCOL_VERSION}.`,
+    });
+
+    const first = status.ports[0] ?? port;
+    const last = status.ports[status.ports.length - 1] ?? port;
+    checks.push(
+      status.role === 'agent'
+        ? {
+            id: 'port',
+            ok: true,
+            title: 'WebSocket bridge',
+            detail: `Dùng chung hub ở ws://localhost:${status.port} (pid ${status.hub?.pid ?? '?'}, build ${status.hub?.build ?? '?'}); server này không mở cổng riêng.`,
+          }
+        : status.listening
+        ? {
+            id: 'port',
+            ok: true,
+            title: 'WebSocket bridge',
+            detail: hub
+              ? `Đang làm hub ở ws://localhost:${status.port}, ${status.agents} agent khác dùng chung.`
+              : `Đang listen ở ws://localhost:${status.port} (dải candidate ${first}-${last}).`,
+          }
+        : {
+            id: 'port',
+            ok: false,
+            title: 'WebSocket bridge',
+            detail: status.error ?? 'Bridge chưa listen.',
+            fix: hub
+              ? `Khởi động lại agent đang giữ cổng ${first} (figma-agent bản cũ chưa có hub), hoặc đóng tiến trình đang chiếm nó. Kiểm tra: lsof -i :${first}`
+              : `Đóng các tiến trình đang chiếm port ${first}-${last} rồi khởi động lại server (hoặc đặt FIGMA_AGENT_PORT). Kiểm tra: lsof -i :${first}-${last}`,
+          },
+    );
+
+    const tokenCheck: DoctorCheck = {
+      id: 'token',
+      ok: token.length > 0,
+      title: 'Token',
+      detail: `Token đã lưu tại ~/.figma-agent/token (${maskToken(token)}). Dán vào panel plugin để kết nối.`,
+    };
+    if (!tokenCheck.ok) tokenCheck.fix = 'Xoá ~/.figma-agent/token rồi khởi động lại server để sinh token mới.';
+    checks.push(tokenCheck);
+
+    const files = status.files;
+    checks.push(
+      files.length
+        ? {
+            id: 'plugin',
+            ok: true,
+            title: 'Plugin đang mở',
+            detail: files
+              .map((f) => `${f.fileName} · ${f.currentPage?.name ?? '?'} · ${f.pluginVersion ?? 'unknown'}`)
+              .join(' | '),
+          }
+        : {
+            id: 'plugin',
+            ok: false,
+            title: 'Plugin đang mở',
+            detail: 'Chưa có file Figma nào kết nối.',
+            fix: 'Mở plugin trong Figma: Plugins → Development → figma-agent-UI, dán token rồi bấm Connect.',
+          },
+    );
+
+    const stale = files.filter((f) => f.pluginVersion !== SERVER_STAMP);
+    checks.push(
+      stale.length === 0
+        ? {
+            id: 'version',
+            ok: true,
+            title: 'Phiên bản plugin',
+            detail: files.length ? `Plugin và server cùng build ${SERVER_STAMP}.` : 'Chưa có plugin nào để so sánh.',
+          }
+        : {
+            id: 'version',
+            ok: false,
+            title: 'Phiên bản plugin',
+            detail: `Plugin khác build server (${SERVER_STAMP}): ${stale.map((f) => `${f.fileName} = ${f.pluginVersion ?? 'unknown'}`).join(', ')}.`,
+            fix: 'Chạy npm run build, rồi đóng và mở lại plugin trong Figma (Plugins → Development → figma-agent-UI).',
+          },
+    );
+
+    checks.push(
+      missing.length === 0
+        ? {
+            id: 'capability',
+            ok: true,
+            title: 'Lệnh của plugin',
+            detail: files.length
+              ? 'Plugin hỗ trợ đủ các lệnh của server.'
+              : 'Chưa có plugin nên chưa kiểm tra được lệnh nào thiếu.',
+          }
+        : {
+            id: 'capability',
+            ok: false,
+            title: 'Lệnh của plugin',
+            detail: `Plugin chưa hỗ trợ: ${missing.join(', ')}.`,
+            fix: 'Đóng và mở lại plugin trong Figma sau khi chạy npm run build.',
+          },
+    );
+
+    const path = manifestPath();
+    let manifestCheck: DoctorCheck;
+    if (!path) {
+      manifestCheck = {
+        id: 'manifest',
+        ok: false,
+        title: 'manifest.json',
+        detail: 'Không đọc được manifest.json.',
+        fix: 'Kiểm tra manifest.json cạnh dist/server.mjs (hoặc đặt FIGMA_AGENT_MANIFEST).',
+      };
+    } else {
+      try {
+        const manifest = JSON.parse(readFileSync(path, 'utf8')) as {
+          networkAccess?: { devAllowedDomains?: string[] };
+        };
+        const entries = manifest.networkAccess?.devAllowedDomains ?? [];
+        const target = status.listening ? status.port : port;
+        const cover = coversPort(entries, target);
+        const listed = entries.length > 4 ? `${entries.slice(0, 4).join(', ')}… (+${entries.length - 4})` : entries.join(', ');
+        manifestCheck = {
+          id: 'manifest',
+          ok: cover.covered,
+          title: 'manifest.json',
+          detail: cover.covered
+            ? `devAllowedDomains phủ port ${target}${cover.note ? ` (${cover.note})` : ''}.`
+            : `devAllowedDomains (${listed || 'rỗng'}) chưa phủ port ${target}.`,
+        };
+        if (!manifestCheck.ok) {
+          manifestCheck.fix =
+            'Sửa manifest.json (devAllowedDomains) rồi Plugins → Development → figma-agent-UI → Import lại manifest.json trong Figma.';
+        }
+      } catch (e) {
+        manifestCheck = {
+          id: 'manifest',
+          ok: false,
+          title: 'manifest.json',
+          detail: `Không đọc được manifest.json (${e instanceof Error ? e.message : String(e)}).`,
+          fix: 'Sửa manifest.json (JSON hỏng) rồi import lại vào Figma.',
+        };
+      }
+    }
+    checks.push(manifestCheck);
+
+    const ok = checks.every((c) => c.ok);
+    const nextSteps = checks.filter((c) => !c.ok && c.fix).map((c) => c.fix!);
+    return {
+      content: [
+        text({
+          ok,
+          checks,
+          nextSteps: nextSteps.length ? nextSteps : ['Mọi thứ ổn — gọi get_document_info để bắt đầu.'],
         }),
       ],
     };
@@ -191,13 +438,14 @@ tool('list_fonts', {
 
 tool('screenshot', {
   description:
-    'PNG of a node (default: first selected). Use it to verify your work: look for clipped text, overlaps, misalignment and spacing issues.',
+    'WebP screenshot of a node (default: first selected). Use it to verify your work: look for clipped text, overlaps, misalignment and spacing issues.',
   input: S.ScreenshotInput,
   readOnly: true,
   timeoutMs: () => 60000,
-  format: (r) => {
-    const { base64, mimeType, ...meta } = r as { base64: string; mimeType: string };
-    return [{ type: 'image', data: base64, mimeType }, text(meta)];
+  format: async (r) => {
+    const { base64, ...meta } = r as { base64: string; mimeType: string };
+    const webp = await sharp(Buffer.from(base64, 'base64')).webp({ quality: 85 }).toBuffer();
+    return [{ type: 'image', data: webp.toString('base64'), mimeType: 'image/webp' }, text(meta)];
   },
 });
 
@@ -406,9 +654,21 @@ tool('export_assets', {
   },
 });
 
+// The real port is written atomically (tmp file → rename) so a reader never
+// sees a half-written file if the server is killed mid-write. Tests point
+// FIGMA_AGENT_PORT_FILE somewhere else so they never touch the real file.
+function writePortFile(actualPort: number) {
+  const target = process.env.FIGMA_AGENT_PORT_FILE ?? join(homedir(), '.figma-agent', 'port');
+  mkdirSync(dirname(target), { recursive: true });
+  const tmp = target + '.tmp';
+  writeFileSync(tmp, `${actualPort}\n`);
+  renameSync(tmp, target);
+}
+
 async function main() {
   await bridge.start();
   log(`token: ${token}  (stored in ~/.figma-agent/token, override with FIGMA_AGENT_TOKEN)`);
+  log('copy the token: pbcopy < ~/.figma-agent/token');
   await server.connect(new StdioServerTransport());
 }
 

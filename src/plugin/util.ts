@@ -2,8 +2,21 @@
 // half-built tree), so the caller may retry without re-reading the canvas.
 export class RolledBackError extends Error {}
 
+// figma.getNodeByIdAsync throws (e.g. "unsupported type in createVMObject:
+// VARIABLE_SET") when the id names an internal object instead of a layer —
+// typically an id copied from another file, since ids are per file.
+export async function findNode(id: string): Promise<BaseNode | null> {
+  try {
+    return await figma.getNodeByIdAsync(id);
+  } catch (e) {
+    throw new Error(
+      `${id} is not a layer id in this file (${e instanceof Error ? e.message : String(e)}). Node ids are per file: read them from this file.`,
+    );
+  }
+}
+
 export async function getNode(id: string): Promise<BaseNode> {
-  const node = await figma.getNodeByIdAsync(id);
+  const node = await findNode(id);
   if (!node) throw new Error(`Node ${id} not found (deleted, or on a page that is not loaded).`);
   return node;
 }

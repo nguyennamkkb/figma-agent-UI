@@ -5,7 +5,7 @@
 2. Node vocabulary
 3. Paints and effects people get wrong
 4. Sizing rules (the source of most failures)
-5. Building level by level
+5. Building in passes
 6. update_nodes
 
 ---
@@ -46,9 +46,20 @@ Types: `frame`, `text`, `rect`, `ellipse`, `svg`, `image`, `instance`, `section`
 }
 ```
 
-Other keys: `widthMode`/`heightMode` (`FIXED|HUG|FILL`), `min/maxWidth`, `min/maxHeight`, `absolute` + `x`/`y`, `opacity`, `visible`, `rotation`, `clip`, `wrap` + `counterGap`, `component: true` (+ `description`); on text `fontFamily`, `fontStyle`, `textAlign`, `verticalAlign`, `textCase`, `decoration`, `textStyle`. **Any number may be `{ "var": "space/4" }`** and any colour `{ "var": "color/text/primary" }` — use them whenever the file has tokens.
+Other keys: `widthMode`/`heightMode` (`FIXED|HUG|FILL`), `min/maxWidth`, `min/maxHeight`, `absolute` + `x`/`y`, `opacity`, `visible`, `locked`, `rotation`, `clip` (both `true` and `false` round-trip), `wrap` + `counterGap`, `component: true` (+ `description`); on text `fontFamily`, `fontStyle`, `textAlign`, `verticalAlign`, `textCase`, `decoration`, `maxLines`, `textStyle`. Grids accept `count: "auto"` (= Figma Infinity). `get_node` returns every key above, so its output replays into `update_nodes`. **Any number may be `{ "var": "space/4" }`** and any colour `{ "var": "color/text/primary" }` — use them whenever the file has tokens.
 
 `section`: `{type: "section", name, children: [frames], gap 200, padding 80, fill}` — screens of one flow, auto-placed left to right.
+
+### Icon slot (icon button, list leading icon, tab icon)
+
+```jsonc
+{ "type": "frame", "name": "icon-button/back", "width": 44, "height": 44, "widthMode": "FIXED", "heightMode": "FIXED",
+  "layout": "HORIZONTAL", "justify": "CENTER", "align": "CENTER",      // both CENTER, always
+  "radius": 999, "fill": { "var": "surface/raised" },
+  "children": [ { "type": "svg", "svg": "<svg …24×24 viewBox…>", "width": 24, "height": 24, "color": "#…" } ] }
+```
+
+Off-centre icons come from: no `layout` (icon stuck at 0,0), `justify`/`align` left at START or swapped (`justify: "END", align: "START"` = top-right), uneven `padding` (`[0,0,8,8]` pushes it up-right), a slot resized later without auto layout, or a glyph that is itself off-centre (a text arrow `→`, an SVG whose path is not centred in its viewBox). `justify` is the slot's own primary axis: horizontal in a HORIZONTAL slot, vertical in a VERTICAL one — set both to CENTER and the axis does not matter. Use SVG, not text characters, for icons. `render_tree`, `update_nodes` and `create_component_set` measure every icon slot (≤ 64×64 frame with one icon) they touch and return `warnings: ["icon-offcenter …"]` with the cause; fix that slot before moving on.
 
 ## 3. Paints and effects people get wrong
 
@@ -61,33 +72,41 @@ Other keys: `widthMode`/`heightMode` (`FIXED|HUG|FILL`), `min/maxWidth`, `min/ma
 ## 4. Sizing rules (the source of most failures)
 
 - Auto-layout frames without `width`/`height` **hug** their content.
+- A frame **without `layout`** keeps a given `width` + `height`. With neither it shrinks to its children (a 44×44 icon button becomes 22×22). With only one it gets **100** on the other axis (`height: 44` alone → 100×44: a pill instead of a circle). Its children sit at (0,0) and are never centred. For an icon slot or round button use `layout: "HORIZONTAL"`, `justify: "CENTER"`, `align: "CENTER"`, plus both sizes.
+- A frame dropped into a **Section** (no auto layout) lands at (0,0) on top of its siblings: wrap the set in an auto-layout frame, or give `x`/`y`.
+- `{var: "space/9"}` resolves by name. When Primitives and Semantic share a name the bare name binds the non-primitive one; write `"Primitives/space/9"` only for foundations charts that show the primitive tier.
 - `widthMode: "FILL"` only inside an auto-layout parent, never on the root (explicit error, safe retry).
 - Text wraps only with a width — `widthMode: "FILL"` or fixed `width`. A long label in a row needs `FILL` on the text, otherwise it overflows.
 - Compose with `gap`, `padding`, `justify`, `align`; `x`/`y` only on `absolute: true` children, `layout: "NONE"` parents or the root.
 - Push a footer down with `justify: "SPACE_BETWEEN"` on the parent, or give the middle region `heightMode: "FILL"`.
 - Canvases: 390×844 (iPhone 15), 393×852, 360×800 (Android), 1440 desktop. Mobile side padding 16–24.
 
-## 5. Building level by level
+## 5. Building in passes
 
-The build loop in figma-ui-flow writes one level or one region per call:
+The build loop in figma-ui-flow locks the layout first, then fills it:
 
 ```jsonc
-// L1 — frame + empty named regions (allowed in one call)
+// Pass 1 — frame + regions + sized placeholder blocks (1 call)
 { "tree": { "type": "frame", "name": "Paywall / Timeline", "width": 390, "height": 844,
   "layout": "VERTICAL", "fill": { "var": "color/bg/default" }, "layoutGrids": { "preset": "mobile" },
   "children": [
     { "type": "frame", "name": "Header",  "layout": "HORIZONTAL", "widthMode": "FILL", "padding": [54, 24, 8, 24], "justify": "SPACE_BETWEEN", "align": "CENTER" },
-    { "type": "frame", "name": "Content", "layout": "VERTICAL",   "widthMode": "FILL", "heightMode": "FILL", "padding": [0, 24], "gap": 24 },
-    { "type": "frame", "name": "Footer",  "layout": "VERTICAL",   "widthMode": "FILL", "padding": [12, 24, 34, 24], "gap": 8 }
+    { "type": "frame", "name": "Content", "layout": "VERTICAL",   "widthMode": "FILL", "heightMode": "FILL", "padding": [0, 24], "gap": 24, "children": [
+      { "type": "frame", "name": "Hero",     "widthMode": "FILL", "height": 208, "fill": "#FF00001A" },
+      { "type": "frame", "name": "Timeline", "widthMode": "FILL", "height": 216, "layout": "VERTICAL", "gap": 16, "fill": "#FF00001A" } ] },
+    { "type": "frame", "name": "Footer",  "layout": "VERTICAL",   "widthMode": "FILL", "padding": [12, 24, 34, 24], "gap": 8, "children": [
+      { "type": "frame", "name": "CTA", "widthMode": "FILL", "height": 56, "fill": "#FF00001A" } ] }
   ] } }
 
-// L2 — one region per call, into the id returned for "Paywall / Timeline/Content"
-{ "parentId": "<Content id>", "tree": { "type": "frame", "name": "Timeline", "layout": "VERTICAL", "widthMode": "FILL", "children": [ … ] } }
+// Pass 2 — fill a placeholder in place (it already has its layout) …
+{ "parentId": "<Timeline id>", "tree": { "type": "instance", "component": "Timeline step", "widthMode": "FILL" } }
+// … or replace one: delete_nodes the placeholder, then insert at its index
+{ "parentId": "<Footer id>", "index": 0, "tree": { "type": "instance", "component": "Button", "variant": { "Variant": "Primary" }, "widthMode": "FILL" } }
 ```
 
-- Empty frames show nothing in a screenshot: give regions a temporary tint (`fill: "#FF00001A"`) during L1 if you need to see them, then `update_nodes` the fill back (or to the token) at L2.
-- Read the frame back with `get_node{ids:[rootId], depth: 1}` to confirm `widthMode`/`heightMode`/padding before filling it.
-- Need a block in the middle of a region later? `render_tree{parentId, index}`.
+- Placeholder tints show the layout in the Pass 1 screenshot; clear them (`update_nodes` fill → token, or `[]`) when filling.
+- Read the frame back with `get_node{ids:[rootId], depth: 2}` to confirm sizing modes and that everything fits before filling.
+- A frame with a `width` inside auto layout also needs `widthMode: "FIXED"`, or it hugs its content.
 
 ## 6. update_nodes
 

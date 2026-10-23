@@ -35,6 +35,9 @@ actionPrimary.scopes = ['FRAME_FILL', 'SHAPE_FILL'];
 const space4 = figma.variables.createVariable('space/4', sem, 'FLOAT');   // 16
 space4.scopes = ['GAP', 'WIDTH_HEIGHT'];
 ```
+Every Semantic variable needs a non-empty `scopes` by role: `space/*` → `GAP`, `radius/*` → `CORNER_RADIUS`, `type/*` (font sizes) → `FONT_SIZE`, `border/width/*` → `STROKE_FLOAT`, `size/*` → `WIDTH_HEIGHT`. `scopes = []` hides it from the pickers and `audit_design` reports every layer bound to it as `primitive-bound`. `import_tokens` infers these scopes; set them yourself when creating variables in code.
+
+Use `v.resolvedType` (not `v.type`), `createVariable(name, collectionNode, type)` (the collection node, not its id), and return `{id, name}` rather than a `Variable` object.
 Plugin API colors are 0–1, not 0–255. Converting hex: `r = parseInt(hex.slice(1,3),16)/255`.
 
 ## 3. Bind a variable to a node
@@ -42,6 +45,9 @@ Plugin API colors are 0–1, not 0–255. Converting hex: `r = parseInt(hex.slic
 // Fill / stroke: must create a new paint
 const base = { type: 'SOLID', color: { r: 0, g: 0, b: 0 } };
 frame.fills = [figma.variables.setBoundVariableForPaint(base, 'color', actionPrimary)];
+// Never write { ...paint, boundVariables: { color: alias } } by hand, and never
+// clone a bound paint, change its color and reassign it: when the binding is
+// unchanged Figma keeps that colour and renders it (audit: stale-paint).
 
 // Numeric properties
 frame.setBoundVariable('itemSpacing', space2);

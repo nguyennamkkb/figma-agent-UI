@@ -1,6 +1,8 @@
 // Name-based lookups for design-system assets. One instance lives for the
 // duration of a single command so repeated references hit a cache.
 
+import { findNode } from './util';
+
 export class Resources {
   private variables?: Promise<Map<string, Variable>>;
   private collections?: Promise<VariableCollection[]>;
@@ -34,9 +36,14 @@ export class Resources {
     ]);
     const byId = new Map(collections.map((c) => [c.id, c.name]));
     const map = new Map<string, Variable>();
+    // A bare name shared by Primitives and Semantic ("space/9") must bind the
+    // Semantic one: layers never bind primitives, and Primitives is usually
+    // created first. "Collection/name" still reaches either.
+    const isPrimitive = (v: Variable) => /primitive/i.test(byId.get(v.variableCollectionId) ?? '');
     for (const v of vars) {
       map.set(`${byId.get(v.variableCollectionId)}/${v.name}`, v);
-      if (!map.has(v.name)) map.set(v.name, v);
+      const seen = map.get(v.name);
+      if (!seen || (isPrimitive(seen) && !isPrimitive(v))) map.set(v.name, v);
     }
     return map;
   }
@@ -104,7 +111,7 @@ function findStyle<T extends BaseStyle>(styles: T[], name: string, kind: string)
 
 async function findComponent(ref: string): Promise<ComponentNode | ComponentSetNode> {
   if (/^I?\d+:\d+/.test(ref)) {
-    const node = await figma.getNodeByIdAsync(ref);
+    const node = await findNode(ref);
     if (node && (node.type === 'COMPONENT' || node.type === 'COMPONENT_SET')) return node;
     throw new Error(`Node ${ref} is not a component or component set.`);
   }

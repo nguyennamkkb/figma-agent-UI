@@ -13,6 +13,14 @@ interface Posted {
   result?: Record<string, unknown>;
   error?: string;
   safeToRetryWithoutCanvasRead?: boolean;
+  requestId?: string;
+  command?: string;
+  state?: string;
+  notice?: string;
+  files?: Array<{ fileName: string; fileKey: string | null; currentPage: string }>;
+  width?: number;
+  height?: number;
+  message?: string;
 }
 
 function loadPlugin() {
@@ -97,6 +105,44 @@ describe('plugin bundle', () => {
       expect(res, command).toBeDefined();
       expect(res?.error ?? '', command).not.toMatch(/Unknown command/);
     }
+  });
+
+  it('advertises the supported commands in client info', async () => {
+    const { posted, send } = loadPlugin();
+    await send({ type: 'ready' });
+    const info = (posted[0] as { info?: { commands?: string[]; preferredFileKey?: string | null } }).info;
+    expect(Array.isArray(info?.commands)).toBe(true);
+    expect(info?.commands).toContain('render_tree');
+    expect(info?.commands).toContain('get_document_info');
+    expect(info?.preferredFileKey).toBeNull();
+  });
+
+  it('reports activity while a command runs and when it finishes', async () => {
+    const { posted, send } = loadPlugin();
+    await send({ type: 'request', id: 'act', command: 'get_document_info', params: {} });
+    const activity = posted.filter((m) => m.type === 'activity');
+    expect(activity.length).toBeGreaterThanOrEqual(2);
+    expect(activity[0]).toMatchObject({ requestId: 'act', command: 'get_document_info', state: 'running' });
+    expect(activity[activity.length - 1]).toMatchObject({ requestId: 'act', state: 'done' });
+  });
+
+  it('relays a server notice to the panel', async () => {
+    const { posted, send } = loadPlugin();
+    await send({
+      type: 'notice',
+      notice: 'files',
+      files: [{ fileName: 'Untitled', fileKey: 'k1', currentPage: 'Screens' }],
+    });
+    expect(posted.find((m) => m.type === 'notice')).toMatchObject({
+      notice: 'files',
+      files: [{ fileName: 'Untitled', fileKey: 'k1' }],
+    });
+  });
+
+  it('confirms a resize and reports a rejected one', async () => {
+    const { posted, send } = loadPlugin();
+    await send({ type: 'resize', width: 520, height: 760 });
+    expect(posted.find((m) => m.type === 'resize-ok')).toMatchObject({ width: 520, height: 760 });
   });
 });
 
