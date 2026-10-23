@@ -22,6 +22,8 @@ export interface ClientInfo {
   protocol: number;
   fileKey: string | null;
   fileName: string;
+  /** v4: per-document id stored in root pluginData — stable for drafts that have no fileKey. Absent on old plugin builds. */
+  instanceId?: string | null;
   user: string | null;
   currentPage: { id: string; name: string };
   // Stamped at build time, e.g. "1.0.0 (a1b2c3d)" — lets the agent and the
@@ -38,6 +40,7 @@ export interface FileSummary {
   fileName: string;
   fileKey: string | null;
   currentPage: string;
+  instanceId?: string | null;
 }
 
 /** A selected layer, as shown in the panel. */
@@ -101,6 +104,7 @@ export const HUB_PROTOCOL = 3;
 export interface HubFile {
   fileName: string | null;
   fileKey: string | null;
+  instanceId?: string | null;
   user: string | null;
   currentPage: { id: string; name: string } | null;
   pluginVersion: string | null;

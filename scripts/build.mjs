@@ -54,6 +54,19 @@ const define = {
   __PLUGIN_BUILD__: JSON.stringify(buildId),
   __SERVER_VERSION__: JSON.stringify(pkg.version),
   __SERVER_BUILD__: JSON.stringify(buildId),
+  // Pinned at build time from ~/.figma-agent/token (or FIGMA_AGENT_TOKEN), so
+  // the panel auto-connects without typing. code.js is gitignored → the
+  // secret never lands in the repo.
+  __BRIDGE_TOKEN__: JSON.stringify(
+    process.env.FIGMA_AGENT_TOKEN?.trim() ||
+      (() => {
+        try {
+          return readFileSync(`${process.env.HOME}/.figma-agent/token`, 'utf8').trim();
+        } catch {
+          return '';
+        }
+      })(),
+  ),
 };
 
 const plugin = {

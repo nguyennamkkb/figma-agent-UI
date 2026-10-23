@@ -30,7 +30,7 @@ function loadPlugin() {
   const figma = {
     mixed: Symbol('mixed'),
     fileKey: undefined,
-    root: { name: 'Smoke file', children: [page] },
+    root: { name: 'Smoke file', children: [page], getPluginData: () => '', setPluginData: () => {} },
     currentPage: page,
     currentUser: { name: 'Tester' },
     showUI: () => {},
@@ -63,6 +63,7 @@ describe('plugin bundle', () => {
       type: 'init',
       info: { fileName: 'Smoke file', user: 'Tester', currentPage: { name: 'Page 1' } },
       settings: { token: 't' },
+      defaultToken: expect.any(String),
     });
   });
 

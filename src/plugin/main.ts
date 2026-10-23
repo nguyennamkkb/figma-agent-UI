@@ -76,13 +76,30 @@ figma.showUI(__html__, { width: 300, height: 300, themeColors: true });
 // Settings live in clientStorage under a single "settings" key. The panel
 // (ui.html) owns the shape and sends the whole object back on every change;
 // the plugin only mirrors it so clientInfo() can report the pinned file.
+// __BRIDGE_TOKEN__ is pinned at build time from ~/.figma-agent/token so the
+// panel auto-connects on a fresh Figma client without typing.
 let cachedSettings: Record<string, unknown> = {};
+
+// Per-document id, stored in root pluginData so it survives reopen. Drafts
+// have no fileKey, so this is what tells two same-named drafts apart.
+const INSTANCE_KEY = 'figma-agent/instance-id';
+function instanceId(): string {
+  let id = figma.root.getPluginData(INSTANCE_KEY);
+  if (!id) {
+    const bytes = new Uint8Array(8);
+    for (let i = 0; i < bytes.length; i++) bytes[i] = Math.floor(Math.random() * 256);
+    id = Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+    figma.root.setPluginData(INSTANCE_KEY, id);
+  }
+  return id;
+}
 
 function clientInfo(): ClientInfo {
   return {
     protocol: PROTOCOL_VERSION,
     fileKey: figma.fileKey ?? null,
     fileName: figma.root.name,
+    instanceId: instanceId(),
     user: figma.currentUser?.name ?? null,
     currentPage: { id: figma.currentPage.id, name: figma.currentPage.name },
     version: `${__PLUGIN_VERSION__} (${__PLUGIN_BUILD__})`,
@@ -156,7 +173,7 @@ figma.ui.onmessage = (msg: UiMessage) => {
   if (msg.type === 'ready') {
     figma.clientStorage.getAsync('settings').then((settings) => {
       cachedSettings = (settings ?? {}) as Record<string, unknown>;
-      figma.ui.postMessage({ type: 'init', info: clientInfo(), settings: cachedSettings });
+      figma.ui.postMessage({ type: 'init', info: clientInfo(), settings: cachedSettings, defaultToken: __BRIDGE_TOKEN__ });
     });
   } else if (msg.type === 'save-settings') {
     cachedSettings = msg.settings ?? {};

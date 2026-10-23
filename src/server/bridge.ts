@@ -466,6 +466,7 @@ export class Bridge {
       files: this.openClients().map((c) => ({
         fileName: c.info?.fileName ?? null,
         fileKey: c.info?.fileKey ?? null,
+        instanceId: c.info?.instanceId ?? null,
         user: c.info?.user ?? null,
         currentPage: c.info?.currentPage ?? null,
         pluginVersion: c.info?.version ?? null,
@@ -505,6 +506,7 @@ export class Bridge {
       .map((c) => ({
         fileName: c.info?.fileName ?? 'Unknown file',
         fileKey: c.info?.fileKey ?? null,
+        instanceId: c.info?.instanceId ?? null,
         currentPage: c.info?.currentPage?.name ?? '',
       }));
     const signature = JSON.stringify(files);
@@ -535,20 +537,22 @@ export class Bridge {
   }
 
   // The file the user pinned in the panel (null when nothing is pinned).
-  // Drafts have no fileKey and are pinned by name, so report the name then.
+  // Keyed files pin by fileKey; drafts pin by instanceId, with the name as
+  // a fallback for old plugin builds that do not send one.
   private preferredFileKey(): string | null {
     const open = [...this.clients.values()].filter((c) => c.ws.readyState === WebSocket.OPEN);
     const pinned = open.find((c) => this.isPinned(c));
-    return pinned?.info?.fileKey ?? pinned?.info?.fileName ?? null;
+    return pinned?.info?.fileKey ?? pinned?.info?.instanceId ?? pinned?.info?.fileName ?? null;
   }
 
   // A file is "pinned" when the panel named it. Untitled drafts have no
-  // fileKey, so the panel pins them by name.
+  // fileKey, so the panel pins them by instanceId (or by name for old builds).
   private isPinned(c: Client): boolean {
     const info = c.info;
     const pin = info?.preferredFileKey;
     if (!info || pin == null) return false;
     if (info.fileKey != null) return pin === info.fileKey;
+    if (info.instanceId != null) return pin === info.instanceId;
     return pin === info.fileName;
   }
 
@@ -581,6 +585,7 @@ export class Bridge {
       files: [...this.clients.values()].map((c) => ({
         fileName: c.info?.fileName ?? null,
         fileKey: c.info?.fileKey ?? null,
+        instanceId: c.info?.instanceId ?? null,
         user: c.info?.user ?? null,
         currentPage: c.info?.currentPage ?? null,
         pluginVersion: c.info?.version ?? null,
@@ -621,8 +626,12 @@ export class Bridge {
       );
     }
     if (file) {
-      // fileKey first, then the name (two files may share a name).
-      const hit = open.find((c) => c.info?.fileKey === file) ?? open.find((c) => c.info?.fileName === file);
+      // fileKey first, then the per-document instanceId (two drafts may share
+      // a name), then the name.
+      const hit =
+        open.find((c) => c.info?.fileKey === file) ??
+        open.find((c) => c.info?.instanceId != null && c.info.instanceId === file) ??
+        open.find((c) => c.info?.fileName === file);
       if (!hit) {
         const names = open.map((c) => c.info?.fileName).join(', ');
         throw new PluginError(`File "${file}" is not connected. Connected: ${names}.`, true);

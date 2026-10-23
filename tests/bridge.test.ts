@@ -174,6 +174,22 @@ describe('Bridge', () => {
     expect(b.status().preferredFile).toBe('file2');
   });
 
+  it('tells two same-named drafts apart by instanceId', async () => {
+    const b = await startBridge();
+    await fakePlugin(b, () => 'A', 'secret', 'Untitled', { fileKey: null, instanceId: 'aaa' });
+    await fakePlugin(b, () => 'B', 'secret', 'Untitled', { fileKey: null, instanceId: 'bbb' });
+    await expect(b.request('x', {}, { file: 'bbb' })).resolves.toBe('B');
+    await expect(b.request('x', {}, { file: 'aaa' })).resolves.toBe('A');
+  });
+
+  it('routes to the draft pinned by instanceId', async () => {
+    const b = await startBridge();
+    await fakePlugin(b, () => 'A', 'secret', 'Untitled', { fileKey: null, instanceId: 'aaa' });
+    await fakePlugin(b, () => 'B', 'secret', 'Untitled', { fileKey: null, instanceId: 'bbb', preferredFileKey: 'bbb' });
+    await expect(b.request('x', {})).resolves.toBe('B');
+    expect(b.status().preferredFile).toBe('bbb');
+  });
+
   it('tells an old plugin which commands it misses', async () => {
     const b = await startBridge({ supportedCommands: () => ['get_document_info', 'render_tree'] });
     await fakePlugin(b, () => 'ok', 'secret', 'Test file', { commands: ['get_document_info'] });

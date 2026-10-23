@@ -854,10 +854,12 @@ function applyFiles(files) {
   const names = list.map((f) => f.fileName);
   for (const file of list) {
     const option = document.createElement('option');
-    option.value = file.fileKey || file.fileName;
+    // Keyed files pin by fileKey; drafts by instanceId (stable per document),
+    // with the name as fallback for old plugin builds.
+    option.value = file.fileKey || file.instanceId || file.fileName;
     let label = file.fileName + ' · ' + (file.currentPage || '');
     if (names.indexOf(file.fileName) !== names.lastIndexOf(file.fileName)) {
-      label += ' · ' + (file.fileKey || 'no key');
+      label += ' · ' + (file.fileKey || (file.instanceId ? 'draft ' + file.instanceId.slice(0, 6) : 'no key'));
     }
     option.textContent = label;
     select.appendChild(option);
@@ -1010,6 +1012,10 @@ window.onmessage = (ev) => {
   if (msg.type === 'init') {
     info = msg.info;
     settings = normalizeSettings(msg.settings || {});
+    if (!settings.token && typeof msg.defaultToken === 'string' && msg.defaultToken) {
+      settings.token = msg.defaultToken;
+      saveSettings();
+    }
     const size = currentSize();
     // Render the stored zoom without writing it back; only the first change
     // persists it.
