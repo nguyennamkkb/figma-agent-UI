@@ -446,6 +446,7 @@ tool('screenshot', {
     const { base64, ...meta } = r as { base64: string; mimeType: string };
     const webp = await sharp(Buffer.from(base64, 'base64')).webp({ quality: 85 }).toBuffer();
     return [{ type: 'image', data: webp.toString('base64'), mimeType: 'image/webp' }, text(meta)];
+  },
 });
 
 tool('select_nodes', {
