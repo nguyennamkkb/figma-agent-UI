@@ -1,6 +1,3 @@
-// FigJam integration: DSL schema validation, serializer views, Design-only
-// refusal vocabulary, and read bounds. Stubs are plain objects shaped like
-// plugin-typings nodes; the serializer only touches documented fields.
 import { beforeAll, describe, expect, it } from 'vitest';
 import { Serializer } from '../src/plugin/serialize';
 import { DESIGN_ONLY_TOOLS, designOnlyError } from '../src/shared/figjam';
@@ -14,7 +11,6 @@ beforeAll(() => {
   };
 });
 
-// Stub-node factory: one builder per in-scope FigJam type (T002).
 function base(over: Record<string, unknown> = {}) {
   return { id: '9:1', name: 'n', visible: true, x: 0, y: 0, width: 100, height: 100, ...over };
 }
@@ -158,13 +154,11 @@ describe('Workshop-starter DSL round-trip (T026)', () => {
     const section = parsed.tree as { children?: unknown[] };
     expect(section.children).toHaveLength(5);
 
-    // The connector references resolve against the ids map of the same call.
     const ids: Record<string, string> = { 'Workshop/step-1': '9:10', 'Workshop/step-2': '9:11' };
     const conn = (section.children as { type: string; from: string; to: string }[])[2];
     expect(ids[conn.from]).toBe('9:10');
     expect(ids[conn.to]).toBe('9:11');
 
-    // Serialized views round-trip in the contract §2 vocabulary.
     const s = new Serializer();
     expect(await s.node(figjamStub.sticky({ text: { characters: 'Guest checkout' } }) as never, 0)).toMatchObject({
       type: 'STICKY',

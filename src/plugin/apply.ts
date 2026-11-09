@@ -36,6 +36,7 @@ export async function applyProps(node: SceneNode, p: AnyProps, ctx: ApplyCtx, is
   if (p.text !== undefined) await applyFigjamText(node, p.text, ctx);
   if (node.type === 'INSTANCE') await applyInstance(node, p, ctx);
   if ((p.from !== undefined || p.to !== undefined) && node.type === 'CONNECTOR') await rewireConnector(node, p);
+  if (node.type === 'SLIDE') await applySlide(node, p);
 
   const fill = node.type === 'TEXT' || node.type === 'STICKY' ? (p.color ?? p.fill) : p.fill;
   if (fill !== undefined && 'fills' in node) {
@@ -141,12 +142,7 @@ async function applyText(node: TextNode, p: AnyProps, ctx: ApplyCtx, isNew: bool
   }
 }
 
-// TextSublayerNode (sticky / shape-with-text / connector / table cell text)
-// shares TextNode's font-loading requirement but is not a TextNode, so
-// applyText cannot handle it.
 export async function setSublayerText(sublayer: TextSublayerNode, text: string, ctx: ApplyCtx): Promise<void> {
-  // Fresh FigJam nodes (notably connectors) can carry an empty fontName
-  // instead of a real font — fall back to the default font in that case.
   const fn = sublayer.fontName as FontName | typeof figma.mixed | null | undefined;
   if (fn === figma.mixed || !fn || !fn.family) await loadFont(await resolveFont(ctx.defaultFont, 'Regular'));
   else await loadFont(fn);
@@ -154,17 +150,28 @@ export async function setSublayerText(sublayer: TextSublayerNode, text: string, 
 }
 
 async function applyFigjamText(node: SceneNode, text: string, ctx: ApplyCtx): Promise<void> {
-  if (node.type === 'TEXT') return; // handled by applyText above
+  if (node.type === 'TEXT') return;
   if (node.type === 'STICKY' || node.type === 'SHAPE_WITH_TEXT' || node.type === 'CONNECTOR') {
     await setSublayerText(node.text, text, ctx);
     return;
   }
   if (node.type === 'TABLE') throw new Error('Set table content with cells (a rows×columns matrix), not text.');
-  // Other node types keep the existing behavior: text is only for text nodes.
+}
+
+async function applySlide(node: SlideNode, p: AnyProps): Promise<void> {
+  if (p.transition !== undefined) {
+    const current = node.getSlideTransition();
+    node.setSlideTransition({
+      style: (p.transition.style ?? current.style) as SlideTransition['style'],
+      duration: p.transition.duration ?? current.duration,
+      curve: current.curve,
+      timing: current.timing,
+    });
+  }
+  if (p.skipped !== undefined) node.isSkippedSlide = p.skipped;
 }
 
 async function rewireConnector(node: ConnectorNode, p: AnyProps): Promise<void> {
-  // Straight connectors only accept CENTER/NONE magnets (Figma restriction).
   const magnet = node.connectorLineType === 'STRAIGHT' ? 'CENTER' : 'AUTO';
   if (p.from !== undefined) node.connectorStart = await endpointFor(p.from, 'from', magnet);
   if (p.to !== undefined) node.connectorEnd = await endpointFor(p.to, 'to', magnet);
@@ -177,8 +184,6 @@ export async function endpointFor(ref: string, side: 'from' | 'to', magnet: 'AUT
   return { endpointNodeId: target.id, magnet };
 }
 
-// Variables and shared styles are Design-only. In FigJam a {var}/{style}
-// would fail deep inside the resolver with a cryptic error — reject it here.
 function assertFigjamFill(p: AnyProps): void {
   for (const v of [p.fill, p.stroke?.color, p.color]) {
     const items = Array.isArray(v) ? v : v === undefined ? [] : [v];
@@ -220,8 +225,6 @@ async function applyRadius(node: SceneNode, radius: NonNullable<AnyProps['radius
   }
 }
 
-// resize() resets both axes to FIXED; restore the axis that was not asked to
-// change so a width-only update keeps a hugging height.
 async function applySize(node: SceneNode, p: AnyProps, ctx: ApplyCtx) {
   if (p.width === undefined && p.height === undefined) return;
   if (!('resize' in node)) throw new Error(`${node.type} cannot be resized.`);
@@ -267,8 +270,9 @@ export function applyPlacement(node: SceneNode, p: AnyProps, isNew: boolean): vo
   let wm = p.widthMode;
   let hm = p.heightMode;
   if (isNew && node.type !== 'INSTANCE') {
-    if (wm === undefined && p.width === undefined && (selfAL || isText)) wm = 'HUG';
-    if (hm === undefined && p.height === undefined && (selfAL || isText)) hm = 'HUG';
+    const autoHug = (figma.editorType as string) !== 'slides';
+    if (autoHug && wm === undefined && p.width === undefined && (selfAL || isText)) wm = 'HUG';
+    if (autoHug && hm === undefined && p.height === undefined && (selfAL || isText)) hm = 'HUG';
   }
   for (const [axis, mode] of [
     ['widthMode', wm],

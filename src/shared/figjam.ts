@@ -1,9 +1,4 @@
-// FigJam integration vocabulary shared by the plugin guard (main.ts) and
-// tests. The refusal message is a contract (contracts/figjam-dsl.md §3):
-// agents match on it, so change it deliberately, not casually.
 
-// Tools that only make sense in Figma Design. Called from a FigJam board
-// they refuse instead of failing on missing editor APIs.
 export const DESIGN_ONLY_TOOLS: readonly string[] = [
   'set_interactions',
   'annotate',

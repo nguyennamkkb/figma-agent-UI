@@ -1,8 +1,5 @@
-// Single source of truth for tool inputs and the render_tree DSL. The server
-// validates with these schemas; the plugin only imports the inferred types.
 import { z } from 'zod';
 
-// ---------------------------------------------------------------- primitives
 
 export const VarRef = z.strictObject({
   var: z
@@ -77,7 +74,6 @@ export const LayoutGrids = z.union([
   z.array(GridSpec),
 ]);
 
-// ---------------------------------------------------------------- property groups
 
 const baseProps = {
   name: z.string().optional(),
@@ -149,7 +145,6 @@ const instanceProps = {
   texts: z.record(z.string(), z.string()).optional().describe('{ "text layer name": "new text" }'),
 };
 
-// ---------------------------------------------------------------- tree DSL
 
 const FrameBase = z.strictObject({
   type: z.literal('frame'),
@@ -175,9 +170,6 @@ export const ImageSpec = z.strictObject({
   scaleMode: ScaleMode.optional(),
 });
 export const InstanceSpec = z.strictObject({ type: z.literal('instance'), ...baseProps, ...instanceProps });
-// FigJam boards: professional whiteboard content (usage-map.md workflows 1–5).
-// Same baseProps (placement, fills, effects) as Design nodes so the build,
-// rollback, undo and ids-map pipeline behaves identically.
 const FigjamShape = z.enum([
   'SQUARE', 'ELLIPSE', 'ROUNDED_RECTANGLE', 'DIAMOND', 'TRIANGLE_UP', 'TRIANGLE_DOWN',
   'PARALLELOGRAM_RIGHT', 'PARALLELOGRAM_LEFT', 'TRAPEZOID', 'PREDEFINED_PROCESS',
@@ -233,8 +225,23 @@ export type ShapeSpec = z.infer<typeof ShapeSpec>;
 export type ConnectorSpec = z.infer<typeof ConnectorSpec>;
 export type CodeSpec = z.infer<typeof CodeSpec>;
 export type TableSpec = z.infer<typeof TableSpec>;
-// Sections group screens of one flow (file-standards.md §5). Only valid on a
-// page or inside another section; children without x/y flow left → right.
+const SlideTransitionStyle = z.enum([
+  'NONE', 'DISSOLVE', 'SMART_ANIMATE',
+  'SLIDE_FROM_LEFT', 'SLIDE_FROM_RIGHT', 'SLIDE_FROM_BOTTOM', 'SLIDE_FROM_TOP',
+  'PUSH_FROM_LEFT', 'PUSH_FROM_RIGHT', 'PUSH_FROM_BOTTOM', 'PUSH_FROM_TOP',
+  'MOVE_FROM_LEFT', 'MOVE_FROM_RIGHT', 'MOVE_FROM_TOP', 'MOVE_FROM_BOTTOM',
+  'SLIDE_OUT_TO_LEFT', 'SLIDE_OUT_TO_RIGHT', 'SLIDE_OUT_TO_TOP', 'SLIDE_OUT_TO_BOTTOM',
+  'MOVE_OUT_TO_LEFT', 'MOVE_OUT_TO_RIGHT', 'MOVE_OUT_TO_TOP', 'MOVE_OUT_TO_BOTTOM',
+]);
+export const SlideSpec = z.strictObject({
+  type: z.literal('slide'),
+  name: z.string().optional(),
+  row: z.number().int().min(0).optional().describe('Grid row for the new slide; default appends'),
+  col: z.number().int().min(0).optional().describe('Grid column for the new slide'),
+  transition: z.strictObject({ style: SlideTransitionStyle.optional(), duration: z.number().min(0).max(10).optional() }).optional(),
+  skipped: z.boolean().optional().describe('Skip this slide in presentation'),
+});
+export type SlideSpec = z.infer<typeof SlideSpec>;
 const SectionBase = z.strictObject({
   type: z.literal('section'),
   name: z.string().optional().describe('Flow name, e.g. "Checkout"'),
@@ -253,6 +260,7 @@ export type SvgSpec = z.infer<typeof SvgSpec>;
 export type ImageSpec = z.infer<typeof ImageSpec>;
 export type InstanceSpec = z.infer<typeof InstanceSpec>;
 export type SectionSpec = z.infer<typeof SectionBase> & { children?: TreeNode[] };
+export type SlideSpecNode = SlideSpec & { children?: TreeNode[] };
 export type TreeNode =
   | FrameSpec
   | TextSpec
@@ -262,18 +270,20 @@ export type TreeNode =
   | ImageSpec
   | InstanceSpec
   | SectionSpec
+  | SlideSpecNode
   | z.infer<typeof StickySpec>
   | z.infer<typeof ShapeSpec>
   | z.infer<typeof ConnectorSpec>
   | z.infer<typeof CodeSpec>
   | z.infer<typeof TableSpec>;
 
-// Recursive: declared through z.lazy with an explicit type to break the cycle.
 export const TreeNode: z.ZodType<TreeNode> = z.lazy(() => TreeNodeUnion);
 export const FrameSpec = FrameBase.extend({ children: z.array(TreeNode).optional() });
 export const SectionSpec = SectionBase.extend({ children: z.array(TreeNode).optional() });
+export const SlideSpecNode = SlideSpec.extend({ children: z.array(TreeNode).optional() });
 const TreeNodeUnion = z.discriminatedUnion('type', [
   SectionSpec,
+  SlideSpecNode,
   FrameSpec,
   TextSpec,
   RectSpec,
@@ -292,7 +302,6 @@ export type PaintInput = z.infer<typeof PaintInput>;
 export type FillInput = z.infer<typeof Fill>;
 export type NumOrVar = z.infer<typeof NumOrVar>;
 
-// Every property the update tool can patch onto an existing node.
 export const UpdateProps = z.strictObject({
   ...baseProps,
   ...frameProps,
@@ -301,7 +310,6 @@ export const UpdateProps = z.strictObject({
   ...instanceProps,
   component: z.string().optional().describe('Instances only: swap to this component'),
   description: z.string().optional(),
-  // FigJam patches: text routes to the sublayer path, from/to rewire connectors.
   shape: FigjamShape.optional(),
   from: z.string().optional(),
   to: z.string().optional(),
@@ -312,10 +320,11 @@ export const UpdateProps = z.strictObject({
   columns: z.number().int().min(1).optional(),
   cells: z.array(z.array(z.string())).optional(),
   isWide: z.boolean().optional(),
+  skipped: z.boolean().optional(),
+  transition: z.strictObject({ style: SlideTransitionStyle.optional(), duration: z.number().min(0).max(10).optional() }).optional(),
 });
 export type UpdateProps = z.infer<typeof UpdateProps>;
 
-// Union of every spec's properties, used internally by the plugin appliers.
 export type AnyProps = Partial<UpdateProps> & {
   type?: TreeNode['type'];
   svg?: string;
@@ -324,9 +333,10 @@ export type AnyProps = Partial<UpdateProps> & {
   scaleMode?: z.infer<typeof ScaleMode>;
   caps?: { start?: z.infer<typeof FigjamStrokeCap>; end?: z.infer<typeof FigjamStrokeCap> };
   children?: TreeNode[];
+  row?: number;
+  col?: number;
 };
 
-// ---------------------------------------------------------------- tool inputs
 
 const NodeId = z.string().describe('Node id, e.g. "12:34"');
 
@@ -401,7 +411,6 @@ export const ExecuteCodeInput = z.object({
   timeoutMs: z.number().int().min(1000).max(300000).default(30000),
 });
 
-// figma-ui-flow Stage 7: one read-only call returns the QA report.
 export const AuditInput = z.object({
   rootId: NodeId.optional().describe('Audit this subtree; default: the current page'),
   checks: z
@@ -412,9 +421,6 @@ export const AuditInput = z.object({
   format: z.enum(['json', 'markdown']).default('json').describe('markdown = the skill QA report template'),
 });
 
-// figma-ui-flow Stage 2: variables in one call (collection, modes,
-// aliases, scopes). Figma rejects addMode when the plan allows one mode only;
-// that case is reported as a warning, not a failure.
 export const CreateVariablesInput = z.object({
   collection: z.string().min(1).describe('Collection name; created when missing'),
   modes: z.array(z.string().min(1)).optional().describe('Mode names; the first is the default. Default: ["Default"]'),
@@ -436,7 +442,6 @@ export const CreateVariablesInput = z.object({
     .describe('A variable with the same name already in this collection: fail, keep it, or overwrite its values/scopes'),
 });
 
-// figma-ui-flow Stage 1: the standard page skeleton and page maintenance.
 export const ManagePagesInput = z.object({
   template: z.boolean().optional().describe('Create the missing pages of the 9-page master skeleton'),
   create: z.array(z.string().min(1)).optional(),
@@ -446,7 +451,6 @@ export const ManagePagesInput = z.object({
   dryRun: z.boolean().default(false).describe('Return the plan without touching the file'),
 });
 
-// figma-ui-flow rule #3 "search before you create".
 export const SearchDesignSystemInput = z.object({
   query: z.string().describe('Name or words, e.g. "button primary", "text/secondary", "elevation"'),
   kinds: z

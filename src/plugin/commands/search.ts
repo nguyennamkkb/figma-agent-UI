@@ -1,6 +1,3 @@
-// figma-ui-flow rule #3 "search before you create": one ranked search over local
-// components, variables and styles, plus with includeLibraries the library
-// assets used on the current page and the variables of enabled libraries.
 import { rank } from '../../shared/search';
 import type { SearchDesignSystemInput } from '../../shared/schemas';
 import { toHex } from '../../shared/values';
@@ -29,7 +26,6 @@ export async function searchDesignSystem(p: SearchDesignSystemInput) {
     // eslint-disable-next-line @figma/figma-plugins/dynamic-page-find-method-advice -- pages loaded just above
     const nodes = figma.root.findAllWithCriteria({ types: ['COMPONENT_SET', 'COMPONENT'] });
     for (const n of nodes) {
-      // Variants are found through their set; standalone components directly.
       if (n.type === 'COMPONENT' && n.parent?.type === 'COMPONENT_SET') continue;
       const props = Object.entries(n.componentPropertyDefinitions).map(([k, d]) =>
         d.type === 'VARIANT' ? `${k}=${(d.variantOptions ?? []).join('|')}` : `${k.split('#')[0]}:${d.type}`,

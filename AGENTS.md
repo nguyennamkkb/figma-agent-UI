@@ -17,6 +17,10 @@
 - Flow: `/speckit.constitution` → `/speckit.specify` → (`/speckit.clarify` optional) → `/speckit.plan` → `/speckit.tasks` → (`/speckit.analyze` + `/speckit.checklist`) → `/speckit.implement` → `/speckit.converge`. Specs live in `specs/<nnn>-*/` (`spec.md`, `plan.md`, `tasks.md`).
 - `specify check` verifies agent CLIs; `specify integration list/upgrade` manages the opencode integration — never hand-edit generated `.opencode/commands/speckit.*.md`.
 
+## Code Style
+- No comments in code: do not write `//`, `/* */`, `<!-- -->`, or JSDoc comments in source files (`src/`, `tests/`, `scripts/`, `ui.html`, `eslint.config.js`). Express intent through names and structure instead.
+- Exceptions (functional, must stay): `#!/usr/bin/env node` shebangs, `eslint-disable` directives, and the `/* @ports-start */ … /* @ports-end */` marker block in `ui.html` (used by `scripts/build.mjs`).
+
 ## Gotchas
 - Stdout belongs to MCP: server must log to stderr only.
 - Version stamp: bump `version` in `package.json` on plugin changes; build stamps version+commit into both bundles. `figma_status` warns on mismatch → fix is rebuild + close/reopen plugin in Figma. After editing `manifest.json` (e.g. `devAllowedDomains` ports), re-import the plugin in Figma.

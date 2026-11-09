@@ -64,22 +64,17 @@ export async function findNodes(p: FindNodesInput) {
   return { total: hits.length, nodes: hits.slice(0, p.limit).map(summary) };
 }
 
-// Text content for search: Design text plus FigJam sublayer text. Some
-// FigJam nodes (TABLE_CELL) have no name, so callers must not assume one.
 function figjamText(n: SceneNode): string | null {
   if (n.type === 'TEXT') return (n as TextNode).characters;
   if (n.type === 'STICKY' || n.type === 'SHAPE_WITH_TEXT' || n.type === 'CONNECTOR') {
     return (n as StickyNode).text.characters;
   }
-  // TABLE_CELL is not in the SceneNode union of this typings version, but
-  // table children arrive with that type at runtime.
   if ((n as { type: string }).type === 'TABLE_CELL') {
     return (n as unknown as StickyNode).text.characters;
   }
   return null;
 }
 
-// get_variable_defs equivalent: tokens actually bound inside one subtree.
 async function usedIn(id: string) {
   const root = await getNode(id);
   const nodes: BaseNode[] = [root, ...('findAll' in root ? (root as ChildrenMixin).findAll(() => true) : [])];
@@ -93,8 +88,6 @@ async function usedIn(id: string) {
     else Object.values(value).forEach(collect);
   };
   for (const n of nodes) {
-    // Paint bindings are mirrored in node.boundVariables.fills/strokes, so
-    // reading the paints too would count them twice.
     collect((n as SceneNode & { boundVariables?: unknown }).boundVariables);
     for (const key of ['fillStyleId', 'strokeStyleId', 'effectStyleId', 'textStyleId', 'gridStyleId'] as const) {
       const v = (n as unknown as Record<string, unknown>)[key];
@@ -187,8 +180,6 @@ export async function getDesignSystem(p: DesignSystemInput) {
     }));
     out.localComponentCount = top.length;
 
-    // Library components cannot be listed by the Plugin API; report the ones
-    // already used on the current page so their keys can be reused.
     out.libraryComponentsUsedOnPage = (await inUse()).components.slice(0, p.componentLimit).map((c) => ({
       name: c.name,
       key: c.key,

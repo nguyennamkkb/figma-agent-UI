@@ -1,6 +1,3 @@
-// figma-ui-flow Stage 3 — a component set in one call: each variant is a
-// render_tree frame, combined with `Property=Value` names, then TEXT /
-// BOOLEAN / INSTANCE_SWAP properties wired to layers by name.
 import { planComponentSet } from '../../shared/components';
 import type { CreateComponentSetInput } from '../../shared/schemas';
 import type { ApplyCtx } from '../apply';
@@ -36,8 +33,8 @@ export async function createComponentSet(p: CreateComponentSetInput) {
         for (const n of state.created) {
           try {
             if (!n.removed) n.remove();
+          // eslint-disable-next-line no-empty
           } catch {
-            // Already gone — nothing to clean.
           }
         }
         if (state.root && !state.root.removed) state.root.remove();
@@ -49,8 +46,6 @@ export async function createComponentSet(p: CreateComponentSetInput) {
     set.name = p.name;
     if (p.description !== undefined) set.description = p.description;
 
-    // Variants on a grid: one row per combination of the leading axes, one
-    // column per value of the last axis (usually State).
     const lastAxis = plan.axes[plan.axes.length - 1];
     const columns = lastAxis ? new Set(p.variants.map((v) => v.props[lastAxis])).size : made.length;
     const cellW = Math.max(...made.map((m) => m.width));
@@ -59,11 +54,9 @@ export async function createComponentSet(p: CreateComponentSetInput) {
     set.itemSpacing = GAP;
     set.counterAxisSpacing = GAP;
     set.paddingTop = set.paddingRight = set.paddingBottom = set.paddingLeft = GAP;
-    // +2px slack: fractional widths would otherwise wrap the last cell of a row.
     set.resize(Math.ceil(columns * cellW + (columns - 1) * GAP + 2 * GAP) + 2, set.height);
     set.primaryAxisSizingMode = 'FIXED';
     set.counterAxisSizingMode = 'AUTO';
-    // The purple dashed frame Figma draws for sets made in the UI.
     set.strokes = [solid('#9747FF')];
     set.dashPattern = [10, 5];
     set.strokeWeight = 1;
@@ -107,7 +100,6 @@ export async function createComponentSet(p: CreateComponentSetInput) {
         if (!hits) warnings.push(`property "${prop.name}": không variant nào có layer "${target}"`);
         wired += hits;
       }
-      // A property wired to no layer is an orphan in the properties panel.
       if (wired) properties[prop.name] = key;
       else {
         set.deleteComponentProperty(key);

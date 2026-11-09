@@ -110,6 +110,24 @@ export class Serializer {
       out.code = c.code.length > 400 ? c.code.slice(0, 400) + '…' : c.code;
       out.language = c.codeLanguage;
     }
+    if (n.type === 'SLIDE') {
+      const s = n as SlideNode;
+      try {
+        const tr = s.getSlideTransition();
+        out.transition = { style: tr.style, duration: round2(tr.duration) };
+      } catch {
+        out.transition = 'unknown';
+      }
+      out.skipped = s.isSkippedSlide === true;
+    }
+    if (n.type === 'SLIDE_GRID' || n.type === 'SLIDE_ROW') {
+      out.kind = n.type === 'SLIDE_GRID' ? 'slide-grid' : 'slide-row';
+    }
+    if (n.type === 'INTERACTIVE_SLIDE_ELEMENT') {
+      const el = n as InteractiveSlideElementNode;
+      out.elementType = el.interactiveSlideElementType;
+      out.readOnly = true;
+    }
     if (n.type === 'WIDGET' || n.type === 'STAMP' || n.type === 'BOOLEAN_OPERATION') out.readOnly = true;
     if (n.type === 'INSTANCE') {
       const main = await n.getMainComponentAsync();
@@ -251,8 +269,6 @@ function endpointSummary(ep: ConnectorEndpoint): unknown {
   return { x: round2(p.x), y: round2(p.y) };
 }
 
-// Cell text is read directly (no font loading needed for reads). Capped at
-// 400 cells — the same budget as creation — so giant tables stay bounded.
 function tableCells(t: TableNode): { cells: string[][]; truncated: boolean } {
   const cells: string[][] = [];
   let count = 0;

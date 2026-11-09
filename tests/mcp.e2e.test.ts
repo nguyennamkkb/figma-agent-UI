@@ -1,5 +1,3 @@
-// Spawns the built MCP server over stdio, connects a fake plugin to its
-// bridge, and drives it with the official MCP client.
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { existsSync, mkdtempSync, readFileSync } from 'node:fs';
@@ -26,25 +24,21 @@ beforeAll(async () => {
       env: {
         ...process.env,
         FIGMA_AGENT_PORT: String(PORT),
-        // A range of 1 keeps the port deterministic (no fallback).
         FIGMA_AGENT_PORT_RANGE: '1',
         FIGMA_AGENT_TOKEN: TOKEN,
-        // Never write to the user's real ~/.figma-agent/port from a test.
         FIGMA_AGENT_PORT_FILE: join(tmpdir(), `figma-agent-port-${process.pid}`),
       } as Record<string, string>,
       stderr: 'ignore',
     }),
   );
 
-  // The plugin reports the commands it supports (protocol v2): the server
-  // refuses to send anything else.
   const { tools } = await client.listTools();
   const commands = tools.map((t) => t.name).filter((n) => n !== 'figma_status' && n !== 'figma_doctor');
 
   plugin = new WebSocket(`ws://localhost:${PORT}/?token=${TOKEN}`);
   plugin.on('message', (data) => {
     const msg = JSON.parse(String(data));
-    if (msg.type !== 'request') return; // "notice" messages are not replies
+    if (msg.type !== 'request') return;
     received.push({ command: msg.command, params: msg.params });
     const reply = (body: object) => plugin.send(JSON.stringify({ type: 'response', id: msg.id, ...body }));
     if (msg.command === 'screenshot') {
@@ -157,7 +151,6 @@ describe('MCP server', () => {
     const r = await client.callTool({ name: 'figma_status', arguments: {} });
     const body = JSON.parse((r.content as { text: string }[])[0].text);
     expect(body.files).toMatchObject([{ fileName: 'E2E', pluginVersion: '1.0.0 (e2e)' }]);
-    // The server stamps its own build too, so a stale process is obvious.
     expect(body.server.version).toMatch(/^\d+\.\d+\.\d+/);
     expect(typeof body.server.build).toBe('string');
   });
@@ -206,8 +199,6 @@ describe('MCP server', () => {
   it('scopes writes to a page and forwards the audit/params to the plugin', async () => {
     const { tools } = await client.listTools();
 
-    // Every write/read tool gets the page scope, except the ones that already
-    // own a `page` field or manage pages themselves.
     const render = tools.find((t) => t.name === 'render_tree')!;
     expect(JSON.stringify(render.inputSchema)).toContain('"page"');
     expect(JSON.stringify(tools.find((t) => t.name === 'set_current_page')!.inputSchema)).not.toContain(
@@ -249,11 +240,9 @@ describe('MCP server', () => {
     const body = JSON.parse(raw);
     expect(raw).not.toContain(TOKEN);
     expect(body.token).toBe(`…${TOKEN.slice(-4)}`);
-    // The plugin reports every command → nothing is missing.
     expect(body.missingCommands).toEqual([]);
     expect(body.protocol).toBe(3);
     expect(body.portRange).toBe(1);
-    // Alone on its port, the server hosts the hub.
     expect(body.role).toBe('hub');
 
     const full = await client.callTool({ name: 'figma_status', arguments: { includeToken: true } });

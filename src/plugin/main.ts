@@ -1,8 +1,6 @@
-// Plugin sandbox entry: shows the bridge UI and executes commands relayed by
-// it. Commands run one at a time so concurrent requests never interleave.
 import type { ClientInfo, NoticeMessage, RequestMessage, ResponseMessage } from '../shared/protocol';
 import { PROTOCOL_VERSION } from '../shared/protocol';
-import { DESIGN_ONLY_TOOLS, designOnlyError } from '../shared/figjam';
+import { DESIGN_ONLY_TOOLS, designOnlyError as designOnlyErrorFigjam } from '../shared/figjam';
 import { executeCode } from './commands/execute';
 import { auditDesign } from './commands/audit';
 import { managePages } from './commands/pages';
@@ -32,7 +30,6 @@ import { errorMessage, RolledBackError } from './util';
 
 interface Command {
   mutates: boolean;
-  // Params are validated by the MCP server before they reach the plugin.
   run(params: never): Promise<unknown>;
 }
 
@@ -70,19 +67,10 @@ const commands: Record<string, Command> = {
   export_assets: { mutates: false, run: exportAssets },
 };
 
-// The panel is deliberately small: it lives in Figma's side panel, so it
-// stays out of the way of the canvas. The user can grow it from the menu.
 figma.showUI(__html__, { width: 300, height: 300, themeColors: true });
 
-// Settings live in clientStorage under a single "settings" key. The panel
-// (ui.html) owns the shape and sends the whole object back on every change;
-// the plugin only mirrors it so clientInfo() can report the pinned file.
-// __BRIDGE_TOKEN__ is pinned at build time from ~/.figma-agent/token so the
-// panel auto-connects on a fresh Figma client without typing.
 let cachedSettings: Record<string, unknown> = {};
 
-// Per-document id, stored in root pluginData so it survives reopen. Drafts
-// have no fileKey, so this is what tells two same-named drafts apart.
 const INSTANCE_KEY = 'figma-agent/instance-id';
 function instanceId(): string {
   let id = figma.root.getPluginData(INSTANCE_KEY);
@@ -104,24 +92,20 @@ function clientInfo(): ClientInfo {
     user: figma.currentUser?.name ?? null,
     currentPage: { id: figma.currentPage.id, name: figma.currentPage.name },
     version: `${__PLUGIN_VERSION__} (${__PLUGIN_BUILD__})`,
-    // Lets the server tell "your plugin build is old" instead of "Unknown
-    // command" (protocol v2).
     commands: Object.keys(commands),
-    // The file the user pinned in the panel (null = no preference).
     preferredFileKey: typeof cachedSettings.preferredFileKey === 'string' ? cachedSettings.preferredFileKey : null,
   };
 }
 
-// Tools that only make sense in Figma Design (prototype reactions, dev-mode
-// metadata, variables/styles libraries). Called from a FigJam board they
-// refuse with a fixed vocabulary (contracts/figjam-dsl.md §3, defined in
-// shared/figjam.ts) instead of failing on missing editor APIs. Everything
-// else is editor-agnostic.
-const DESIGN_ONLY = new Set(DESIGN_ONLY_TOOLS);
+const DESIGN_ONLY = new Set<string>(DESIGN_ONLY_TOOLS);
+
+function designOnlyError(command: string): string {
+  return figma.editorType === 'slides'
+    ? `${command} is Design-only and has no effect in this Slides deck.`
+    : designOnlyErrorFigjam(command);
+}
 
 let queue: Promise<unknown> = Promise.resolve();
-// Number of requests accepted but not finished yet; >0 means the next
-// request has to wait for the running one.
 let pending = 0;
 
 async function run(req: RequestMessage): Promise<ResponseMessage> {
@@ -129,12 +113,9 @@ async function run(req: RequestMessage): Promise<ResponseMessage> {
   if (!cmd) {
     return { type: 'response', id: req.id, ok: false, error: `Unknown command "${req.command}".`, safeToRetryWithoutCanvasRead: true };
   }
-  if (DESIGN_ONLY.has(req.command) && figma.editorType === 'figjam') {
+  if (DESIGN_ONLY.has(req.command) && (figma.editorType === 'figjam' || (figma.editorType as string) === 'slides')) {
     return { type: 'response', id: req.id, ok: false, error: designOnlyError(req.command), safeToRetryWithoutCanvasRead: true };
   }
-  // `page` scopes the command to one page regardless of which page another
-  // agent switched to (the current page is file-global state). We switch,
-  // run, then hand the previous page back.
   const raw = (req.params ?? {}) as Record<string, unknown>;
   const target = typeof raw.page === 'string' && req.command !== 'set_current_page' ? raw.page : null;
   const { page: _scope, ...params } = raw;
@@ -166,8 +147,8 @@ async function run(req: RequestMessage): Promise<ResponseMessage> {
     if (previous) {
       try {
         await figma.setCurrentPageAsync(previous);
+      // eslint-disable-next-line no-empty
       } catch {
-        // the page may have been deleted by this command; leave the new one
       }
     }
   }
@@ -194,19 +175,13 @@ figma.ui.onmessage = (msg: UiMessage) => {
       figma.ui.resize(msg.width, msg.height);
       figma.ui.postMessage({ type: 'resize-ok', width: msg.width, height: msg.height });
     } catch (e) {
-      // Figma refuses some sizes (e.g. bigger than the canvas area). Keep the
-      // current size and tell the panel so it can show a small toast.
       figma.ui.postMessage({ type: 'resize-error', message: errorMessage(e) });
     }
   } else if (msg.type === 'notice') {
-    // Server → panel. The panel renders the file picker from this.
     figma.ui.postMessage(msg);
   } else if (msg.type === 'request') {
     const started = Date.now();
     const { id, command } = msg;
-    // A request that arrives while another one is still running has to wait in
-    // the queue: tell the panel "queued" so the spinner is honest. The panel
-    // gets "running" as soon as the command actually starts.
     const queued = pending > 0;
     pending += 1;
     figma.ui.postMessage({ type: 'activity', requestId: id, command, state: queued ? 'queued' : 'running' });
@@ -231,7 +206,6 @@ figma.ui.onmessage = (msg: UiMessage) => {
 
 figma.on('currentpagechange', () => figma.ui.postMessage({ type: 'event', event: 'pagechange', info: clientInfo() }));
 
-// Selection changes fire on every drag; debounce so the server is not flooded.
 let selectionTimer: number | null = null;
 figma.on('selectionchange', () => {
   if (selectionTimer !== null) clearTimeout(selectionTimer);
@@ -245,7 +219,6 @@ figma.on('selectionchange', () => {
         type: node.type,
       }));
     } catch {
-      // The page may not be loaded (dynamic-page) — report an empty selection.
       selection = [];
     }
     figma.ui.postMessage({ type: 'event', event: 'selectionchange', info: clientInfo(), selection });
