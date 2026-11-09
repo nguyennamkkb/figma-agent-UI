@@ -37,7 +37,7 @@ export async function applyProps(node: SceneNode, p: AnyProps, ctx: ApplyCtx, is
   if (node.type === 'INSTANCE') await applyInstance(node, p, ctx);
   if ((p.from !== undefined || p.to !== undefined) && node.type === 'CONNECTOR') await rewireConnector(node, p);
 
-  const fill = node.type === 'TEXT' ? (p.color ?? p.fill) : p.fill;
+  const fill = node.type === 'TEXT' || node.type === 'STICKY' ? (p.color ?? p.fill) : p.fill;
   if (fill !== undefined && 'fills' in node) {
     const r = await resolveFill(fill, ctx.res);
     if ('style' in r) await (node as MinimalFillsMixin).setFillStyleIdAsync(r.style.id);
