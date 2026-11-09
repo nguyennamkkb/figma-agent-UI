@@ -42,7 +42,7 @@ beforeAll(async () => {
     received.push({ command: msg.command, params: msg.params });
     const reply = (body: object) => plugin.send(JSON.stringify({ type: 'response', id: msg.id, ...body }));
     if (msg.command === 'screenshot') {
-      reply({ ok: true, result: { nodeId: '1:2', mimeType: 'image/png', base64: 'iVBORw0KGgo=', width: 10, height: 10 } });
+      reply({ ok: true, result: { nodeId: '1:2', mimeType: 'image/png', base64: 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', width: 10, height: 10 } });
     } else if (msg.command === 'export_tokens') {
       reply({
         ok: true,
@@ -186,7 +186,10 @@ describe('MCP server', () => {
   it('returns screenshots as image content', async () => {
     const r = await client.callTool({ name: 'screenshot', arguments: { id: '1:2' } });
     const content = r.content as { type: string; data?: string; mimeType?: string }[];
-    expect(content[0]).toEqual({ type: 'image', data: 'iVBORw0KGgo=', mimeType: 'image/png' });
+    expect(content[0].type).toBe('image');
+    expect(content[0].mimeType).toBe('image/webp');
+    expect(typeof content[0].data).toBe('string');
+    expect((content[0].data as string).length).toBeGreaterThan(0);
     expect(content[1].type).toBe('text');
   });
 
