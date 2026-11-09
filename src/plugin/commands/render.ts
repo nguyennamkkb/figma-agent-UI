@@ -71,8 +71,10 @@ export async function wireConnectors(state: BuildState, ids: Record<string, stri
     const fromRef = ids[spec.from] ?? spec.from;
     const toRef = ids[spec.to] ?? spec.to;
     if (fromRef === toRef) throw new Error(`Connector "${spec.name ?? 'connector'}" cannot loop onto itself.`);
-    node.connectorStart = await endpointFor(fromRef, 'from');
-    node.connectorEnd = await endpointFor(toRef, 'to');
+    // Straight connectors only accept CENTER/NONE magnets (Figma restriction).
+    const magnet = node.connectorLineType === 'STRAIGHT' ? 'CENTER' : 'AUTO';
+    node.connectorStart = await endpointFor(fromRef, 'from', magnet);
+    node.connectorEnd = await endpointFor(toRef, 'to', magnet);
   }
   state.deferred = [];
 }

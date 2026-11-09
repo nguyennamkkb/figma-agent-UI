@@ -145,8 +145,10 @@ async function applyText(node: TextNode, p: AnyProps, ctx: ApplyCtx, isNew: bool
 // shares TextNode's font-loading requirement but is not a TextNode, so
 // applyText cannot handle it.
 export async function setSublayerText(sublayer: TextSublayerNode, text: string, ctx: ApplyCtx): Promise<void> {
-  const fn = sublayer.fontName;
-  if (fn === figma.mixed) await loadFont(await resolveFont(ctx.defaultFont, 'Regular'));
+  // Fresh FigJam nodes (notably connectors) can carry an empty fontName
+  // instead of a real font — fall back to the default font in that case.
+  const fn = sublayer.fontName as FontName | typeof figma.mixed | null | undefined;
+  if (fn === figma.mixed || !fn || !fn.family) await loadFont(await resolveFont(ctx.defaultFont, 'Regular'));
   else await loadFont(fn);
   sublayer.characters = text;
 }
@@ -162,15 +164,17 @@ async function applyFigjamText(node: SceneNode, text: string, ctx: ApplyCtx): Pr
 }
 
 async function rewireConnector(node: ConnectorNode, p: AnyProps): Promise<void> {
-  if (p.from !== undefined) node.connectorStart = await endpointFor(p.from, 'from');
-  if (p.to !== undefined) node.connectorEnd = await endpointFor(p.to, 'to');
+  // Straight connectors only accept CENTER/NONE magnets (Figma restriction).
+  const magnet = node.connectorLineType === 'STRAIGHT' ? 'CENTER' : 'AUTO';
+  if (p.from !== undefined) node.connectorStart = await endpointFor(p.from, 'from', magnet);
+  if (p.to !== undefined) node.connectorEnd = await endpointFor(p.to, 'to', magnet);
 }
 
-export async function endpointFor(ref: string, side: 'from' | 'to'): Promise<ConnectorEndpoint> {
+export async function endpointFor(ref: string, side: 'from' | 'to', magnet: 'AUTO' | 'CENTER' = 'AUTO'): Promise<ConnectorEndpoint> {
   const target = await findNode(ref);
   if (!target) throw new Error(`Connector "${side}" target not found: ${ref}.`);
   if (target.type === 'DOCUMENT' || target.type === 'PAGE') throw new Error(`Connector "${side}" cannot attach to a ${target.type}.`);
-  return { endpointNodeId: target.id, magnet: 'AUTO' };
+  return { endpointNodeId: target.id, magnet };
 }
 
 // Variables and shared styles are Design-only. In FigJam a {var}/{style}
