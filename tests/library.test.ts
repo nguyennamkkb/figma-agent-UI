@@ -1,5 +1,3 @@
-// Library (remote) assets through Resources: variables, styles and components
-// referenced by name, id or published key, against a fake `figma` global.
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { remoteInUse } from '../src/plugin/library';
 import { Resources } from '../src/plugin/resources';

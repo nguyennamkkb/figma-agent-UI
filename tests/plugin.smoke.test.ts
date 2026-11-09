@@ -1,6 +1,3 @@
-// Loads the built code.js in a VM with a minimal fake `figma` global to check
-// the bundle evaluates and the dispatcher answers requests. Real rendering is
-// verified manually in Figma (see TESTING.md).
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import vm from 'node:vm';

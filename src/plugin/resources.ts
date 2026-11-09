@@ -1,5 +1,3 @@
-// Name-based lookups for design-system assets. One instance lives for the
-// duration of a single command so repeated references hit a cache.
 
 import { enabledLibraryVariables, errorText, isPrivateName, KEY_RE, remoteInUse } from './library';
 import type { LibraryVariableRef, RemoteInUse } from './library';
@@ -34,7 +32,6 @@ export class Resources {
         throw new Error(`No published library variable with key "${ref}": ${errorText(e)}`);
       }
     }
-    // Library variables: the ones bound on the page, then enabled libraries.
     const used = (await this.inUse()).variables.find((x) => x.name === ref);
     if (used) return used;
     const libs = await this.libraryVariables();
@@ -65,9 +62,6 @@ export class Resources {
     ]);
     const byId = new Map(collections.map((c) => [c.id, c.name]));
     const map = new Map<string, Variable>();
-    // A bare name shared by Primitives and Semantic ("space/9") must bind the
-    // Semantic one: layers never bind primitives, and Primitives is usually
-    // created first. "Collection/name" still reaches either.
     const isPrimitive = (v: Variable) => /primitive/i.test(byId.get(v.variableCollectionId) ?? '');
     for (const v of vars) {
       map.set(`${byId.get(v.variableCollectionId)}/${v.name}`, v);
@@ -109,8 +103,6 @@ export class Resources {
     return this.style(await this.gridStyles, ref, 'GRID');
   }
 
-  // Local name or id, then a library style: its id ("S:..."), published key,
-  // or the name of one already used on the page.
   private async style<T extends BaseStyle>(local: T[], ref: string, type: StyleType): Promise<T> {
     const kind = type.toLowerCase();
     const hit = local.find((x) => x.name === ref || x.id === ref);
@@ -134,8 +126,6 @@ export class Resources {
     );
   }
 
-  // id ("12:34"), published key (hex string), local name, or the name of a
-  // library component already used on the page.
   component(ref: string): Promise<ComponentNode | ComponentSetNode> {
     let p = this.components.get(ref);
     if (!p) {
@@ -170,8 +160,6 @@ export class Resources {
     );
   }
 
-  // A key names either a component (a variant counts) or a component set;
-  // try both and keep the first error, which is the informative one.
   private async importComponent(key: string): Promise<ComponentNode | ComponentSetNode> {
     let first: unknown;
     try {
@@ -181,8 +169,8 @@ export class Resources {
     }
     try {
       return await figma.importComponentSetByKeyAsync(key);
+    // eslint-disable-next-line no-empty
     } catch {
-      // Report the component error below.
     }
     const owner = (await this.inUse()).components.find(
       (c) => c.key === key || (c.type === 'COMPONENT_SET' && c.children.some((v) => (v as ComponentNode).key === key)),
@@ -205,8 +193,6 @@ export class Resources {
 }
 
 function pickByName<T extends ComponentNode | ComponentSetNode>(nodes: T[], name: string): T | undefined {
-  // Variants inside a set are named "Size=Large, State=Default"; prefer sets
-  // and standalone components over individual variants.
   return (
     nodes.find((n) => n.name === name && (n.type === 'COMPONENT_SET' || n.parent?.type !== 'COMPONENT_SET')) ??
     nodes.find((n) => n.name === name)

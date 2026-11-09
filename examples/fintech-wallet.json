@@ -1,0 +1,113 @@
+{
+  "type": "frame",
+  "name": "Vi dien tu",
+  "layout": "VERTICAL",
+  "gap": 24,
+  "padding": 32,
+  "fill": "#F8FAFC",
+  "width": 420,
+  "children": [
+    {
+      "type": "text",
+      "name": "tieu-de",
+      "text": "Ví của tôi",
+      "fontSize": 28
+    },
+    {
+      "type": "frame",
+      "name": "the-so-du",
+      "layout": "VERTICAL",
+      "gap": 8,
+      "padding": 24,
+      "fill": "#0F172A",
+      "radius": 16,
+      "children": [
+        {
+          "type": "text",
+          "name": "nhan-so-du",
+          "text": "Số dư khả dụng",
+          "fontSize": 16,
+          "color": "#94A3B8"
+        },
+        {
+          "type": "text",
+          "name": "so-du",
+          "text": "12.450.000đ",
+          "fontSize": 40,
+          "color": "#FFFFFF"
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "name": "hang-nut",
+      "layout": "HORIZONTAL",
+      "gap": 16,
+      "children": [
+        {
+          "type": "frame",
+          "name": "nut-nap",
+          "layout": "HORIZONTAL",
+          "padding": 16,
+          "fill": "#22D3EE",
+          "radius": 12,
+          "children": [
+            {
+              "type": "text",
+              "name": "nhan-nap",
+              "text": "Nạp tiền",
+              "fontSize": 20,
+              "color": "#0F172A"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "name": "nut-chuyen",
+          "layout": "HORIZONTAL",
+          "padding": 16,
+          "fill": "#E2E8F0",
+          "radius": 12,
+          "children": [
+            {
+              "type": "text",
+              "name": "nhan-chuyen",
+              "text": "Chuyển khoản",
+              "fontSize": 20
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "text",
+      "name": "tieu-de-lich-su",
+      "text": "Giao dịch gần đây",
+      "fontSize": 20
+    },
+    {
+      "type": "frame",
+      "name": "giao-dich-1",
+      "layout": "HORIZONTAL",
+      "gap": 12,
+      "padding": 16,
+      "fill": "#FFFFFF",
+      "radius": 12,
+      "children": [
+        {
+          "type": "text",
+          "name": "mo-ta-1",
+          "text": "Nhận lương tháng 11",
+          "fontSize": 18
+        },
+        {
+          "type": "text",
+          "name": "so-tien-1",
+          "text": "+15.000.000đ",
+          "fontSize": 18,
+          "color": "#16A34A"
+        }
+      ]
+    }
+  ]
+}
