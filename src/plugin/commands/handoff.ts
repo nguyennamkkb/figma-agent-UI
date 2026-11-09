@@ -7,6 +7,7 @@ const ANNOTATION_PROPS: readonly AnnotationPropertyType[] = ['width', 'height', 
 
 export async function annotate(p: AnnotateInput) {
   const categories = p.items.some((i) => i.category) ? await figma.annotations.getAnnotationCategoriesAsync() : [];
+  const done: { id: string; annotations: number }[] = [];
   for (const item of p.items) {
     const node = await getSceneNode(item.id);
     if (!('annotations' in node)) throw new Error(`${node.type} ${node.id} không nhận annotation`);

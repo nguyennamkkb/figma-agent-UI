@@ -424,7 +424,7 @@ tool('find_nodes', {
 
 tool('get_design_system', {
   description:
-    'Local variables (with modes and values), paint/text/effect styles, local components with their properties, library components already used on the page, and optionally library variable collections. Check this before building so you reuse tokens and components.',
+    'Local variables (with modes and values), paint/text/effect styles, local components with their properties; library components, variables and styles already used on the page (names and keys to reuse; private library components are flagged); optionally the variable collections of enabled libraries. Check this before building so you reuse tokens and components.',
   input: S.DesignSystemInput,
   readOnly: true,
   timeoutMs: () => 120000,
@@ -522,7 +522,7 @@ Safety: never deletes the last page, refuses name collisions, reports unknown pa
 
 tool('search_design_system', {
   description: `Ranked search over local components (with their properties), variables (collection, value, primitive or not) and paint/text/effect/grid styles — figma-ui-flow rule #3 "search before you create". Call it before creating any component, token or style.
-includeLibraries also searches variables of enabled team libraries (library components cannot be listed by the Plugin API).`,
+includeLibraries also searches the library components, variables and styles used on the current page and the variables of enabled libraries (the Plugin API cannot list a library's other components).`,
   input: S.SearchDesignSystemInput,
   readOnly: true,
   noPage: true,

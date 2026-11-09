@@ -7,7 +7,7 @@ import { z } from 'zod';
 export const VarRef = z.strictObject({
   var: z
     .string()
-    .describe('Local variable name ("color/primary"), "Collection/name", or a "VariableID:..." id'),
+    .describe('Variable name ("color/primary", local or a library variable used on the page), "Collection/name", a "VariableID:..." id, or a library variable key'),
 });
 export const NumOrVar = z.union([z.number(), VarRef]);
 
@@ -17,7 +17,7 @@ const ScaleMode = z.enum(['FILL', 'FIT', 'CROP', 'TILE']);
 export const PaintInput = z.union([
   ColorString,
   VarRef,
-  z.strictObject({ style: z.string().describe('Local paint style name') }),
+  z.strictObject({ style: z.string().describe('Paint style name (local or library used on the page), style id, or library style key') }),
   z.strictObject({
     gradient: z.enum(['LINEAR', 'RADIAL', 'ANGULAR', 'DIAMOND']),
     angle: z.number().optional().describe('CSS degrees for LINEAR; default 180 (top → bottom)'),
@@ -50,7 +50,7 @@ export const Shadow = z.strictObject({
 });
 export const Effects = z.union([
   z.enum(['none', 'sm', 'md', 'lg', 'xl']).describe('Shadow preset (Tailwind-like)'),
-  z.strictObject({ style: z.string().describe('Local effect style name') }),
+  z.strictObject({ style: z.string().describe('Effect style name (local or library used on the page), style id, or library style key') }),
   z.array(
     z.union([
       Shadow,
@@ -72,7 +72,7 @@ export const GridSpec = z.strictObject({
   visible: z.boolean().optional(),
 });
 export const LayoutGrids = z.union([
-  z.strictObject({ style: z.string().describe('Local grid style name') }),
+  z.strictObject({ style: z.string().describe('Grid style name (local or library used on the page), style id, or library style key') }),
   z.strictObject({ preset: z.enum(['mobile', 'tablet', 'desktop', 'baseline']).describe('file-standards §4 presets') }),
   z.array(GridSpec),
 ]);
@@ -136,11 +136,11 @@ const textProps = {
   textCase: z.enum(['ORIGINAL', 'UPPER', 'LOWER', 'TITLE']).optional(),
   decoration: z.enum(['NONE', 'UNDERLINE', 'STRIKETHROUGH']).optional(),
   maxLines: z.number().int().positive().optional().describe('Truncate with ellipsis'),
-  textStyle: z.string().optional().describe('Local text style name'),
+  textStyle: z.string().optional().describe('Text style name (local or library used on the page), style id, or library style key'),
 };
 
 const instanceProps = {
-  component: z.string().describe('Component or component set: node id, published key, or local name'),
+  component: z.string().describe('Component or component set: node id, published key, local name, or name of a library component used on the page'),
   variant: z.record(z.string(), z.string()).optional().describe('{ "Size": "Large" }'),
   properties: z
     .record(z.string(), z.union([z.string(), z.boolean()]))
@@ -372,7 +372,7 @@ export const SearchDesignSystemInput = z.object({
   kinds: z
     .array(z.enum(['component', 'variable', 'style']))
     .default(['component', 'variable', 'style']),
-  includeLibraries: z.boolean().default(false).describe('Also search variables of enabled team libraries'),
+  includeLibraries: z.boolean().default(false).describe('Also search library components, variables and styles used on the current page, and variables of enabled libraries'),
   limit: z.number().int().min(1).max(200).default(20),
 });
 
