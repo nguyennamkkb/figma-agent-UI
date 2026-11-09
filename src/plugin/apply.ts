@@ -4,7 +4,7 @@ import { expandSides, parseLetterSpacing, parseLineHeight, weightToStyle } from 
 import { loadFont, loadNodeFonts, resolveFont } from './fonts';
 import { resolveEffects, resolveFill } from './paints';
 import type { Resources } from './resources';
-import { isAutoLayout } from './util';
+import { findNode, isAutoLayout } from './util';
 
 export interface ApplyCtx {
   res: Resources;
@@ -30,9 +30,12 @@ export async function applyProps(node: SceneNode, p: AnyProps, ctx: ApplyCtx, is
   if (p.opacity !== undefined && 'opacity' in node) {
     await setNum(node, 'opacity', p.opacity, ctx, (n) => ((node as BlendMixin).opacity = n));
   }
+  if (figma.editorType === 'figjam') assertFigjamFill(p);
   if ('layoutMode' in node) await applyFrame(node as FrameNode, p, ctx);
   if (node.type === 'TEXT') await applyText(node, p, ctx, isNew);
+  if (p.text !== undefined) await applyFigjamText(node, p.text, ctx);
   if (node.type === 'INSTANCE') await applyInstance(node, p, ctx);
+  if ((p.from !== undefined || p.to !== undefined) && node.type === 'CONNECTOR') await rewireConnector(node, p);
 
   const fill = node.type === 'TEXT' ? (p.color ?? p.fill) : p.fill;
   if (fill !== undefined && 'fills' in node) {
@@ -138,6 +141,49 @@ async function applyText(node: TextNode, p: AnyProps, ctx: ApplyCtx, isNew: bool
   }
 }
 
+// TextSublayerNode (sticky / shape-with-text / connector / table cell text)
+// shares TextNode's font-loading requirement but is not a TextNode, so
+// applyText cannot handle it.
+export async function setSublayerText(sublayer: TextSublayerNode, text: string, ctx: ApplyCtx): Promise<void> {
+  const fn = sublayer.fontName;
+  if (fn === figma.mixed) await loadFont(await resolveFont(ctx.defaultFont, 'Regular'));
+  else await loadFont(fn);
+  sublayer.characters = text;
+}
+
+async function applyFigjamText(node: SceneNode, text: string, ctx: ApplyCtx): Promise<void> {
+  if (node.type === 'TEXT') return; // handled by applyText above
+  if (node.type === 'STICKY' || node.type === 'SHAPE_WITH_TEXT' || node.type === 'CONNECTOR') {
+    await setSublayerText(node.text, text, ctx);
+    return;
+  }
+  if (node.type === 'TABLE') throw new Error('Set table content with cells (a rows×columns matrix), not text.');
+  // Other node types keep the existing behavior: text is only for text nodes.
+}
+
+async function rewireConnector(node: ConnectorNode, p: AnyProps): Promise<void> {
+  if (p.from !== undefined) node.connectorStart = await endpointFor(p.from, 'from');
+  if (p.to !== undefined) node.connectorEnd = await endpointFor(p.to, 'to');
+}
+
+export async function endpointFor(ref: string, side: 'from' | 'to'): Promise<ConnectorEndpoint> {
+  const target = await findNode(ref);
+  if (!target) throw new Error(`Connector "${side}" target not found: ${ref}.`);
+  if (target.type === 'DOCUMENT' || target.type === 'PAGE') throw new Error(`Connector "${side}" cannot attach to a ${target.type}.`);
+  return { endpointNodeId: target.id, magnet: 'AUTO' };
+}
+
+// Variables and shared styles are Design-only. In FigJam a {var}/{style}
+// would fail deep inside the resolver with a cryptic error — reject it here.
+function assertFigjamFill(p: AnyProps): void {
+  for (const v of [p.fill, p.stroke?.color, p.color]) {
+    const items = Array.isArray(v) ? v : v === undefined ? [] : [v];
+    if (items.some((i) => typeof i === 'object' && i !== null && ('var' in i || 'style' in i))) {
+      throw new Error('Variables and styles are Design-only; use a hex color in FigJam.');
+    }
+  }
+}
+
 async function applyStroke(node: SceneNode, s: NonNullable<AnyProps['stroke']>, ctx: ApplyCtx) {
   const n = node as GeometryMixin & MinimalStrokesMixin & SceneNode;
   const r = await resolveFill(s.color, ctx.res);
@@ -158,6 +204,7 @@ async function applyStroke(node: SceneNode, s: NonNullable<AnyProps['stroke']>, 
 }
 
 async function applyRadius(node: SceneNode, radius: NonNullable<AnyProps['radius']>, ctx: ApplyCtx) {
+  if (node.type === 'SHAPE_WITH_TEXT') throw new Error('SHAPE_WITH_TEXT corner radius is fixed; omit radius.');
   if (!Array.isArray(radius)) {
     await setNum(node, 'cornerRadius', radius, ctx, (v) => ((node as CornerMixin).cornerRadius = v));
     return;

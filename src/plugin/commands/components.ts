@@ -26,10 +26,20 @@ export async function createComponentSet(p: CreateComponentSetInput) {
   try {
     for (let i = 0; i < p.variants.length; i++) {
       const tree = { ...p.variants[i].tree, component: true, name: plan.names[i] || p.name };
-      const state: BuildState = { root: null, count: 0 };
+      const state: BuildState = { root: null, count: 0, created: [], deferred: [] };
       try {
         made.push((await build(tree, parent, undefined, ctx, [], {}, state)) as ComponentNode);
+        if (state.deferred.length > 0) {
+          throw new Error('Connectors cannot live inside component variants; create the set first, then add connectors with render_tree.');
+        }
       } catch (e) {
+        for (const n of state.created) {
+          try {
+            if (!n.removed) n.remove();
+          } catch {
+            // Already gone — nothing to clean.
+          }
+        }
         if (state.root && !state.root.removed) state.root.remove();
         throw e;
       }

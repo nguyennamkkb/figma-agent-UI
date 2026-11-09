@@ -54,14 +54,29 @@ export async function findNodes(p: FindNodesInput) {
   const name = p.name?.toLowerCase();
   const text = p.text?.toLowerCase();
   const match = (n: SceneNode) =>
-    (!name || n.name.toLowerCase().includes(name)) &&
-    (!text || (n.type === 'TEXT' && n.characters.toLowerCase().includes(text)));
+    (!name || (n.name ?? '').toLowerCase().includes(name)) &&
+    (!text || (figjamText(n)?.toLowerCase().includes(text) ?? false));
   const container = root as ChildrenMixin;
   const candidates = p.types?.length
     ? container.findAllWithCriteria({ types: p.types as NodeType[] })
     : container.findAll(() => true);
   const hits = (candidates as SceneNode[]).filter(match);
   return { total: hits.length, nodes: hits.slice(0, p.limit).map(summary) };
+}
+
+// Text content for search: Design text plus FigJam sublayer text. Some
+// FigJam nodes (TABLE_CELL) have no name, so callers must not assume one.
+function figjamText(n: SceneNode): string | null {
+  if (n.type === 'TEXT') return (n as TextNode).characters;
+  if (n.type === 'STICKY' || n.type === 'SHAPE_WITH_TEXT' || n.type === 'CONNECTOR') {
+    return (n as StickyNode).text.characters;
+  }
+  // TABLE_CELL is not in the SceneNode union of this typings version, but
+  // table children arrive with that type at runtime.
+  if ((n as { type: string }).type === 'TABLE_CELL') {
+    return (n as unknown as StickyNode).text.characters;
+  }
+  return null;
 }
 
 // get_variable_defs equivalent: tokens actually bound inside one subtree.

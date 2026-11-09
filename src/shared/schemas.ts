@@ -175,6 +175,64 @@ export const ImageSpec = z.strictObject({
   scaleMode: ScaleMode.optional(),
 });
 export const InstanceSpec = z.strictObject({ type: z.literal('instance'), ...baseProps, ...instanceProps });
+// FigJam boards: professional whiteboard content (usage-map.md workflows 1–5).
+// Same baseProps (placement, fills, effects) as Design nodes so the build,
+// rollback, undo and ids-map pipeline behaves identically.
+const FigjamShape = z.enum([
+  'SQUARE', 'ELLIPSE', 'ROUNDED_RECTANGLE', 'DIAMOND', 'TRIANGLE_UP', 'TRIANGLE_DOWN',
+  'PARALLELOGRAM_RIGHT', 'PARALLELOGRAM_LEFT', 'TRAPEZOID', 'PREDEFINED_PROCESS',
+  'SHIELD', 'DOCUMENT_SINGLE', 'DOCUMENT_MULTIPLE', 'MANUAL_INPUT', 'HEXAGON',
+  'CHEVRON', 'PENTAGON', 'OCTAGON', 'STAR', 'PLUS', 'ARROW_LEFT', 'ARROW_RIGHT',
+  'SUMMING_JUNCTION', 'OR', 'SPEECH_BUBBLE', 'INTERNAL_STORAGE',
+  'ENG_DATABASE', 'ENG_QUEUE', 'ENG_FILE', 'ENG_FOLDER',
+]);
+const FigjamCodeLanguage = z.enum([
+  'TYPESCRIPT', 'CPP', 'RUBY', 'CSS', 'JAVASCRIPT', 'HTML', 'JSON', 'GRAPHQL',
+  'PYTHON', 'GO', 'SQL', 'SWIFT', 'KOTLIN', 'RUST', 'BASH', 'PLAINTEXT', 'DART',
+]);
+const FigjamStrokeCap = z.enum([
+  'NONE', 'ARROW_EQUILATERAL', 'ARROW_LINES', 'TRIANGLE_FILLED', 'DIAMOND_FILLED', 'CIRCLE_FILLED',
+]);
+export const StickySpec = z.strictObject({
+  type: z.literal('sticky'),
+  ...baseProps,
+  text: z.string().min(1),
+  color: Fill.optional().describe('Sticky fill (default FigJam yellow); {var} is Design-only and rejected in FigJam'),
+  isWide: z.boolean().optional().describe('Wide rectangular sticky instead of square'),
+});
+export const ShapeSpec = z.strictObject({
+  type: z.literal('shape'),
+  ...baseProps,
+  shape: FigjamShape.describe('ShapeWithText outline; DIAMOND/CHEVRON suit decisions/flows'),
+  text: z.string().optional(),
+});
+export const ConnectorSpec = z.strictObject({
+  type: z.literal('connector'),
+  ...baseProps,
+  from: z.string().describe('Node id, or a "Root/Child" ids-map key from the same render_tree call'),
+  to: z.string().describe('Node id, or a "Root/Child" ids-map key from the same render_tree call'),
+  lineType: z.enum(['ELBOWED', 'STRAIGHT', 'CURVED']).default('ELBOWED'),
+  caps: z.strictObject({ start: FigjamStrokeCap.optional(), end: FigjamStrokeCap.optional() }).optional(),
+  text: z.string().optional().describe('Label on the connector'),
+});
+export const CodeSpec = z.strictObject({
+  type: z.literal('code'),
+  ...baseProps,
+  code: z.string().min(1),
+  language: FigjamCodeLanguage.default('PLAINTEXT'),
+});
+export const TableSpec = z.strictObject({
+  type: z.literal('table'),
+  ...baseProps,
+  rows: z.number().int().min(1),
+  columns: z.number().int().min(1),
+  cells: z.array(z.array(z.string())).optional().describe('Row-major cell text; must be exactly rows×columns'),
+});
+export type StickySpec = z.infer<typeof StickySpec>;
+export type ShapeSpec = z.infer<typeof ShapeSpec>;
+export type ConnectorSpec = z.infer<typeof ConnectorSpec>;
+export type CodeSpec = z.infer<typeof CodeSpec>;
+export type TableSpec = z.infer<typeof TableSpec>;
 // Sections group screens of one flow (file-standards.md §5). Only valid on a
 // page or inside another section; children without x/y flow left → right.
 const SectionBase = z.strictObject({
@@ -203,7 +261,12 @@ export type TreeNode =
   | SvgSpec
   | ImageSpec
   | InstanceSpec
-  | SectionSpec;
+  | SectionSpec
+  | z.infer<typeof StickySpec>
+  | z.infer<typeof ShapeSpec>
+  | z.infer<typeof ConnectorSpec>
+  | z.infer<typeof CodeSpec>
+  | z.infer<typeof TableSpec>;
 
 // Recursive: declared through z.lazy with an explicit type to break the cycle.
 export const TreeNode: z.ZodType<TreeNode> = z.lazy(() => TreeNodeUnion);
@@ -218,6 +281,11 @@ const TreeNodeUnion = z.discriminatedUnion('type', [
   SvgSpec,
   ImageSpec,
   InstanceSpec,
+  StickySpec,
+  ShapeSpec,
+  ConnectorSpec,
+  CodeSpec,
+  TableSpec,
 ]);
 
 export type PaintInput = z.infer<typeof PaintInput>;
@@ -233,6 +301,17 @@ export const UpdateProps = z.strictObject({
   ...instanceProps,
   component: z.string().optional().describe('Instances only: swap to this component'),
   description: z.string().optional(),
+  // FigJam patches: text routes to the sublayer path, from/to rewire connectors.
+  shape: FigjamShape.optional(),
+  from: z.string().optional(),
+  to: z.string().optional(),
+  lineType: z.enum(['ELBOWED', 'STRAIGHT', 'CURVED']).optional(),
+  code: z.string().optional(),
+  language: FigjamCodeLanguage.optional(),
+  rows: z.number().int().min(1).optional(),
+  columns: z.number().int().min(1).optional(),
+  cells: z.array(z.array(z.string())).optional(),
+  isWide: z.boolean().optional(),
 });
 export type UpdateProps = z.infer<typeof UpdateProps>;
 
@@ -243,6 +322,7 @@ export type AnyProps = Partial<UpdateProps> & {
   src?: string;
   imageBase64?: string;
   scaleMode?: z.infer<typeof ScaleMode>;
+  caps?: { start?: z.infer<typeof FigjamStrokeCap>; end?: z.infer<typeof FigjamStrokeCap> };
   children?: TreeNode[];
 };
 

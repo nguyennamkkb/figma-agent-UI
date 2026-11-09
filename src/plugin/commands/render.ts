@@ -1,6 +1,6 @@
-import type { AnyProps, RenderTreeInput, SectionSpec, TreeNode } from '../../shared/schemas';
+import type { AnyProps, ConnectorSpec, RenderTreeInput, SectionSpec, TreeNode } from '../../shared/schemas';
 import { parseColor } from '../../shared/values';
-import { applyPlacement, applyProps, type ApplyCtx } from '../apply';
+import { applyPlacement, applyProps, endpointFor, setSublayerText, type ApplyCtx } from '../apply';
 import { resolveFill } from '../paints';
 import { Resources } from '../resources';
 import { iconWarnings } from '../icons';
@@ -10,13 +10,14 @@ export async function renderTree(p: RenderTreeInput) {
   const ctx: ApplyCtx = { res: new Resources(), defaultFont: p.defaultFont ?? 'Inter' };
   const parent = p.parentId ? await getContainer(p.parentId) : figma.currentPage;
   const ids: Record<string, string> = {};
-  const state: BuildState = { root: null, count: 0 };
+  const state: BuildState = { root: null, count: 0, created: [], deferred: [] };
 
   const onPage = parent.type === 'PAGE' && p.tree.x === undefined && p.tree.y === undefined;
   const spot = onPage ? freeSpot((parent as PageNode).children) : null;
 
   try {
     const root = await build(p.tree, parent, p.index, ctx, [], ids, state);
+    await wireConnectors(state, ids);
     if (spot) {
       root.x = spot.x;
       root.y = spot.y;
@@ -36,6 +37,16 @@ export async function renderTree(p: RenderTreeInput) {
       ...(warnings.length ? { warnings } : {}),
     };
   } catch (e) {
+    // Created nodes auto-parent to the page before we move them into the
+    // tree, so removing only the root can strand a node whose applyProps
+    // threw before its appendChild. Remove every node this call created.
+    for (const n of state.created) {
+      try {
+        if (!n.removed) n.remove();
+      } catch {
+        // Already gone — nothing to clean.
+      }
+    }
     if (state.root && !state.root.removed) state.root.remove();
     throw new RolledBackError(`${e instanceof Error ? e.message : String(e)} (nothing was left on the canvas)`);
   }
@@ -44,6 +55,26 @@ export async function renderTree(p: RenderTreeInput) {
 export interface BuildState {
   root: SceneNode | null;
   count: number;
+  /** Every node this call created, for airtight rollback (see catch). */
+  created: SceneNode[];
+  // Connectors are created in pass 1 (so earlier ids-map keys exist for
+  // later nodes) but wired in pass 2, when every endpoint exists.
+  deferred: { node: ConnectorNode; spec: ConnectorSpec }[];
+}
+
+// Resolves from/to against ids-map keys from the same call first, literal
+// node ids second. Any failure rolls back the whole call via the caller.
+// Exported for tests; renderTree is the only production caller (component
+// variants reject connectors outright).
+export async function wireConnectors(state: BuildState, ids: Record<string, string>) {
+  for (const { node, spec } of state.deferred) {
+    const fromRef = ids[spec.from] ?? spec.from;
+    const toRef = ids[spec.to] ?? spec.to;
+    if (fromRef === toRef) throw new Error(`Connector "${spec.name ?? 'connector'}" cannot loop onto itself.`);
+    node.connectorStart = await endpointFor(fromRef, 'from');
+    node.connectorEnd = await endpointFor(toRef, 'to');
+  }
+  state.deferred = [];
 }
 
 // Builds one spec subtree under `parent`. Exported for create_component_set,
@@ -66,10 +97,16 @@ export async function build(
     const node = await create(spec, ctx, props);
     if (!state.root) state.root = node;
     state.count++;
+    state.created.push(node);
 
     await applyProps(node, props, ctx, true);
     if (index !== undefined) parent.insertChild(Math.min(index, parent.children.length), node);
     else parent.appendChild(node);
+    if (node.type === 'CONNECTOR') {
+      // Endpoints are wired in pass 2 (wireConnectors); from/to were
+      // already consumed in create() above.
+      state.deferred.push({ node, spec: spec as ConnectorSpec });
+    }
     applyPlacement(node, props, true);
 
     if (spec.type === 'frame' && spec.children?.length) {
@@ -198,6 +235,67 @@ async function create(spec: Exclude<TreeNode, SectionSpec>, ctx: ApplyCtx, props
       // The component ref is consumed here; applyProps would treat it as a swap.
       delete props.component;
       return inst;
+    }
+    case 'sticky': {
+      const node = figma.createSticky();
+      if (props.isWide !== undefined) node.isWideWidth = props.isWide;
+      delete props.isWide;
+      return node;
+    }
+    case 'shape': {
+      const node = figma.createShapeWithText();
+      node.shapeType = spec.shape;
+      delete props.shape;
+      return node;
+    }
+    case 'connector': {
+      // Endpoints are wired in pass 2 (wireConnectors), once every target
+      // of the same call exists. Until then the connector floats unattached.
+      // from/to are consumed here (like component) so applyProps does not
+      // try to resolve same-call ids-map keys too early.
+      const node = figma.createConnector();
+      if (props.lineType !== undefined) node.connectorLineType = props.lineType;
+      if (props.caps?.start) node.connectorStartStrokeCap = props.caps.start;
+      if (props.caps?.end) node.connectorEndStrokeCap = props.caps.end;
+      delete props.lineType;
+      delete props.caps;
+      delete props.from;
+      delete props.to;
+      return node;
+    }
+    case 'code': {
+      const node = figma.createCodeBlock();
+      node.code = spec.code;
+      if (props.language !== undefined) node.codeLanguage = props.language;
+      delete props.code;
+      delete props.language;
+      return node;
+    }
+    case 'table': {
+      const rows = props.rows;
+      const columns = props.columns;
+      if (!Number.isInteger(rows) || (rows as number) < 1 || !Number.isInteger(columns) || (columns as number) < 1) {
+        throw new Error(`table needs rows and columns ≥ 1 (got ${String(rows)}×${String(columns)}).`);
+      }
+      if ((rows as number) * (columns as number) > 400) {
+        throw new Error(`table is capped at 400 cells (got ${(rows as number) * (columns as number)}).`);
+      }
+      const node = figma.createTable(rows as number, columns as number);
+      const cells = props.cells;
+      if (cells !== undefined) {
+        if (cells.length !== rows || cells.some((r) => r.length !== columns)) {
+          throw new Error(`cells must be exactly ${String(rows)}×${String(columns)}.`);
+        }
+        for (let r = 0; r < (rows as number); r++) {
+          for (let c = 0; c < (columns as number); c++) {
+            await setSublayerText(node.cellAt(r, c).text, cells[r][c], ctx);
+          }
+        }
+      }
+      delete props.rows;
+      delete props.columns;
+      delete props.cells;
+      return node;
     }
   }
 }

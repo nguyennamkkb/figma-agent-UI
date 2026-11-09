@@ -458,6 +458,7 @@ tool('render_tree', {
   description: `Create a layout from a nested JSON tree (frames with auto layout, text, rect, ellipse, svg icons, images, component instances, sections).
 Build screens level by level: first the screen frame with empty named regions, then one render_tree{parentId: <region id>} per region, checking each with screenshot before the next.
 Rules: one wrapper frame per call; use layout HORIZONTAL/VERTICAL with gap/padding instead of x/y; widthMode FILL needs an auto-layout parent; text wraps when it has a width or widthMode FILL; colors are hex or {var:"name"} to bind variables; text styles/paint styles/effect styles by name.
+In FigJam files the same call builds boards with FigJam types: sticky {text, color, isWide}, shape {shape, text}, connector {from, to (node ids or same-call "Root/Child" keys), lineType, caps}, code {code, language}, table {rows, columns, cells}; variables/styles are Design-only and rejected there.
 Images (src / {image}) may be URLs or local paths: the server downloads them. If anything fails, the partial result is removed.
 Returns rootId and an ids map "Root/Child/Grandchild" → node id.`,
   input: S.RenderTreeInput,
@@ -467,7 +468,7 @@ Returns rootId and an ids map "Root/Child/Grandchild" → node id.`,
 
 tool('update_nodes', {
   description:
-    'Patch properties of existing nodes in a batch, using the same properties as render_tree (text, fonts, fills, stroke, radius, effects, layout, padding, gap, sizing, variables, instance variant/properties/texts, component swap). Returns updated and failed ids.',
+    'Patch properties of existing nodes in a batch, using the same properties as render_tree (text, fonts, fills, stroke, radius, effects, layout, padding, gap, sizing, variables, instance variant/properties/texts, component swap). On FigJam boards text edits sticky/shape/connector sublayers, cells rewrites table content, and from/to rewires connectors. Returns updated and failed ids.',
   input: S.UpdateNodesInput,
   timeoutMs: () => 60000,
   prepare: (args) => inlineImages(args),

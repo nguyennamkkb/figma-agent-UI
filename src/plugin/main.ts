@@ -2,6 +2,7 @@
 // it. Commands run one at a time so concurrent requests never interleave.
 import type { ClientInfo, NoticeMessage, RequestMessage, ResponseMessage } from '../shared/protocol';
 import { PROTOCOL_VERSION } from '../shared/protocol';
+import { DESIGN_ONLY_TOOLS, designOnlyError } from '../shared/figjam';
 import { executeCode } from './commands/execute';
 import { auditDesign } from './commands/audit';
 import { managePages } from './commands/pages';
@@ -111,6 +112,13 @@ function clientInfo(): ClientInfo {
   };
 }
 
+// Tools that only make sense in Figma Design (prototype reactions, dev-mode
+// metadata, variables/styles libraries). Called from a FigJam board they
+// refuse with a fixed vocabulary (contracts/figjam-dsl.md §3, defined in
+// shared/figjam.ts) instead of failing on missing editor APIs. Everything
+// else is editor-agnostic.
+const DESIGN_ONLY = new Set(DESIGN_ONLY_TOOLS);
+
 let queue: Promise<unknown> = Promise.resolve();
 // Number of requests accepted but not finished yet; >0 means the next
 // request has to wait for the running one.
@@ -120,6 +128,9 @@ async function run(req: RequestMessage): Promise<ResponseMessage> {
   const cmd = commands[req.command];
   if (!cmd) {
     return { type: 'response', id: req.id, ok: false, error: `Unknown command "${req.command}".`, safeToRetryWithoutCanvasRead: true };
+  }
+  if (DESIGN_ONLY.has(req.command) && figma.editorType === 'figjam') {
+    return { type: 'response', id: req.id, ok: false, error: designOnlyError(req.command), safeToRetryWithoutCanvasRead: true };
   }
   // `page` scopes the command to one page regardless of which page another
   // agent switched to (the current page is file-global state). We switch,

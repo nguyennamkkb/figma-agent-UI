@@ -44,7 +44,7 @@ Cổng **không còn cố định**. Server dò port trống trong dải 3055–
 |---|---|
 | Kết nối | `figma_status` (kèm `versionCheck`: cảnh báo khi plugin trong Figma khác bản build của server; token được **mask**, thêm `includeToken: true` để lấy đầy đủ), `figma_doctor` (chẩn đoán 1 lệnh: port, token, plugin, version, capability, manifest — mỗi lỗi kèm cách sửa) |
 | Đọc | `get_document_info`, `set_current_page`, `get_selection`, `get_node`, `find_nodes`, `get_design_system` (`usedIn`: token đang bind trong một node), `list_fonts`, `search_design_system` |
-| Tạo | `render_tree`: dựng cả màn hình từ cây JSON (section/frame/auto layout/layout grid, text, rect, ellipse, svg, image, instance) |
+| Tạo | `render_tree`: dựng cả màn hình từ cây JSON (section/frame/auto layout/layout grid, text, rect, ellipse, svg, image, instance). Trên board FigJam dựng bằng FigJam types: `sticky`, `shape`, `connector` (from/to là id hoặc key cùng lệnh), `code`, `table` |
 | Sửa | `update_nodes`, `delete_nodes`, `move_nodes`, `clone_node`, `select_nodes` |
 | Design system | `manage_pages`, `create_variables`, `import_tokens` (DTCG, lint giống `check_tokens.py`), `create_styles`, `render_foundations`, `create_component_set` |
 | Prototype | `set_interactions` (Smart Animate, motion token, interactive component, flow start) |
@@ -58,6 +58,8 @@ Mọi tool nhận `page` (id/tên) để chạy trên page đó rồi trả page
 **Phiên bản:** mỗi lần nâng cấp plugin thì tăng `version` trong `package.json`. `npm run build` gắn version + commit vào cả plugin và server. Bảng plugin hiện `Plugin <version> (<commit>)`, còn `figma_status` báo ⚠️ khi plugin đang mở là bản cũ: đóng và mở lại plugin trong Figma. Server cũng **tự nhận diện lệnh thiếu**: plugin báo danh sách lệnh nó hỗ trợ, nên gọi tool chưa có sẽ ra thông báo *"plugin là bản cũ, thiếu lệnh X"* thay vì "Unknown command".
 
 **Panel plugin (300×300):** panel mặc định nhỏ gọn 300×300. Menu `⋯` gộp mọi thứ: đổi kích thước (S 240×240 · M 300×300 · L 420×560), thu phóng 80–150%, chọn file đích cho agent, developer mode, và chi tiết kết nối (port, user, phiên bản, file key, số lệnh). Nhật ký lệnh ở giữa panel, có lọc / xoá / sao chép / mở rộng JSON. Mọi thành phần nằm trong luồng — không có gì chồng lên nhau.
+
+**FigJam:** plugin chạy trong cả FigJam (`editorType` gồm `figma`, `figjam`; sửa manifest ⇒ import lại plugin). Trên board FigJam, `render_tree`/`update_nodes` dùng FigJam types (`sticky`, `shape`, `connector`, `code`, `table`); các tool Design-only (prototype, dev-mode, variables/styles) từ chối với message rõ ràng. Chi tiết: `specs/001-figjam-integration/` + mục J trong `TESTING.md`.
 
 Agent có 2 skill (Claude Code tự nạp): `.claude/skills/figma-agent-tools/` là sổ tay mọi tool MCP (tham số, kết quả, lỗi, công thức `execute_code`, ảnh gemini); `.claude/skills/figma-ui-flow/` là luồng và kiến thức tạo UI: 11 luật, 8 giai đoạn có gate, và vòng dựng màn từ ngoài vào trong theo 3 lượt (`references/build-loop.md`: bố cục với block giữ chỗ có kích thước → lấp đầy bằng component và nội dung → chốt bằng audit/stress; kiểm tra số liệu sau mỗi lần ghi, chụp màn hình một lần mỗi lượt; 3 chế độ Phác nhanh / Theo mẫu / Dựng mới; đạt Definition of Done mới sang màn khác). Ví dụ DSL: `examples/fintech-wallet.json` (dán vào ô *Test render_tree locally* trong plugin để thử không cần agent).
 
