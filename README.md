@@ -100,6 +100,7 @@ Biến môi trường: `FIGMA_AGENT_TOKEN` (cố định token), `FIGMA_AGENT_PO
 | `figma_status` cảnh báo lệch version | Plugin trong Figma là bản cũ: chạy lại `install` (hoặc `npm run build`), đóng rồi mở lại plugin |
 | Token bị từ chối | Token trong plugin khác `~/.figma-agent/token`: dán lại token mới, hoặc xoá file token rồi khởi động lại client |
 | `npx` lỗi 404 / đòi đăng nhập | Máy chưa có quyền truy cập repo GitHub hoặc thiếu git |
+| `npx` chạy xong không in gì (exit 128) | Git không lấy được repo: chưa có quyền vào repo private hoặc sai tag. Kiểm tra bằng `git ls-remote https://github.com/nguyennamkkb/figma-agent-UI` |
 | Client không thấy tool `figma-agent` | Khởi động lại client; kiểm tra bằng `claude mcp get figma-agent` hoặc `opencode mcp list` |
 | Plugin bị treo sau `execute_code` | Vòng lặp vô hạn làm chết sandbox: đóng và mở lại plugin (server không cần khởi động lại) |
 
