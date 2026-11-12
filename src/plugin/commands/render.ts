@@ -135,14 +135,20 @@ export async function build(
 
 class PathError extends Error {}
 
+const BAR_CONSTRAINTS: Record<string, Constraints> = {
+  'overlay/home-indicator': { horizontal: 'CENTER', vertical: 'MAX' },
+  'overlay/system-chrome': { horizontal: 'MAX', vertical: 'MIN' },
+  'overlay/hinge': { horizontal: 'CENTER', vertical: 'STRETCH' },
+};
+
 function pinBar(node: SceneNode): void {
   if (!('constraints' in node)) return;
-  node.constraints = node.name === 'overlay/home-indicator' ? { horizontal: 'CENTER', vertical: 'MAX' } : { horizontal: 'STRETCH', vertical: 'MIN' };
+  node.constraints = BAR_CONSTRAINTS[node.name] ?? { horizontal: 'STRETCH', vertical: 'MIN' };
 }
 
 function deviceBars(spec: TreeNode & { type: 'frame' }, frame: FrameNode): TreeNode[] {
   const inFlow = frame.layoutMode !== 'NONE';
-  return systemBarNodes(spec, { width: frame.width, height: frame.height, clip: true }).map(
+  return systemBarNodes(spec, { width: frame.width, height: frame.height, clip: true, fixedHeight: true }).map(
     (bar) => ({ ...bar, absolute: inFlow ? true : undefined }) as unknown as TreeNode,
   );
 }

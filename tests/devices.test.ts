@@ -4,8 +4,8 @@ import { toLayoutGrid } from '../src/shared/grids';
 import { TreeNode, UpdateProps } from '../src/shared/schemas';
 
 describe('device presets', () => {
-  it('has one mobile and one tablet frame', () => {
-    expect(Object.keys(DEVICES)).toEqual(['mobile', 'tablet']);
+  it('has mobile, tablet and the two duo displays', () => {
+    expect(Object.keys(DEVICES)).toEqual(['mobile', 'tablet', 'duo-outer', 'duo-inner']);
     expect(DEVICES.mobile).toMatchObject({ width: 393, height: 852, grid: 'mobile' });
     expect(DEVICES.tablet).toMatchObject({ width: 834, height: 1194, grid: 'tablet' });
   });
@@ -68,5 +68,28 @@ describe('system bars', () => {
     expect(home).toMatchObject({ x: 437, y: 823 });
     expect(systemBarNodes({ device: 'mobile', systemBars: false }, frame)).toEqual([]);
     expect(systemBarNodes({}, frame)).toEqual([]);
+  });
+});
+
+describe('duo foldable', () => {
+  it('sizes outer and inner with fixed height, radius and a right rail', () => {
+    const outer = deviceFrame({ device: 'duo-outer', orientation: 'landscape' })!;
+    expect(outer).toMatchObject({ width: 466, height: 678, radius: [0, 40, 40, 0], fixedHeight: true });
+    expect(outer.layoutGrids?.[0]).toMatchObject({ pattern: 'COLUMNS', alignment: 'MAX', size: 84 });
+    const inner = deviceFrame({ device: 'duo-inner' })!;
+    expect(inner).toMatchObject({ width: 951, height: 669, radius: 36 });
+    expect(inner.layoutGrids?.at(-1)).toMatchObject({ alignment: 'MIN', size: 27, margin: 462 });
+  });
+
+  it('adds the system rail and the hinge', () => {
+    const outer = deviceFrame({ device: 'duo-outer' })!;
+    const [chrome] = systemBarNodes({ device: 'duo-outer' }, outer);
+    expect(chrome).toMatchObject({ name: 'overlay/system-chrome', x: 382, width: 84, height: 169 });
+    expect((chrome.children as unknown[]).length).toBe(2);
+    const inner = deviceFrame({ device: 'duo-inner' })!;
+    const [hinge, innerChrome] = systemBarNodes({ device: 'duo-inner' }, inner);
+    expect(hinge).toMatchObject({ name: 'overlay/hinge', x: 462, width: 27, height: 669 });
+    expect(innerChrome).toMatchObject({ x: 867, height: 119 });
+    for (const n of [chrome, hinge, innerChrome]) expect(TreeNode.safeParse(n).success).toBe(true);
   });
 });
