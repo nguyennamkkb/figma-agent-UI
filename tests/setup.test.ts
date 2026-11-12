@@ -4,6 +4,7 @@ import {
   npxSpecFrom,
   parseArgs,
   serverCommand,
+  shortPath,
   skillTargets,
   tokenCopyHint,
   withClaudeServer,
@@ -76,6 +77,12 @@ describe('setup: paths and args', () => {
     expect(dirs).toEqual(['/h/.claude/skills', '/h/.config/opencode/skills', '/h/.agents/skills']);
   });
 
+  it('shortens paths under home', () => {
+    expect(shortPath('/Users/a/.figma-agent/plugin', '/Users/a', 'darwin')).toBe('~/.figma-agent/plugin');
+    expect(shortPath('C:\\Users\\a\\.figma-agent', 'C:\\Users\\a', 'win32')).toBe('%USERPROFILE%\\.figma-agent');
+    expect(shortPath('/opt/x', '/Users/a', 'darwin')).toBe('/opt/x');
+  });
+
   it('gives a clipboard hint per OS', () => {
     expect(tokenCopyHint('darwin')).toContain('pbcopy');
     expect(tokenCopyHint('win32')).toContain('clip');
@@ -88,6 +95,8 @@ describe('setup: paths and args', () => {
     expect([...o.clients]).toEqual(['opencode']);
     expect([...o.skillTargets]).toEqual(['claude', 'agents']);
     expect(o.dryRun).toBe(true);
+    expect(o.verbose).toBe(false);
+    expect(parseArgs(['install', '--verbose']).verbose).toBe(true);
     expect(parseArgs([]).command).toBe('help');
     expect(parseArgs(['doctor']).clients.size).toBe(2);
   });

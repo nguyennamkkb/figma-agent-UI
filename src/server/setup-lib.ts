@@ -45,7 +45,7 @@ export function skillTargets(home: string, env: NodeJS.ProcessEnv): SkillTarget[
   return [
     { id: 'claude', label: 'Claude Code', dir: join(home, '.claude', 'skills') },
     { id: 'opencode', label: 'OpenCode', dir: join(xdg, 'opencode', 'skills') },
-    { id: 'agents', label: 'Agents (universal)', dir: join(home, '.agents', 'skills') },
+    { id: 'agents', label: 'Agents', dir: join(home, '.agents', 'skills') },
   ];
 }
 
@@ -90,6 +90,11 @@ export function withoutClaudeServer(config: ClaudeConfig): ClaudeConfig {
   return { ...config, mcpServers: rest };
 }
 
+export function shortPath(path: string, home: string, platform: Platform): string {
+  if (!home || !path.startsWith(home)) return path;
+  return (platform === 'win32' ? '%USERPROFILE%' : '~') + path.slice(home.length);
+}
+
 export function tokenCopyHint(platform: Platform): string {
   if (platform === 'darwin') return 'pbcopy < ~/.figma-agent/token';
   if (platform === 'win32') return 'type %USERPROFILE%\\.figma-agent\\token | clip';
@@ -99,6 +104,7 @@ export function tokenCopyHint(platform: Platform): string {
 export type CliOptions = {
   command: 'install' | 'uninstall' | 'doctor' | 'help';
   dryRun: boolean;
+  verbose: boolean;
   skills: boolean;
   mcp: boolean;
   clients: Set<'claude' | 'opencode'>;
@@ -121,6 +127,7 @@ export function parseArgs(argv: string[]): CliOptions {
   return {
     command,
     dryRun: rest.includes('--dry-run'),
+    verbose: rest.includes('--verbose') || rest.includes('-v'),
     skills: !rest.includes('--no-skills'),
     mcp: !rest.includes('--no-mcp'),
     clients: list(value('--client'), ['claude', 'opencode'] as const),

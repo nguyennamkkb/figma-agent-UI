@@ -13,6 +13,7 @@ import {
   opencodeConfigPath,
   parseArgs,
   serverCommand,
+  shortPath,
   skillTargets,
   tokenCopyHint,
   withClaudeServer,
@@ -29,11 +30,34 @@ const platform = process.platform;
 const pluginDir = process.env.FIGMA_AGENT_PLUGIN_DIR || join(home, '.figma-agent', 'plugin');
 const tokenFile = join(home, '.figma-agent', 'token');
 const pkg = readJson<{ version: string }>(join(packageRoot, 'package.json')) ?? { version: '0.0.0' };
+const options = parseArgs(process.argv.slice(2));
+
+const color = process.stdout.isTTY && !process.env.NO_COLOR;
+const paint = (code: number) => (s: string) => (color ? `\x1b[${code}m${s}\x1b[0m` : s);
+const green = paint(32);
+const yellow = paint(33);
+const red = paint(31);
+const dim = paint(2);
+const bold = paint(1);
+
+type Status = 'ok' | 'warn' | 'fail';
+const MARK: Record<Status, string> = { ok: green('✓'), warn: yellow('!'), fail: red('✗') };
+const LABEL_WIDTH = 10;
 
 const out = (line = '') => process.stdout.write(line + '\n');
-const ok = (msg: string) => out(`  ✓ ${msg}`);
-const warn = (msg: string) => out(`  ! ${msg}`);
-const bad = (msg: string) => out(`  ✗ ${msg}`);
+const tilde = (p: string) => shortPath(p, home, platform);
+
+function row(status: Status, label: string, text: string, details: string[] = []) {
+  if (status === 'fail') process.exitCode = 1;
+  out(`  ${MARK[status]} ${label.padEnd(LABEL_WIDTH)}${text}`);
+  if (options.verbose) for (const d of details) out(`    ${' '.repeat(LABEL_WIDTH)}${dim(d)}`);
+}
+
+function header(title: string) {
+  out();
+  out(`  ${bold(`figma-agent-ui ${pkg.version}`)} ${dim(`· ${title}${options.dryRun ? ' (dry run)' : ''}`)}`);
+  out();
+}
 
 function readJson<T>(file: string): T | undefined {
   try {
@@ -43,8 +67,8 @@ function readJson<T>(file: string): T | undefined {
   }
 }
 
-function writeJsonWithBackup(file: string, data: unknown, dryRun: boolean) {
-  if (dryRun) return;
+function writeJsonWithBackup(file: string, data: unknown) {
+  if (options.dryRun) return;
   mkdirSync(dirname(file), { recursive: true });
   if (existsSync(file)) copyFileSync(file, `${file}.bak`);
   writeFileSync(file, JSON.stringify(data, null, 2) + '\n');
@@ -55,8 +79,11 @@ function run(cmd: string, args: string[]) {
 }
 
 function hasCli(cmd: string): boolean {
-  const r = run(cmd, ['--version']);
-  return r.status === 0;
+  return run(cmd, ['--version']).status === 0;
+}
+
+function firstLine(text: string): string {
+  return text.trim().split('\n')[0] ?? '';
 }
 
 function resolveServerCommand(): ServerCommand {
@@ -70,128 +97,171 @@ function resolveServerCommand(): ServerCommand {
   });
 }
 
-function installPlugin(o: CliOptions) {
+function describeCommand(cmd: ServerCommand): string {
+  const spec = cmd.args.find((a) => a.startsWith('github:'));
+  return spec ? `npx ${spec}` : `node ${tilde(cmd.args[cmd.args.length - 1] ?? '')}`;
+}
+
+function selectedTargets(o: CliOptions) {
+  return skillTargets(home, process.env).filter((t) => o.skillTargets.has(t.id));
+}
+
+function installPlugin() {
   const missing = PLUGIN_FILES.filter((f) => !existsSync(join(packageRoot, f)));
   if (missing.length > 0) {
-    bad(`missing build output: ${missing.join(', ')} (run "npm run build")`);
-    process.exitCode = 1;
+    row('fail', 'Plugin', `missing ${missing.join(', ')} — run "npm run build"`);
     return;
   }
-  if (!o.dryRun) {
+  if (!options.dryRun) {
     mkdirSync(pluginDir, { recursive: true });
     for (const f of PLUGIN_FILES) copyFileSync(join(packageRoot, f), join(pluginDir, f));
   }
-  ok(`plugin → ${pluginDir}`);
+  row('ok', 'Plugin', tilde(pluginDir));
 }
 
-function installSkills(o: CliOptions) {
-  for (const target of skillTargets(home, process.env).filter((t) => o.skillTargets.has(t.id))) {
-    const installed: string[] = [];
-    for (const name of BUNDLED_SKILLS) {
-      const src = join(packageRoot, '.claude', 'skills', name);
-      if (!existsSync(src)) continue;
-      const dest = join(target.dir, name);
-      if (!o.dryRun) {
+function installSkills() {
+  const available = BUNDLED_SKILLS.filter((name) => existsSync(join(packageRoot, '.claude', 'skills', name)));
+  if (available.length === 0) {
+    row('fail', 'Skills', 'none bundled in this package');
+    return;
+  }
+  const targets = selectedTargets(options);
+  const failed: string[] = [];
+  for (const target of targets) {
+    try {
+      if (options.dryRun) continue;
+      mkdirSync(target.dir, { recursive: true });
+      for (const name of available) {
+        const dest = join(target.dir, name);
         rmSync(dest, { recursive: true, force: true });
-        mkdirSync(target.dir, { recursive: true });
-        cpSync(src, dest, { recursive: true });
+        cpSync(join(packageRoot, '.claude', 'skills', name), dest, { recursive: true });
       }
-      installed.push(name);
+    } catch (e) {
+      failed.push(`${target.label}: ${e instanceof Error ? e.message : String(e)}`);
     }
-    if (installed.length === 0) warn(`skills: none bundled in ${join(packageRoot, '.claude', 'skills')}`);
-    else ok(`skills (${target.label}) → ${target.dir}: ${installed.join(', ')}`);
   }
+  const names = targets.map((t) => t.label).join(', ');
+  const details = [...targets.map((t) => tilde(t.dir)), available.join(', ')];
+  if (failed.length > 0) row('fail', 'Skills', failed.join('; '), details);
+  else row('ok', 'Skills', `${available.length} → ${names}`, details);
 }
 
-function uninstallSkills(o: CliOptions) {
-  for (const target of skillTargets(home, process.env).filter((t) => o.skillTargets.has(t.id))) {
-    const removed = BUNDLED_SKILLS.filter((name) => existsSync(join(target.dir, name)));
-    if (!o.dryRun) for (const name of removed) rmSync(join(target.dir, name), { recursive: true, force: true });
-    ok(`skills (${target.label}): removed ${removed.length ? removed.join(', ') : 'nothing'}`);
+function uninstallSkills() {
+  const targets = selectedTargets(options);
+  let removed = 0;
+  for (const target of targets) {
+    for (const name of BUNDLED_SKILLS) {
+      const dir = join(target.dir, name);
+      if (!existsSync(dir)) continue;
+      removed += 1;
+      if (!options.dryRun) rmSync(dir, { recursive: true, force: true });
+    }
   }
+  row('ok', 'Skills', removed ? `removed from ${targets.map((t) => t.label).join(', ')}` : 'nothing to remove');
 }
 
 function claudeConfigFile() {
   return join(home, '.claude.json');
 }
 
-function configureClaude(o: CliOptions, cmd: ServerCommand) {
+function configureClaude(cmd: ServerCommand): string | undefined {
   if (hasCli('claude')) {
-    if (!o.dryRun) {
-      run('claude', ['mcp', 'remove', SERVER_NAME, '-s', 'user']);
-      const r = run('claude', ['mcp', 'add', '-s', 'user', SERVER_NAME, '--', cmd.command, ...cmd.args]);
-      if (r.status !== 0) {
-        bad(`Claude Code: "claude mcp add" failed: ${(r.stderr || r.stdout).trim()}`);
-        process.exitCode = 1;
-        return;
-      }
-    }
-    ok(`Claude Code (user scope): ${[cmd.command, ...cmd.args].join(' ')}`);
-    return;
+    if (options.dryRun) return undefined;
+    run('claude', ['mcp', 'remove', SERVER_NAME, '-s', 'user']);
+    const r = run('claude', ['mcp', 'add', '-s', 'user', SERVER_NAME, '--', cmd.command, ...cmd.args]);
+    return r.status === 0 ? undefined : firstLine(r.stderr || r.stdout) || 'claude mcp add failed';
   }
   const file = claudeConfigFile();
-  writeJsonWithBackup(file, withClaudeServer(readJson(file) ?? {}, cmd), o.dryRun);
-  ok(`Claude Code (${file}, claude CLI not found): ${[cmd.command, ...cmd.args].join(' ')}`);
+  writeJsonWithBackup(file, withClaudeServer(readJson(file) ?? {}, cmd));
+  return undefined;
 }
 
-function unconfigureClaude(o: CliOptions) {
-  if (hasCli('claude')) {
-    if (!o.dryRun) run('claude', ['mcp', 'remove', SERVER_NAME, '-s', 'user']);
-  } else {
-    const file = claudeConfigFile();
-    const config = readJson<Record<string, unknown>>(file);
-    if (config) writeJsonWithBackup(file, withoutClaudeServer(config), o.dryRun);
-  }
-  ok(`Claude Code: removed ${SERVER_NAME}`);
-}
-
-function configureOpencode(o: CliOptions, cmd: ServerCommand) {
+function configureOpencode(cmd: ServerCommand): string | undefined {
   const file = opencodeConfigPath(home, process.env);
-  const exists = existsSync(file);
-  const config = exists ? readJson<Record<string, unknown>>(file) : {};
-  if (!config) {
-    warn(`OpenCode: cannot parse ${file} (JSONC?). Add this under "mcp":`);
-    out(JSON.stringify({ [SERVER_NAME]: { type: 'local', command: [cmd.command, ...cmd.args], enabled: true } }, null, 2));
+  const config = existsSync(file) ? readJson<Record<string, unknown>>(file) : {};
+  if (!config) return `cannot parse ${tilde(file)} — add "${SERVER_NAME}" under "mcp" by hand`;
+  writeJsonWithBackup(file, withOpencodeServer(config, cmd));
+  return undefined;
+}
+
+function configureMcp() {
+  const cmd = resolveServerCommand();
+  const done: string[] = [];
+  const errors: string[] = [];
+  const details: string[] = [];
+  if (options.clients.has('claude')) {
+    const err = configureClaude(cmd);
+    if (err) errors.push(`Claude Code: ${err}`);
+    else done.push('Claude Code');
+    details.push(`Claude Code  ${hasCli('claude') ? 'claude mcp add -s user' : tilde(claudeConfigFile())}`);
+  }
+  if (options.clients.has('opencode')) {
+    const err = configureOpencode(cmd);
+    if (err) errors.push(`OpenCode: ${err}`);
+    else done.push('OpenCode');
+    details.push(`OpenCode     ${tilde(opencodeConfigPath(home, process.env))}`);
+  }
+  details.push(`command      ${[cmd.command, ...cmd.args].join(' ')}`);
+  if (done.length > 0) row('ok', 'MCP', `${done.join(', ')} ${dim(`(${describeCommand(cmd)})`)}`, details);
+  for (const e of errors) row('fail', 'MCP', e);
+}
+
+function unconfigureMcp() {
+  const done: string[] = [];
+  if (options.clients.has('claude')) {
+    if (hasCli('claude')) {
+      if (!options.dryRun) run('claude', ['mcp', 'remove', SERVER_NAME, '-s', 'user']);
+    } else {
+      const config = readJson<Record<string, unknown>>(claudeConfigFile());
+      if (config) writeJsonWithBackup(claudeConfigFile(), withoutClaudeServer(config));
+    }
+    done.push('Claude Code');
+  }
+  if (options.clients.has('opencode')) {
+    const file = opencodeConfigPath(home, process.env);
+    const config = readJson<Record<string, unknown>>(file);
+    if (config) writeJsonWithBackup(file, withoutOpencodeServer(config));
+    done.push('OpenCode');
+  }
+  row('ok', 'MCP', `removed from ${done.join(', ')}`);
+}
+
+function nextSteps() {
+  out();
+  out(`  ${bold('Next steps')}`);
+  out(`  1. Figma → Plugins → Development → Import plugin from manifest…`);
+  out(`     ${tilde(join(pluginDir, 'manifest.json'))}`);
+  out(`  2. Restart Claude Code / OpenCode`);
+  out(`  3. Copy the token   ${tokenCopyHint(platform)}`);
+  out(`  4. Open the plugin in Figma → paste the token → Connect`);
+  out();
+  out(dim(`  Upgrade: re-run install with a newer tag, then reopen the plugin.`));
+  out();
+}
+
+function install() {
+  header('install');
+  installPlugin();
+  if (options.skills) installSkills();
+  if (options.mcp) configureMcp();
+  if (process.exitCode) {
+    out();
+    out(red('  Install finished with errors (see ✗ above).'));
+    out();
     return;
   }
-  writeJsonWithBackup(file, withOpencodeServer(config, cmd), o.dryRun);
-  ok(`OpenCode (${file}): ${[cmd.command, ...cmd.args].join(' ')}`);
+  nextSteps();
 }
 
-function unconfigureOpencode(o: CliOptions) {
-  const file = opencodeConfigPath(home, process.env);
-  const config = readJson<Record<string, unknown>>(file);
-  if (config) writeJsonWithBackup(file, withoutOpencodeServer(config), o.dryRun);
-  ok(`OpenCode: removed ${SERVER_NAME}`);
-}
-
-function install(o: CliOptions) {
-  out(`figma-agent-ui ${pkg.version} install${o.dryRun ? ' (dry run)' : ''}`);
-  installPlugin(o);
-  if (o.skills) installSkills(o);
-  if (o.mcp) {
-    const cmd = resolveServerCommand();
-    if (o.clients.has('claude')) configureClaude(o, cmd);
-    if (o.clients.has('opencode')) configureOpencode(o, cmd);
-  }
+function uninstall() {
+  header('uninstall');
+  if (options.mcp) unconfigureMcp();
+  if (options.skills) uninstallSkills();
+  if (!options.dryRun) rmSync(pluginDir, { recursive: true, force: true });
+  row('ok', 'Plugin', `removed ${tilde(pluginDir)}`);
   out();
-  out('Next steps:');
-  out(`  1. Figma desktop → Plugins → Development → Import plugin from manifest… → ${join(pluginDir, 'manifest.json')}`);
-  out('  2. Restart Claude Code / OpenCode so they start the figma-agent MCP server.');
-  out(`  3. Token (created on first server start): ${tokenFile}  —  copy: ${tokenCopyHint(platform)}`);
-  out('  4. Open the plugin in a Figma file, paste the token, Connect.');
-  out('  Upgrade: re-run install with the new tag, then close and reopen the plugin.');
-}
-
-function uninstall(o: CliOptions) {
-  out(`figma-agent-ui uninstall${o.dryRun ? ' (dry run)' : ''}`);
-  if (o.mcp) {
-    if (o.clients.has('claude')) unconfigureClaude(o);
-    if (o.clients.has('opencode')) unconfigureOpencode(o);
-  }
-  if (o.skills) uninstallSkills(o);
-  if (!o.dryRun) rmSync(pluginDir, { recursive: true, force: true });
-  ok(`plugin: removed ${pluginDir} (token kept at ${tokenFile}); remove it from Figma → Plugins → Development manually`);
+  out(dim('  Token kept. Remove the plugin in Figma → Plugins → Development by hand.'));
+  out();
 }
 
 function portInUse(port: number): Promise<boolean> {
@@ -205,64 +275,72 @@ function portInUse(port: number): Promise<boolean> {
   });
 }
 
-async function doctor(o: CliOptions) {
-  out(`figma-agent-ui ${pkg.version} doctor (${platform})`);
-  const major = Number(process.versions.node.split('.')[0]);
-  if (major >= 20) ok(`node ${process.versions.node}`);
-  else bad(`node ${process.versions.node}: need >= 20`);
-  if (hasCli('git')) ok('git found');
-  else warn('git not found: npx github:… installs will fail');
+async function doctor() {
+  header(`doctor · ${({ darwin: 'macOS', win32: 'Windows', linux: 'Linux' } as Record<string, string>)[platform] ?? platform}`);
+  const nodeOk = Number(process.versions.node.split('.')[0]) >= 20;
+  row(nodeOk ? 'ok' : 'fail', 'Node', nodeOk ? process.versions.node : `${process.versions.node} — need 20 or newer`);
+  const git = hasCli('git');
+  row(git ? 'ok' : 'warn', 'git', git ? 'found' : 'not found — npx github:… installs will fail');
 
   const pluginCode = join(pluginDir, 'code.js');
-  if (!existsSync(pluginCode)) bad(`plugin not installed at ${pluginDir} (run install)`);
-  else if (readFileSync(pluginCode, 'utf8') === readFileSync(join(packageRoot, 'code.js'), 'utf8')) ok(`plugin up to date at ${pluginDir}`);
-  else warn(`plugin at ${pluginDir} differs from this version (re-run install, then reopen the plugin)`);
+  if (!existsSync(pluginCode)) row('fail', 'Plugin', 'not installed — run install');
+  else if (readFileSync(pluginCode, 'utf8') === readFileSync(join(packageRoot, 'code.js'), 'utf8')) row('ok', 'Plugin', 'up to date', [tilde(pluginDir)]);
+  else row('warn', 'Plugin', 'older or newer than this version — re-run install, reopen the plugin', [tilde(pluginDir)]);
 
-  for (const target of skillTargets(home, process.env).filter((t) => o.skillTargets.has(t.id))) {
-    const present = BUNDLED_SKILLS.filter((n) => existsSync(join(target.dir, n, 'SKILL.md')));
-    if (present.length === BUNDLED_SKILLS.length) ok(`skills (${target.label}): all ${present.length}`);
-    else warn(`skills (${target.label}): ${present.length}/${BUNDLED_SKILLS.length} in ${target.dir}`);
-  }
+  const counts = selectedTargets(options).map((t) => ({
+    target: t,
+    present: BUNDLED_SKILLS.filter((n) => existsSync(join(t.dir, n, 'SKILL.md'))).length,
+  }));
+  const allSkills = counts.every((c) => c.present === BUNDLED_SKILLS.length);
+  row(
+    allSkills ? 'ok' : 'warn',
+    'Skills',
+    allSkills
+      ? `${BUNDLED_SKILLS.length}/${BUNDLED_SKILLS.length} in ${counts.map((c) => c.target.label).join(', ')}`
+      : counts.map((c) => `${c.target.label} ${c.present}/${BUNDLED_SKILLS.length}`).join(' · '),
+    counts.map((c) => tilde(c.target.dir)),
+  );
 
-  if (o.clients.has('claude')) {
-    if (hasCli('claude')) {
-      const r = run('claude', ['mcp', 'get', SERVER_NAME]);
-      if (r.status === 0) ok('Claude Code: figma-agent configured');
-      else warn('Claude Code: figma-agent not configured');
-    } else warn('Claude Code: claude CLI not found');
+  const configured: string[] = [];
+  const missing: string[] = [];
+  if (options.clients.has('claude')) {
+    (hasCli('claude') && run('claude', ['mcp', 'get', SERVER_NAME]).status === 0 ? configured : missing).push('Claude Code');
   }
-  if (o.clients.has('opencode')) {
+  if (options.clients.has('opencode')) {
     const config = readJson<{ mcp?: Record<string, unknown> }>(opencodeConfigPath(home, process.env));
-    if (config?.mcp?.[SERVER_NAME]) ok('OpenCode: figma-agent configured');
-    else warn('OpenCode: figma-agent not configured');
+    (config?.mcp?.[SERVER_NAME] ? configured : missing).push('OpenCode');
   }
+  if (missing.length === 0) row('ok', 'MCP', configured.join(', '));
+  else row('warn', 'MCP', `not configured: ${missing.join(', ')}${configured.length ? ` · ok: ${configured.join(', ')}` : ''}`);
 
-  if (existsSync(tokenFile)) ok(`token at ${tokenFile}`);
-  else warn('token not created yet (starts with the first server run)');
-  if (await portInUse(3055)) ok('port 3055 in use (a figma-agent hub is probably running)');
-  else warn('port 3055 free (no server running right now)');
-  if (!hasCli(platform === 'win32' ? 'python' : 'python3')) warn('python not found: figma-ui-flow token check script will be skipped');
+  row(existsSync(tokenFile) ? 'ok' : 'warn', 'Token', existsSync(tokenFile) ? tilde(tokenFile) : 'not created yet — start a client once');
+  const hub = await portInUse(3055);
+  row(hub ? 'ok' : 'warn', 'Hub', hub ? 'running on port 3055' : 'not running — start Claude Code / OpenCode');
+  if (!hasCli(platform === 'win32' ? 'python' : 'python3')) row('warn', 'Python', 'not found (optional, used by figma-ui-flow)');
+  out();
 }
 
 function help() {
-  out(`figma-agent-ui ${pkg.version}
+  out(`
+  ${bold(`figma-agent-ui ${pkg.version}`)}
 
-Usage: figma-agent-ui                      start the MCP server (stdio)
-       figma-agent-ui install   [options]  copy plugin, install skills, configure MCP clients
-       figma-agent-ui uninstall [options]  undo install (keeps the token)
-       figma-agent-ui doctor    [options]  check the setup
+  Usage
+    figma-agent-ui                       start the MCP server (stdio)
+    figma-agent-ui install   [options]   copy plugin, install skills, configure MCP clients
+    figma-agent-ui uninstall [options]   undo install (keeps the token)
+    figma-agent-ui doctor    [options]   check the setup
 
-Options:
-  --client claude,opencode     MCP clients to configure (default: all)
-  --skills-to claude,opencode,agents
-                               global skill folders (default: all)
-  --no-skills                  skip skills
-  --no-mcp                     skip MCP client config
-  --dry-run                    show what would change`);
+  Options
+    --client claude,opencode             MCP clients to configure (default: all)
+    --skills-to claude,opencode,agents   global skill folders (default: all)
+    --no-skills                          skip skills
+    --no-mcp                             skip MCP client config
+    --dry-run                            show what would change
+    --verbose                            show paths and commands
+`);
 }
 
-const options = parseArgs(process.argv.slice(2));
-if (options.command === 'install') install(options);
-else if (options.command === 'uninstall') uninstall(options);
-else if (options.command === 'doctor') await doctor(options);
+if (options.command === 'install') install();
+else if (options.command === 'uninstall') uninstall();
+else if (options.command === 'doctor') await doctor();
 else help();
