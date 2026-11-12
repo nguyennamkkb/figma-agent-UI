@@ -28,6 +28,7 @@ function section(name: string, children: TreeNode[]): TreeNode {
     layout: 'VERTICAL',
     gap: 24,
     widthMode: 'FILL',
+    clip: false,
     children: [heading(name), ...children],
   };
 }
@@ -39,6 +40,45 @@ const groupBy = <T>(items: T[], key: (t: T) => string) => {
 };
 
 const groupOf = (name: string) => name.split('/').slice(0, -1).join('/') || name;
+
+const HEX = /#[0-9A-Fa-f]{6}(?:[0-9A-Fa-f]{2})?\b/g;
+
+export function swatchInk(display: string): string {
+  const hex = display.match(HEX)?.pop();
+  if (!hex) return INK;
+  const [r, g, b] = [1, 3, 5].map((i) => {
+    const c = parseInt(hex.slice(i, i + 2), 16) / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  const bg = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  const INK_LUMINANCE = 0.0089;
+  return (bg + 0.05) / (INK_LUMINANCE + 0.05) >= 1.05 / (bg + 0.05) ? INK : '#FFFFFF';
+}
+
+function swatchChildren(v: FoundationVar): TreeNode[] {
+  const ink = swatchInk(v.display);
+  const hex = v.display.match(HEX)?.pop() ?? v.display;
+  const alias = v.display.match(/^→ [^\s(]+/)?.[0] ?? '';
+  const chip: TreeNode = {
+    type: 'frame',
+    name: 'chip',
+    layout: 'VERTICAL',
+    justify: 'SPACE_BETWEEN',
+    width: 120,
+    height: 88,
+    widthMode: 'FIXED',
+    heightMode: 'FIXED',
+    padding: 10,
+    radius: 12,
+    fill: { var: v.id },
+    stroke: { color: LINE, width: 1 },
+    children: [
+      { type: 'text', name: 'name', text: v.name.split('/').pop()!, fontSize: 13, fontWeight: 600, color: ink },
+      { type: 'text', name: 'hex', text: hex.toUpperCase(), fontSize: 11, color: ink },
+    ],
+  };
+  return alias ? [chip, { type: 'text', name: 'alias', text: alias, fontSize: 11, color: MUTED, width: 120, widthMode: 'FIXED' }] : [chip];
+}
 
 export function foundationsTree(d: FoundationData): TreeNode {
   const children: TreeNode[] = [];
@@ -61,13 +101,9 @@ export function foundationsTree(d: FoundationData): TreeNode {
             type: 'frame',
             name: `swatch/${v.name}`,
             layout: 'VERTICAL',
-            gap: 8,
+            gap: 6,
             width: 120,
-            children: [
-              { type: 'rect', name: 'chip', width: 120, height: 72, radius: 12, fill: { var: v.id }, stroke: { color: LINE, width: 1 } },
-              caption(v.name.split('/').pop()!, INK),
-              caption(v.display),
-            ],
+            children: swatchChildren(v),
           })),
         });
       }
@@ -148,7 +184,11 @@ export function foundationsTree(d: FoundationData): TreeNode {
           name: 'elevation',
           layout: 'HORIZONTAL',
           wrap: true,
-          gap: 32,
+          gap: 40,
+          padding: 40,
+          radius: 16,
+          fill: '#F1F5F9',
+          clip: false,
           widthMode: 'FILL',
           children: d.effectStyles.map((s) => ({
             type: 'frame',
@@ -159,6 +199,7 @@ export function foundationsTree(d: FoundationData): TreeNode {
             height: 120,
             radius: 12,
             fill: '#FFFFFF',
+            clip: false,
             effects: { style: s.name },
             children: [caption(s.name, INK)],
           })),

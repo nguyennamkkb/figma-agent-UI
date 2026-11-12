@@ -123,7 +123,7 @@ export async function renderFoundations(p: RenderFoundationsInput) {
     variables,
     textStyles: textStyles.map((s) => ({
       name: s.name,
-      caption: `${s.fontName.family} ${s.fontName.style} · ${s.fontSize}/${s.lineHeight.unit === 'PIXELS' ? s.lineHeight.value : s.lineHeight.unit === 'PERCENT' ? `${s.lineHeight.value}%` : 'auto'}`,
+      caption: `${s.fontName.family} ${s.fontName.style} · ${s.fontSize} px · line ${s.lineHeight.unit === 'PIXELS' ? `${s.lineHeight.value} px` : s.lineHeight.unit === 'PERCENT' ? `${s.lineHeight.value}%` : 'auto'}`,
     })),
     effectStyles: effectStyles.map((s) => ({ name: s.name })),
   });
