@@ -270,9 +270,9 @@ export function applyPlacement(node: SceneNode, p: AnyProps, isNew: boolean): vo
   let wm = p.widthMode;
   let hm = p.heightMode;
   if (isNew && node.type !== 'INSTANCE') {
-    const autoHug = (figma.editorType as string) !== 'slides';
-    if (autoHug && wm === undefined && p.width === undefined && (selfAL || isText)) wm = 'HUG';
-    if (autoHug && hm === undefined && p.height === undefined && (selfAL || isText)) hm = 'HUG';
+    const canHug = (figma.editorType as string) !== 'slides' || selfAL;
+    if (canHug && wm === undefined && p.width === undefined && (selfAL || isText)) wm = 'HUG';
+    if (canHug && hm === undefined && p.height === undefined && (selfAL || isText)) hm = 'HUG';
   }
   for (const [axis, mode] of [
     ['widthMode', wm],

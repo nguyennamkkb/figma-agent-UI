@@ -49,7 +49,7 @@ Mọi tool Design-only gọi trong Slides trả đúng mẫu, board không đổ
 <tool> is Design-only and has no effect in this Slides deck.
 ```
 
-`safeToRetryWithoutCanvasRead: true`. Danh sách tạm (chốt sau đo live từng tool): `set_interactions`, `annotate`, `set_dev_status`, `bind_variables`, `create_variables`, `create_styles`, `import_tokens`, `export_tokens`, `render_foundations`, `create_component_set`, `stress_test`, `get_design_system`, `search_design_system`.
+`safeToRetryWithoutCanvasRead: true`. Danh sách chốt (đã đo live từng họ API): `set_interactions`, `annotate`, `set_dev_status`, `bind_variables`, `create_component_set`, `stress_test`, `render_foundations`. MỞ cho Slides: `create_variables`, `create_styles`, `import_tokens`, `export_tokens`, `get_design_system`, `search_design_system`. Components thật không tạo được trong Slides — dùng master frames + `clone_node`.
 
 ## §4. Grid qua `execute_code` (cho tới khi có tool riêng)
 

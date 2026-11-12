@@ -1,6 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { Serializer } from '../src/plugin/serialize';
 import { RenderTreeInput, TreeNode, UpdateProps } from '../src/shared/schemas';
+import { SLIDES_DESIGN_ONLY_TOOLS, slidesDesignOnlyError } from '../src/shared/figjam';
 
 beforeAll(() => {
   (globalThis as Record<string, unknown>).figma = {
@@ -91,8 +92,18 @@ describe('Slides serializer views (T006)', () => {
 describe('Slides refusal vocabulary (T017)', () => {
   it('uses the Slides deck message, not the FigJam board message', () => {
     const cmd = 'set_interactions';
-    const slidesMsg = `${cmd} is Design-only and has no effect in this Slides deck.`;
+    const slidesMsg = slidesDesignOnlyError(cmd);
     expect(slidesMsg).toContain('Slides deck');
     expect(slidesMsg).not.toContain('FigJam');
+  });
+
+  it('gates 7 tools but leaves variables/styles open', () => {
+    expect(SLIDES_DESIGN_ONLY_TOOLS).toHaveLength(7);
+    for (const tool of ['create_variables', 'create_styles', 'import_tokens', 'export_tokens', 'get_design_system', 'search_design_system']) {
+      expect(SLIDES_DESIGN_ONLY_TOOLS).not.toContain(tool);
+    }
+    for (const tool of ['set_interactions', 'annotate', 'set_dev_status', 'bind_variables', 'create_component_set', 'stress_test', 'render_foundations']) {
+      expect(SLIDES_DESIGN_ONLY_TOOLS).toContain(tool);
+    }
   });
 });

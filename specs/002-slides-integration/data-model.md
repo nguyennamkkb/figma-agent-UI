@@ -25,7 +25,7 @@ Caps hiện có giữ nguyên: `depth`, `maxNodes: 300` + `childrenTruncated`.
 ## 3. Routing & gating state (không persisted state mới)
 
 - **Editor detection**: `figma.editorType` đọc mỗi lệnh (không cache).
-- **Slides refusal** (tạm, FR-008; chốt sau đo live): cùng 13 tools FigJam — `set_interactions`, `annotate`, `set_dev_status`, `bind_variables`, `create_variables`, `create_styles`, `import_tokens`, `export_tokens`, `render_foundations`, `create_component_set`, `stress_test`, `get_design_system`, `search_design_system`. Vocabulary: `"<tool> is Design-only and has no effect in this Slides deck."`, `safeToRetryWithoutCanvasRead: true`.
+- **Slides refusal** (FR-008): 7 tools — `set_interactions`, `annotate`, `set_dev_status`, `bind_variables`, `create_component_set`, `stress_test`, `render_foundations`. MỞ cho Slides (đã chứng minh live): variables/styles/tokens/design-system. Components thật không tồn tại trong Slides (`createComponent` là `undefined`) → masters là frames mẫu + `clone_node`, bind variables/styles đầy đủ.
 - **Parenting rule**: write Slides thiếu `parentId` → fallback `focusedSlide ?? currentPage`, trả thêm `parentNote` trong kết quả để agent biết node rơi vào đâu.
 - **Multi-file routing**: không đổi — deck Slides là thêm một file trong hub.
 

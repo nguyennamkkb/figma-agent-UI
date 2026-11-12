@@ -1,6 +1,6 @@
 import type { ClientInfo, NoticeMessage, RequestMessage, ResponseMessage } from '../shared/protocol';
 import { PROTOCOL_VERSION } from '../shared/protocol';
-import { DESIGN_ONLY_TOOLS, designOnlyError as designOnlyErrorFigjam } from '../shared/figjam';
+import { DESIGN_ONLY_TOOLS, SLIDES_DESIGN_ONLY_TOOLS, designOnlyError as designOnlyErrorFigjam, slidesDesignOnlyError } from '../shared/figjam';
 import { executeCode } from './commands/execute';
 import { auditDesign } from './commands/audit';
 import { managePages } from './commands/pages';
@@ -98,10 +98,11 @@ function clientInfo(): ClientInfo {
 }
 
 const DESIGN_ONLY = new Set<string>(DESIGN_ONLY_TOOLS);
+const SLIDES_DESIGN_ONLY = new Set<string>(SLIDES_DESIGN_ONLY_TOOLS);
 
 function designOnlyError(command: string): string {
   return figma.editorType === 'slides'
-    ? `${command} is Design-only and has no effect in this Slides deck.`
+    ? slidesDesignOnlyError(command)
     : designOnlyErrorFigjam(command);
 }
 
@@ -113,7 +114,10 @@ async function run(req: RequestMessage): Promise<ResponseMessage> {
   if (!cmd) {
     return { type: 'response', id: req.id, ok: false, error: `Unknown command "${req.command}".`, safeToRetryWithoutCanvasRead: true };
   }
-  if (DESIGN_ONLY.has(req.command) && (figma.editorType === 'figjam' || (figma.editorType as string) === 'slides')) {
+  if (
+    (DESIGN_ONLY.has(req.command) && figma.editorType === 'figjam') ||
+    (SLIDES_DESIGN_ONLY.has(req.command) && (figma.editorType as string) === 'slides')
+  ) {
     return { type: 'response', id: req.id, ok: false, error: designOnlyError(req.command), safeToRetryWithoutCanvasRead: true };
   }
   const raw = (req.params ?? {}) as Record<string, unknown>;

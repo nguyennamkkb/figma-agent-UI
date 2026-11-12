@@ -44,11 +44,11 @@ Nguồn: `@figma/plugin-typings` (bundled) + đo live trên deck "How to Use Fig
 - **Rationale**: Typings đánh deprecated cặp cũ, nhưng deck live trả cả hai. Hỗ trợ cả hai thì mọi deck đều chạy.
 - **Alternatives considered**: Chỉ dùng API mới — loại: gãy deck/client cũ.
 
-## Decision 7: Design-only trong Slides — bảo thủ trước, nới sau khi đo live
+## Decision 7: Design-only trong Slides — mở những gì đã chứng minh live
 
-- **Decision**: Tạm áp cùng danh sách FigJam (`set_interactions`, `annotate`, `set_dev_status`, `bind_variables`, `create_variables`, `create_styles`, `import_tokens`, `export_tokens`, `render_foundations`, `create_component_set`, `stress_test`, `get_design_system`, `search_design_system`) + từ chối khi `editorType === 'slides'` với message `"<tool> is Design-only and has no effect in this Slides deck."`. Task live đo từng tool: cái nào chạy tốt trong Slides thì **ungate** có ghi chú (variables/styles nhiều khả năng sống trong Slides vì template dùng chúng).
-- **Rationale**: An toàn hơn hối hận trên deck người khác. Plugin-side guard là choke point duy nhất như FigJam.
-- **Alternatives considered**: Ungate hết rồi chặn dần — loại: rủi ro phá deck.
+- **Decision**: Gate theo editor: FigJam giữ nguyên 13 tools; Slides chỉ gate 7 tools (`set_interactions`, `annotate`, `set_dev_status`, `bind_variables`, `create_component_set`, `stress_test`, `render_foundations`) — cùng message `"<tool> is Design-only and has no effect in this Slides deck."` MỞ cho Slides: `create_variables`, `create_styles`, `import_tokens`, `export_tokens`, `get_design_system`, `search_design_system` (đã chứng minh live trên deck: tạo collection/variable/text style/paint style đều ăn).
+- **Rationale**: Bảo thủ lúc đầu là đúng, nhưng đo live cho thấy variables/styles là API chung Figma–Slides (template deck vốn đã bind `{var}`/`{style}`). Giữ gate những gì hoặc vô nghĩa (prototype/dev-mode) hoặc không tồn tại trong Slides (`figma.createComponent` là `undefined` → components thật không tạo được; thay bằng master frames + `clone_node`, styles/variables vẫn bind đầy đủ).
+- **Alternatives considered**: Mở hết — loại: `create_component_set`/`stress_test` (Sections) gọi API không tồn tại trong Slides, nổ lỗi khó hiểu thay vì message rõ.
 
 ## Decision 8: Những gì giữ nguyên
 
