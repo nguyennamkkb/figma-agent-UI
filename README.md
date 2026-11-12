@@ -21,7 +21,7 @@ MCP client ──stdio──► MCP server (dist/server.mjs)
 ### Cách A: npx (khuyên dùng, không cần clone)
 
 ```bash
-npx -y github:nguyennamkkb/figma-agent-UI#v1.5.1 install
+npx -y github:nguyennamkkb/figma-agent-UI#v1.5.2 install
 ```
 
 Lệnh này chạy được trên macOS, Windows và Linux, và làm 3 việc:
@@ -57,10 +57,10 @@ Tuỳ chọn của `install`/`uninstall`/`doctor`:
 **Client khác** (Claude Desktop, Cursor…): thêm tay vào file cấu hình MCP của client:
 
 ```json
-{ "mcpServers": { "figma-agent": { "command": "npx", "args": ["-y", "github:nguyennamkkb/figma-agent-UI#v1.5.1"] } } }
+{ "mcpServers": { "figma-agent": { "command": "npx", "args": ["-y", "github:nguyennamkkb/figma-agent-UI#v1.5.2"] } } }
 ```
 
-Trên Windows dùng `"command": "cmd", "args": ["/c", "npx", "-y", "github:nguyennamkkb/figma-agent-UI#v1.5.1"]`.
+Trên Windows dùng `"command": "cmd", "args": ["/c", "npx", "-y", "github:nguyennamkkb/figma-agent-UI#v1.5.2"]`.
 
 ### Cách B: clone (để phát triển)
 
