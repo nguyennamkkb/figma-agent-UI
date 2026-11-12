@@ -22,6 +22,7 @@ Let `SKILL_DIR` be the directory containing this file.
 | Page structure, layer/frame naming, Auto Layout, grids | `references/file-standards.md` |
 | Variables, tokens, styles, components, variants, libraries | `references/design-system.md` |
 | Moodboards, direction exploration, critique, Motion, shaders, AI | `references/creative-process.md` |
+| Why this screen and why this way: brief priorities, screen contract, monetization rules, 4 handoff questions | `references/decision-playbook.md` |
 | QA, accessibility, Dev Mode, developer handoff (iOS/Android/Web) | `references/handoff-qa.md` |
 | Skill assessment, learning path, shortcuts | `references/skill-ladder.md` |
 | Check a token JSON file (names, aliases, contrast) | `scripts/check_tokens.py` |
@@ -97,7 +98,7 @@ Not every task runs all 8. Determine the entry point in Stage 0, then run from t
 
 Read `references/file-standards.md` and `assets/brief.template.md`.
 
-1. Lock a minimal brief: product, users, **platform (iOS / Android / Both / Web)**, **theme (Light only / Dark only / Both — see *Theme scope*)**, business goal, constraints (existing brand, deadline, accessibility), success criteria. Ask about anything missing — at most 3–4 questions, batched in one message; the platform and theme questions are always among them unless the user already said it. **Both platforms:** one shared token set and component library; design the primary platform first and redraw only screens whose patterns differ in an `Adaptive · Android` (or `Adaptive · iOS`) Section — see `style-direction/references/platform-mapping.md`.
+1. Lock a minimal brief: product, users, **platform (iOS / Android / Both / Web)**, **theme (Light only / Dark only / Both — see *Theme scope*)**, business goal (priority now, aha moment, monetization, one metric + guardrail — `decision-playbook.md`), constraints (existing brand, deadline, accessibility), success criteria. Ask about anything missing — at most 3–4 questions, batched in one message; the platform and theme questions are always among them unless the user already said it. **Both platforms:** one shared token set and component library; design the primary platform first and redraw only screens whose patterns differ in an `Adaptive · Android` (or `Adaptive · iOS`) Section — see `style-direction/references/platform-mapping.md`.
 2. Set up the file skeleton with the 7 standard pages — `🏠 Cover`, `01 · Foundations`, `02 · Components`, `03 · Templates`, `04 · Assets`, `05 · Screens & Flows`, `06 · Explore (WIP)` — and put the brief as a `Brief · <Product>` frame on Cover. Name every Section and screen per `file-standards.md` §2.2 (`SCR-NN · <Screen> · <State>`).
 3. **Gate:** present a one-page brief + the file skeleton. Wait for the user's confirmation before continuing.
 
@@ -135,7 +136,7 @@ Read `references/creative-process.md`. When the user names a style, gives a refe
 Read `references/build-loop.md` — **mandatory** for every screen.
 
 1. **Pick the mode:** **Sketch** (quick idea, Stage 4), **From template** (a similar screen exists: clone and edit what differs), **New build** (complex, no template). First screen of a set = New build, the rest = From template.
-2. **Pass 0 Prepare:** screen goal, one primary CTA, real content, a region map down to block sizes, which blocks repeat (→ components), images generated up front.
+2. **Pass 0 Prepare:** the screen contract (`decision-playbook.md`: purpose, entry → exit, one primary action, information order, states), real content, a region map down to block sizes, which blocks repeat (→ components), images generated up front.
 3. **Pass 1 Layout (1–2 writes):** root frame at the platform size (`file-standards.md` section 4) + named regions + **sized placeholder blocks** carrying their final Auto Layout. Numeric check, then one screenshot: the screen should already read as the final layout in grey boxes.
 4. **Pass 2 Fill:** components first for anything repeated ≥ 3 times (Stage 3), then fill placeholders **by cluster** (several blocks per write) and add real text, icons, images in batches. Numeric check after each write; one screenshot at the end of the pass, extra ones only for unusual blocks.
 5. **Pass 3 Lock:** audit + stress + one final screenshot, fix until it meets the **Definition of Done** (skipped in Sketch).
@@ -169,7 +170,7 @@ Read `references/handoff-qa.md` sections 4–6.
 
 ## Output by mode
 
-**Agent:** real changes in the Figma file + a short report: what was created/edited (with node IDs or links), which decisions were locked, what remains open. Don't re-describe what the user can open and see for themselves.
+**Agent:** real changes in the Figma file + a short report: what was created/edited (with node IDs or links), which decisions were locked, what remains open; at handoff, one line each for the 4 questions in `decision-playbook.md`. Don't re-describe what the user can open and see for themselves.
 
 **Designer:** an instruction document containing: goal → steps (numbered, naming the exact menu/shortcut/panel) → value tables (tokens, naming) → self-check checklist. Each step is specific enough to follow without guessing.
 

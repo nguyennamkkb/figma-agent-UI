@@ -52,7 +52,7 @@ When unsure, use **New build** for the first screen of a set and **From template
 
 ## 4. Pass 0 — Prepare (nothing written)
 
-- One-sentence goal and **one primary action** (CTA).
+- **Screen contract** (`decision-playbook.md`), one line each: purpose, entry → exit, **one primary action**, information order, states. Key screens (onboarding, paywall, checkout, permission) add success signal + guardrail and a hypothesis. No purpose → don't draw the screen.
 - Real content in the user's language. No lorem.
 - **Region map** with sizing, down to the blocks:
   ```
