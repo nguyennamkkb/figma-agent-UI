@@ -78,10 +78,22 @@ const server = {
   logLevel: 'info',
 };
 
+const install = {
+  entryPoints: ['src/server/install.ts'],
+  bundle: true,
+  platform: 'node',
+  format: 'esm',
+  target: 'node20',
+  packages: 'external',
+  outfile: 'dist/install.mjs',
+  define,
+  logLevel: 'info',
+};
+
 const target = process.argv[2] ?? 'all';
 const watch = process.argv.includes('--watch');
 
-const jobs = target === 'all' ? [plugin, server] : target === 'plugin' ? [plugin] : target === 'server' ? [server] : null;
+const jobs = target === 'all' ? [plugin, server, install] : target === 'plugin' ? [plugin] : target === 'server' ? [server, install] : null;
 if (!jobs) {
   console.error(`usage: node scripts/build.mjs <all|plugin|server> [--watch]`);
   process.exit(2);

@@ -11,6 +11,16 @@ Claude Code ──stdio──► MCP server (dist/server.mjs)
 
 ## Cài đặt
 
+### Cách A: npx (không cần clone)
+
+```bash
+npx -y github:nguyennamkkb/figma-agent-UI#v1.4.0 install   # copy plugin ra ~/.figma-agent/plugin/ và in cấu hình MCP
+```
+
+Sau đó import `~/.figma-agent/plugin/manifest.json` vào Figma một lần. Cấu hình MCP: `"command": "npx", "args": ["-y", "github:nguyennamkkb/figma-agent-UI#v1.4.0"]`. Lần chạy đầu build mất vài chục giây. Nâng cấp: đổi tag, chạy lại `install`, đóng rồi mở lại plugin.
+
+### Cách B: clone
+
 ```bash
 npm install
 npm run build          # code.js (plugin) + dist/server.mjs (MCP server)

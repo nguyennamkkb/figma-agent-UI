@@ -3,7 +3,21 @@
   "version": "1.4.0",
   "description": "Figma plugin + MCP server that lets an AI agent read, create, edit and screenshot designs",
   "main": "code.js",
+  "bin": {
+    "figma-agent-ui": "bin/figma-agent-ui.mjs"
+  },
+  "files": [
+    "bin",
+    "dist",
+    "code.js",
+    "ui.html",
+    "manifest.json"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
   "scripts": {
+    "prepare": "node scripts/build.mjs all",
     "build": "node scripts/build.mjs all",
     "build:plugin": "node scripts/build.mjs plugin",
     "build:server": "node scripts/build.mjs server",

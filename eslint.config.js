@@ -3,6 +3,7 @@ const tseslint = require('typescript-eslint')
 const figmaPlugin = require('@figma/eslint-plugin-figma-plugins')
 
 module.exports = tseslint.config(
+  { ignores: ['bin/**'] },
   eslint.configs.recommended,
   tseslint.configs.recommended,
   {
