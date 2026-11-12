@@ -73,7 +73,7 @@ Every top-level item on a page is a Section (or the single `Cover`/`Foundations`
 | `05` one Section per screen | `SCR-NN · <Screen>` | `SCR-08 · Paywall` |
 | screen frame inside it | `SCR-NN · <Screen> · <State>[ · <Theme>]` | `SCR-08 · Paywall · Default · Dark`, `SCR-09 · Home · Empty` |
 | feedback frame (alert, sheet, toast, result triggered by an event) | `FBK-NN · <Screen> · <Event>` | `FBK-06 · Paywall · Purchase Failed` |
-| flow overview Section | `Flow · <Product>`, thumbnails `flow/SCR-NN · <Screen>` | `Flow · Lumen` |
+| flow overview Section (§2.2.1) | `Flow · <Product>`, thumbnails `flow/SCR-NN · <Screen>`, text flow `flow/text` | `Flow · Lumen` |
 | other device sizes | `Adaptive · <Device>[ · <Group>]` | `Adaptive · iPad`, `Adaptive · iPhone Duo · Onboarding` |
 | `02` component library | `<Product> · Components — <what is inside>` | `Lumen · Components — icons, buttons, chips` |
 | `03` / `04` groups | `<emoji> <Group> · <Kind>` (🧩 templates, 🖼 images) | `🧩 Content Packs · Templates`, `🖼 Wallpapers & Backgrounds` |
@@ -83,6 +83,28 @@ Every top-level item on a page is a Section (or the single `Cover`/`Foundations`
 - **State:** Title Case, short: `Default`, `Empty`, `Loading`, `Error`, `Largest Text`, `Filter Empty`. `Default` is always the first frame.
 - **Theme suffix** ` · Light` / ` · Dark` only when the brief's theme is **Both**; a single-theme project leaves it off.
 - **Layout inside a screen Section:** `Default` top-left, states to the right in reading order, 80 px gaps; feedback frames after the states; the second theme (Both) on the row below its source.
+
+### 2.2.1 Flow overview (`Flow · <Product>`)
+One Section at the top of `05 · Screens & Flows`, above the screen Sections. It holds two views of the same flow:
+
+1. **Thumbnails + arrows** for people: a row of scaled copies `flow/SCR-NN · <Screen>` (scale 0.4, label above each) in main-flow order, joined by `flow/arrow N→M` vectors. Arrows are static drawings: they don't follow moved thumbnails.
+2. **Text flow** for people and agents: one text layer `flow/text`, monospace, **one transition per line**:
+
+```text
+SCR-01 Welcome      --[Get started]-->       SCR-02 Onboarding
+SCR-04 Home         --[Tap habit]-->         SCR-05 Habit Detail
+SCR-10 Settings     --[Sign out]-->          SCR-01 Welcome
+```
+
+Rules for the text flow:
+- `FROM --[action]--> TO`: both ends are a full screen code `SCR-NN <Screen>` (or `FBK-NN …`) that matches a frame on the page; never `back`, `previous` or free text.
+- `[action]` is the visible label or gesture that triggers it (`[Save]`, `[Tab Stats]`, `[Swipe left]`), so it maps 1:1 to a prototype reaction (`set_interactions` NAVIGATE on that element).
+- List every transition, including returns (Cancel, Close, back chevrons, tabs); group lines by FROM screen in flow order; pad columns with spaces for reading — agents ignore the spacing.
+- The text is the source of truth for the flow: update it whenever a screen or transition is added, and build the prototype from it.
+
+Read it with `get_node{ids: [<flow/text id>]}` (full text up to 5000 characters; `find_nodes` shows only the first 80): split on newlines, and check the line count equals the layer height ÷ line height. Icon-only actions use their glyph or label (`[+]`, `[‹ Today]`). On `06 · Explore` the same Section works for an exploration; set `x`/`y` on the Section.
+
+Draw it from `assets/flow.render-tree.json` (`render_tree{tree}` on `05`, replace `<Product>` and the lines). Thumbnails and arrows need `execute_code` (`clone` → `rescale(0.4)` into the Section, then vectors with `strokeCap: "ARROW_LINES"` on the end vertex).
 
 ### 2.3 Inner layers
 | Type | Name | Example |

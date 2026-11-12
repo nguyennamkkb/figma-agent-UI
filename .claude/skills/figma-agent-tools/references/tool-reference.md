@@ -24,7 +24,7 @@ Source of truth: tool descriptions in `src/server/index.ts` and input schemas in
 | `get_design_system` | `include` (`variables`,`styles`,`components`,`library`), `componentLimit` 200, `usedIn: nodeId` | Variables with modes/values, paint/text/effect/grid styles, local components with properties. `usedIn` = only what is bound inside that node (the remote MCP's `get_variable_defs`). |
 | `search_design_system` | `query`, `kinds` (`component`,`variable`,`style`), `includeLibraries`, `limit` 20 | Ranked matches; variables show collection, resolved value, primitive or not, alias target. **Call before creating any component, token or style.** |
 | `get_selection` | `depth` 1, `maxNodes` 300 | Serialized selected layers. |
-| `get_node` | `ids: string[]` (**array**), `depth` 2, `maxNodes` 300 | Same vocabulary as `render_tree` (layout, sizing, fills as hex or variable names). Raise `maxNodes` when the result says `truncated`. |
+| `get_node` | `ids: string[]` (**array**), `depth` 2, `maxNodes` 300 | Same vocabulary as `render_tree` (layout, sizing, fills as hex or variable names). Raise `maxNodes` when the result says `truncated` (node count only). Text is returned in full up to 5000 characters, then cut with `…`; `find_nodes` shows only the first 80. |
 | `find_nodes` | `rootId`, `types` (`["TEXT"]`), `name`, `text` (case-insensitive substrings), `limit` 50 | Locate layers the user mentions but you cannot see. |
 | `list_fonts` | `family` substring, `limit` | Exact style names — `"Semi Bold"` not `"SemiBold"`. Call whenever the brief uses a family other than Inter. |
 | `set_current_page` | `page` | Prefer the `page` param of each tool instead. |

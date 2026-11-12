@@ -49,7 +49,8 @@ The bridge between the workflow (this skill) and the tools (the `figma-agent-too
 | 4 | 2–3 directions | One section per direction (`Explore · <Direction>`) in `06 · Explore (WIP)`, each screen in it is a Sketch per §4 (Pass 1–2, just enough to compare) → **stop at the gate** |
 | 5 | Screens by flow | One section per screen `render_tree{page: "05 · Screens & Flows", tree: {type: "section", name: "SCR-NN · <Screen>"}}`, frames named `SCR-NN · <Screen> · <State>`, then **each screen per §4** (first one New build, the rest From template) with `parentId` = section; screen name `Flow / Screen / State` |
 | 5 | Second theme *(theme = Both only)* | Copy of a finished screen with `variableModes: {"Semantic": "Dark"}` (requires a multi-mode plan). Single theme: skip |
-| 6 | Prototype | `set_interactions{items: [{id, reactions: [{action: "NAVIGATE", destination, transition: {duration: {var: "duration/base"}, easing: "standard"}}]}], flowStart}` |
+| 5 | Flow overview | `render_tree{tree: assets/flow.render-tree.json}` on `05`, one `FROM --[action]--> TO` line per transition (`file-standards.md` §2.2.1); thumbnails + arrows via `execute_code` |
+| 6 | Prototype | read `flow/text` line by line → one reaction per line; `set_interactions{items: [{id, reactions: [{action: "NAVIGATE", destination, transition: {duration: {var: "duration/base"}, easing: "standard"}}]}], flowStart}` |
 | 6 | Interactive component | `set_interactions` on a variant with `action: "CHANGE_TO"`, `destination` = target variant |
 | 7 | QA | `audit_design{format: "markdown"}` → paste into the QA report |
 | 7 | Fix raw fill/spacing/radius | `bind_variables{rootId}` (dryRun by default) → review `ambiguous` → add `map` → `dryRun: false` |
