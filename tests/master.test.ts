@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { LOREM, worstContrast } from '../src/shared/audit';
 import { deltaE, exactNumber, nearestColor, scopeAllows } from '../src/shared/color';
 import { planComponentSet, variantName } from '../src/shared/components';
-import { foundationsTree } from '../src/shared/foundations';
+import { foundationsTree, swatchInk } from '../src/shared/foundations';
 import { GRID_PRESETS, toLayoutGrid } from '../src/shared/grids';
 import { easingFor, msToSeconds, transitionFor } from '../src/shared/motion';
 import { planRename, slug, suggestName } from '../src/shared/rename';
@@ -234,6 +234,20 @@ describe('render_foundations tree', () => {
     expect(json).toContain('"textStyle":"body/md"');
     expect(json).toContain('"style":"elevation/1"');
     for (const s of ['section/colors', 'section/typography', 'section/spacing', 'section/radius', 'section/elevation']) expect(json).toContain(s);
+  });
+
+  it('writes name and hex inside the swatch in a readable ink', () => {
+    expect(swatchInk('#0F172A')).toBe('#FFFFFF');
+    expect(swatchInk('→ color/white (#FFFFFF)')).toBe('#0F172A');
+    expect(swatchInk('#94A3B8')).toBe('#0F172A');
+    expect(swatchInk('#475569')).toBe('#FFFFFF');
+    const json = JSON.stringify(foundationsTree(data));
+    expect(json).toContain('"name":"hex","text":"#0F172A","fontSize":11,"color":"#FFFFFF"');
+  });
+
+  it('lets elevation shadows show on a tinted panel', () => {
+    const json = JSON.stringify(foundationsTree(data));
+    expect(json).toContain('"name":"elevation","layout":"HORIZONTAL","wrap":true,"gap":40,"padding":40,"radius":16,"fill":"#F1F5F9","clip":false');
   });
 
   it('explains an empty file instead of drawing nothing', () => {
