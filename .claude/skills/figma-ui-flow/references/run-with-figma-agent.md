@@ -48,7 +48,7 @@ The bridge between the workflow (this skill) and the tools (the `figma-agent-too
 | 3 | Playground | `stress_test{id, cases, modes}` → `screenshot{id: sectionId}` |
 | 4 | 2–3 directions | One section per direction in `🧪 Explore`, each screen in it is a Sketch per §4 (Pass 1–2, just enough to compare) → **stop at the gate** |
 | 5 | Screens by flow | Empty section `render_tree{page: "📱 Screens", tree: {type: "section", name: "<Flow>"}}`, then **each screen per §4** (first one New build, the rest From template) with `parentId` = section; screen name `Flow / Screen / State` |
-| 5 | Dark mode | Frame with `variableModes: {"Semantic": "Dark"}` (requires a multi-mode plan) |
+| 5 | Second theme *(theme = Both only)* | Copy of a finished screen with `variableModes: {"Semantic": "Dark"}` (requires a multi-mode plan). Single theme: skip |
 | 6 | Prototype | `set_interactions{items: [{id, reactions: [{action: "NAVIGATE", destination, transition: {duration: {var: "duration/base"}, easing: "standard"}}]}], flowStart}` |
 | 6 | Interactive component | `set_interactions` on a variant with `action: "CHANGE_TO"`, `destination` = target variant |
 | 7 | QA | `audit_design{format: "markdown"}` → paste into the QA report |

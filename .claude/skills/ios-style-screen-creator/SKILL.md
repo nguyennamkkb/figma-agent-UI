@@ -57,7 +57,7 @@ Present 3 directions. Each includes: name, 3 feeling words, principles kept, sig
 
 Before drawing any screen, define:
 
-- **Color:** primitive → semantic (`bg/base`, `bg/surface`, `text/primary`, `text/secondary`, `accent`, `border`, `state/success|warning|error`), with Light + Dark modes
+- **Color:** primitive → semantic (`bg/base`, `bg/surface`, `text/primary`, `text/secondary`, `accent`, `border`, `state/success|warning|error`), with the theme the user chose (Light only / Dark only / Both — ask if unknown; Both = Light + Dark modes)
 - **Typography:** 6–8 text styles (Display, Title, Headline, Body, Callout, Caption…), supporting Dynamic Type
 - **Spacing:** a scale (e.g. 4/8/12/16/24/32/48)
 - **Radius, elevation/blur, motion** (duration + easing)
@@ -85,13 +85,13 @@ Mobile standards: 393×852 frame (iPhone) unless specified otherwise; respect sa
 - [ ] **5-second test** — purpose of the screen is understood in 5 seconds
 - [ ] **Thumbnail test** — layout holds up when scaled down
 - [ ] Still evokes the **3 feeling words**
-- [ ] Text contrast ≥ 4.5:1 (large text ≥ 3:1); Dark mode works
+- [ ] Text contrast ≥ 4.5:1 (large text ≥ 3:1) in each chosen theme; Both: switching modes works
 - [ ] Signature move is present but not overused
 - [ ] No effect (glass, gradient, shadow) used just "for style"
 
 ## 8. Output
 
-**If a Figma tool (MCP/plugin) is available:** create Variables (with Light/Dark modes), Text Styles, and Components with variants using Auto Layout, then build screen frames using those tokens/components — never hard-code colors or font sizes. Name layers clearly.
+**If a Figma tool (MCP/plugin) is available:** create Variables (modes = the chosen theme: 1 mode, or Light + Dark for Both), Text Styles, and Components with variants using Auto Layout, then build screen frames using those tokens/components — never hard-code colors or font sizes. Name layers clearly.
 
 **If Figma is not available:** output a Markdown spec file plus a mockup (HTML or SwiftUI preview).
 

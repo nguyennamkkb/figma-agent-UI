@@ -85,7 +85,7 @@ When unsure, use **New build** for the first screen of a set and **From template
 - **Goal:** meet the Definition of Done. Run it in **New build** and **From template**, and in any mode before handoff; skip it in **Sketch**.
 - **Do:**
   1. `audit_design{rootId: <screen>}` — all groups.
-  2. `stress_test{id: <screen>, cases: [long-text, large-text]}` (+ `modes` if Dark exists) → one screenshot of the section → delete the section. **Read the screenshot, not only the `overflow` list:** text that hugs its width and is clipped by an ancestor frame (a centred title cut on both sides) is not reported. The fix is usually `widthMode: "FILL"` on the text so it wraps.
+  2. `stress_test{id: <screen>, cases: [long-text, large-text]}` (+ `modes` only when the brief's theme is **Both**) → one screenshot of the section → delete the section. **Read the screenshot, not only the `overflow` list:** text that hugs its width and is clipped by an ancestor frame (a centred title cut on both sides) is not reported. The fix is usually `widthMode: "FILL"` on the text so it wraps.
   3. Fix: `update_nodes`; default names with `rename_by_rule`; raw values where tokens exist with `bind_variables` (dryRun first).
   4. Re-run only the checks that failed, then **one final screenshot** at `scale: 1`.
 - **Triage:** false positives (small target on a non-tappable label or on an indicator inside a tappable row — a radio or chevron in a 72-high list row, contrast sampled behind an opaque plate) are stated as reviewed and dismissed.

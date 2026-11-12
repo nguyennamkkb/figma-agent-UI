@@ -98,7 +98,7 @@ Polish checklist in order of impact:
 5. **Nested corner radii:** inner radius = outer radius − padding (so the curves stay parallel).
 6. **Micro-details:** consistent stroke widths, shadows from the same light source, images in the same tone.
 7. **Real content:** replace lorem ipsum with real or near-real content; long names, large numbers, bad photos.
-8. **Test dark mode and large text sizes** — polish is not just for the happy path.
+8. **Test large text sizes, and the second theme if the brief chose Both** — polish is not just for the happy path.
 
 ## 7. Motion
 

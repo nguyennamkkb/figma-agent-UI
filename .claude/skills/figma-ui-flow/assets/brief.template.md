@@ -29,7 +29,8 @@
 ## 5. Constraints
 - **Existing brand:** logo / colors / fonts: <…>
 - **Existing library:** <library name or "none">
-- **Accessibility:** WCAG level, Dynamic Type, dark mode: <…>
+- **Theme:** Light only / Dark only / Both (primary: <Light|Dark>) — <…>
+- **Accessibility:** WCAG level, Dynamic Type: <…>
 - **Technical:** SwiftUI / Compose / React…: <…>
 - **Deadline:** <…>
 

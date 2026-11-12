@@ -86,7 +86,7 @@ Suggested scale (mobile); each step is a text style with a role name:
 
 | Collection | Common modes |
 |---|---|
-| Semantic color | Light, Dark (+ High contrast if needed) |
+| Semantic color | The brief's theme choice: `Light` or `Dark` (1 mode), or `Light` + `Dark` for Both (+ High contrast if needed) |
 | Brand | Brand A, Brand B (white-label) |
 | Density / Size | Compact, Default, Comfortable |
 | Content (string) | vi, en — to test text length |
@@ -116,7 +116,7 @@ Text styles remain the best way to package typography; inside a text style you c
 5. **Properties** (section 6) — prefer properties over variants.
 6. **States**, the full set (section 6.3).
 7. **Component description:** when to use, when not to use, documentation link.
-8. **Test in the Playground:** long label, no icon, two lines, large text size, dark mode, another language.
+8. **Test in the Playground:** long label, no icon, two lines, large text size, the second theme *(Both only)*, another language.
 
 ### 5.2 Principles
 - A **base component** (hidden, name starting with `_` or `.`) holds the shared structure; public variants use instances of the base → edit once, apply everywhere.
