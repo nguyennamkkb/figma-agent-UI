@@ -272,7 +272,8 @@ function unconfigureMcp() {
 
 function npxCacheDir() {
   if (isNpxInstall(packageRoot)) return resolve(packageRoot, '..', '..', '..');
-  return join(process.env.npm_config_cache || join(home, '.npm'), '_npx');
+  const defaultCache = platform === 'win32' ? join(process.env.LOCALAPPDATA || join(home, 'AppData', 'Local'), 'npm-cache') : join(home, '.npm');
+  return join(process.env.npm_config_cache || defaultCache, '_npx');
 }
 
 function folderSize(dir: string): number {
