@@ -44,6 +44,11 @@ type Status = 'ok' | 'warn' | 'fail';
 const MARK: Record<Status, string> = { ok: green('✓'), warn: yellow('!'), fail: red('✗') };
 const LABEL_WIDTH = 10;
 
+process.stdout.on('error', (e: NodeJS.ErrnoException) => {
+  if (e.code === 'EPIPE') process.exit(process.exitCode ?? 0);
+  throw e;
+});
+
 const out = (line = '') => process.stdout.write(line + '\n');
 const tilde = (p: string) => shortPath(p, home, platform);
 
