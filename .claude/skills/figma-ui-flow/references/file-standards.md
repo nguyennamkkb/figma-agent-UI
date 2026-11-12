@@ -129,18 +129,19 @@ Stretch the screen width 320 → 430 (mobile) or 1280 → 1920 (web): no overlap
 
 ## 4. Frame sizes and layout grids by platform
 
-### 4.1 Mobile
-| Platform | Main design frame | Also test | Suggested grid |
-|---|---|---|---|
-| iOS | 393 × 852 (standard iPhone) | 375 (small), 440 (Pro Max) | 4 columns, margin 16, gutter 8–16 |
-| Android | 360 × 800 or 412 × 915 | 600+ (foldable/tablet) | 4 columns, margin 16, gutter 8–16 |
+### 4.1 Mobile and tablet — one frame each
+| Frame | `render_tree` | Size | Grid | Safe area (top / bottom) | Also test |
+|---|---|---|---|---|---|
+| Mobile (iOS + Android) | `device: "mobile"` | 393 × 852 | 4 columns, margin 16, gutter 16 | 59 / 34 | 375 (small), 412 (Android), 440 (Pro Max) |
+| Tablet (iPad + Android tablet) | `device: "tablet"` | 834 × 1194, landscape 1194 × 834 | 8 columns, margin 32, gutter 24 | 24 / 20 | 744 (iPad mini), 1024 (13") |
+
+Every screen frame starts from one of these two; other sizes are only stress tests (`device` + `width`), named `Adaptive · <Device>`. 834 sits in Android's medium width class (600–839 dp) and 1194 in expanded (840–1199 dp).
 
 Respect safe areas: status bar, Dynamic Island, home indicator (iOS); status bar, gesture bar (Android). Use device frames/safe-area frames as reference layers and don't draw content over them.
 
-### 4.2 Tablet and Web
+### 4.2 Web
 | Breakpoint | Frame | Grid |
 |---|---|---|
-| Tablet | 768 / 834 / 1024 | 8 columns, margin 24–32, gutter 16–24 |
 | Desktop | 1280 / 1440 | 12 columns, max content 1120–1200, gutter 24 |
 | Wide | 1920 | 12 columns, content doesn't stretch indefinitely — has a max width |
 

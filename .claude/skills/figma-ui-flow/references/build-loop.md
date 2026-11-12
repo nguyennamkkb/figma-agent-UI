@@ -125,8 +125,8 @@ When unsure, use **New build** for the first screen of a set and **From template
 **Pass 1 (1 write):**
 
 ```jsonc
-{ "type": "frame", "name": "Paywall / Timeline", "width": 390, "height": 844, "layout": "VERTICAL",
-  "fill": "#FFFFFF", "layoutGrids": { "preset": "mobile" }, "children": [
+{ "type": "frame", "name": "Paywall / Timeline", "device": "mobile", "layout": "VERTICAL",
+  "fill": "#FFFFFF", "children": [
   { "type": "frame", "name": "Header", "layout": "HORIZONTAL", "widthMode": "FILL", "padding": [54, 24, 8, 24], "justify": "SPACE_BETWEEN", "align": "CENTER",
     "children": [ { "type": "frame", "name": "Close", "width": 44, "height": 44, "fill": "#FF00001A" },
                   { "type": "frame", "name": "Restore", "width": 72, "height": 44, "fill": "#FF00001A" } ] },

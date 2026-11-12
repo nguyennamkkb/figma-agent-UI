@@ -21,8 +21,10 @@ MCP client ──stdio──► MCP server (dist/server.mjs)
 ### Cách A: npx (khuyên dùng, không cần clone)
 
 ```bash
-npx -y github:nguyennamkkb/figma-agent-UI#v1.5.3 install
+npx -y --prefer-online github:nguyennamkkb/figma-agent-UI install
 ```
+
+Lệnh này cài bản mới nhất của nhánh `main`. Muốn ghim một phiên bản cố định thì thêm tag: `github:nguyennamkkb/figma-agent-UI#v1.5.2`.
 
 Lệnh này chạy được trên macOS, Windows và Linux, và làm 3 việc:
 - copy plugin ra `~/.figma-agent/plugin/` (Windows: `%USERPROFILE%\.figma-agent\plugin\`)
@@ -39,7 +41,7 @@ Sau đó làm tay một lần:
 
 | Lệnh | Việc |
 |---|---|
-| `npx -y github:nguyennamkkb/figma-agent-UI#<tag> install` | cài hoặc nâng cấp |
+| `npx -y --prefer-online github:nguyennamkkb/figma-agent-UI install` | cài hoặc nâng cấp lên bản mới nhất (`#<tag>` để ghim phiên bản) |
 | `… doctor` | kiểm tra Node, git, plugin, skill, cấu hình MCP, token, cổng 3055 |
 | `… uninstall` | gỡ những gì `install` đã thêm (giữ token; plugin trong Figma gỡ tay) |
 
@@ -52,15 +54,15 @@ Tuỳ chọn của `install`/`uninstall`/`doctor`:
 | `--no-skills` / `--no-mcp` | bỏ qua skill / bỏ qua cấu hình MCP |
 | `--dry-run` | chỉ in ra sẽ thay đổi gì |
 
-**Nâng cấp:** chạy lại `install` với tag mới, rồi đóng và mở lại plugin trong Figma. Không cần import lại manifest, trừ khi bản mới sửa `manifest.json`.
+**Nâng cấp:** chạy lại lệnh `install` ở trên (`--prefer-online` bắt npx lấy commit mới nhất thay vì bản trong cache; vẫn ra bản cũ thì xoá `~/.npm/_npx` rồi chạy lại), khởi động lại client, rồi đóng và mở lại plugin trong Figma. Không cần import lại manifest, trừ khi bản mới sửa `manifest.json`.
 
 **Client khác** (Claude Desktop, Cursor…): thêm tay vào file cấu hình MCP của client:
 
 ```json
-{ "mcpServers": { "figma-agent": { "command": "npx", "args": ["-y", "github:nguyennamkkb/figma-agent-UI#v1.5.3"] } } }
+{ "mcpServers": { "figma-agent": { "command": "npx", "args": ["-y", "github:nguyennamkkb/figma-agent-UI"] } } }
 ```
 
-Trên Windows dùng `"command": "cmd", "args": ["/c", "npx", "-y", "github:nguyennamkkb/figma-agent-UI#v1.5.3"]`.
+Trên Windows dùng `"command": "cmd", "args": ["/c", "npx", "-y", "github:nguyennamkkb/figma-agent-UI"]`.
 
 ### Cách B: clone (để phát triển)
 
@@ -101,7 +103,7 @@ Biến môi trường: `FIGMA_AGENT_TOKEN` (cố định token), `FIGMA_AGENT_PO
 | `figma_status` cảnh báo lệch version | Plugin trong Figma là bản cũ: chạy lại `install` (hoặc `npm run build`), đóng rồi mở lại plugin |
 | Token bị từ chối | Token trong plugin khác `~/.figma-agent/token`: dán lại token mới, hoặc xoá file token rồi khởi động lại client |
 | `npx` lỗi 404 / đòi đăng nhập | Máy chưa có quyền truy cập repo GitHub hoặc thiếu git |
-| `npx` chạy xong không in gì (exit 128) | Git không lấy được repo: chưa có quyền vào repo private hoặc sai tag. Kiểm tra bằng `git ls-remote https://github.com/nguyennamkkb/figma-agent-UI` |
+| `npx` chạy xong không in gì (exit 128) | Git không lấy được repo: chưa có quyền vào repo private hoặc sai tag (nếu có ghim tag). Kiểm tra bằng `git ls-remote https://github.com/nguyennamkkb/figma-agent-UI` |
 | Client không thấy tool `figma-agent` | Khởi động lại client; kiểm tra bằng `claude mcp get figma-agent`, `opencode mcp list` hoặc `codex mcp get figma-agent` |
 | Plugin bị treo sau `execute_code` | Vòng lặp vô hạn làm chết sandbox: đóng và mở lại plugin (server không cần khởi động lại) |
 

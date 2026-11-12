@@ -1,4 +1,5 @@
 import type { AnyProps, ConnectorSpec, RenderTreeInput, SectionSpec, TreeNode } from '../../shared/schemas';
+import { systemBarNodes } from '../../shared/devices';
 import { parseColor } from '../../shared/values';
 import { applyPlacement, applyProps, endpointFor, setSublayerText, type ApplyCtx } from '../apply';
 import { resolveFill } from '../paints';
@@ -114,10 +115,12 @@ export async function build(
     }
     applyPlacement(node, props, true);
 
-    if (spec.type === 'frame' && spec.children?.length) {
+    const bars = spec.type === 'frame' ? deviceBars(spec, node as FrameNode) : [];
+    if (spec.type === 'frame' && (spec.children?.length || bars.length)) {
       const frame = node as FrameNode;
-      for (const child of spec.children) await build(child, frame, undefined, ctx, here, ids, state);
-      if (!isAutoLayout(frame) && spec.width === undefined && spec.height === undefined) fitToChildren(frame);
+      for (const child of spec.children ?? []) await build(child, frame, undefined, ctx, here, ids, state);
+      for (const bar of bars) pinBar(await build(bar, frame, undefined, ctx, here, ids, state));
+      if (!isAutoLayout(frame) && spec.width === undefined && spec.height === undefined && spec.device === undefined) fitToChildren(frame);
     }
 
     let key = here.join('/');
@@ -131,6 +134,18 @@ export async function build(
 }
 
 class PathError extends Error {}
+
+function pinBar(node: SceneNode): void {
+  if (!('constraints' in node)) return;
+  node.constraints = node.name === 'overlay/home-indicator' ? { horizontal: 'CENTER', vertical: 'MAX' } : { horizontal: 'STRETCH', vertical: 'MIN' };
+}
+
+function deviceBars(spec: TreeNode & { type: 'frame' }, frame: FrameNode): TreeNode[] {
+  const inFlow = frame.layoutMode !== 'NONE';
+  return systemBarNodes(spec, { width: frame.width, height: frame.height, clip: true }).map(
+    (bar) => ({ ...bar, absolute: inFlow ? true : undefined }) as unknown as TreeNode,
+  );
+}
 
 async function buildSlide(
   spec: Extract<TreeNode, { type: 'slide' }>,

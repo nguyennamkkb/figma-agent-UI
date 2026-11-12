@@ -17,13 +17,13 @@ A tool touches four places, in this order:
 
 Keep logic that doesn't need the `figma` global in `src/shared/` (pure, unit-tested in `tests/`); the plugin side stays thin. Bump `version` in `package.json` when the plugin changes (see AGENTS.md).
 
-## Installer (`npx github:nguyennamkkb/figma-agent-UI#vX.Y.Z install|doctor|uninstall`)
+## Installer (`npx github:nguyennamkkb/figma-agent-UI install|doctor|uninstall`)
 
 - `bin/figma-agent-ui.mjs` routes `install|uninstall|doctor|help` to `dist/setup.mjs`, everything else to `dist/server.mjs`. `prepare` runs the full build when installed from git.
 - `src/server/setup-lib.ts` holds pure, tested helpers (paths per platform, MCP config edits for Claude Code / OpenCode / Codex TOML, arg parsing); `src/server/setup.ts` does the I/O and output.
 - Bundled skills are listed twice and must stay in sync: `BUNDLED_SKILLS` in `setup-lib.ts` and `files` in `package.json`. A renamed or merged skill goes into `RETIRED_SKILLS` so `install`/`uninstall` remove the old copy from `~/.claude/skills`, `~/.config/opencode/skills`, `~/.agents/skills`.
 - Verify installer changes in a throwaway home: `HOME=$(mktemp -d) node bin/figma-agent-ui.mjs install --no-mcp` (plus `doctor`, `uninstall`), and `npm pack --dry-run` to check shipped files.
-- README install instructions pin a tag (`#vX.Y.Z`); a release = bump `package.json`, update README, commit, push, push the tag.
+- README installs the latest `main` (no tag; `--prefer-online` defeats the npx cache); the installer writes the same untagged spec into the MCP configs. A release = bump `package.json`, commit, merge to `main`, push, push a `vX.Y.Z` tag for users who pin.
 
 ## Skills (`.claude/skills/`)
 

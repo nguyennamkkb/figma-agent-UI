@@ -1,4 +1,5 @@
 import type { AnyProps, NumOrVar } from '../shared/schemas';
+import { deviceFrame } from '../shared/devices';
 import { GRID_PRESETS, toLayoutGrid } from '../shared/grids';
 import { expandSides, parseLetterSpacing, parseLineHeight, weightToStyle } from '../shared/values';
 import { loadFont, loadNodeFonts, resolveFont } from './fonts';
@@ -22,7 +23,8 @@ async function setNum(node: SceneNode, field: BindField, v: NumOrVar, ctx: Apply
   (node as Bindable).setBoundVariable(field, await ctx.res.variable(v.var));
 }
 
-export async function applyProps(node: SceneNode, p: AnyProps, ctx: ApplyCtx, isNew: boolean): Promise<void> {
+export async function applyProps(node: SceneNode, input: AnyProps, ctx: ApplyCtx, isNew: boolean): Promise<void> {
+  const p = withDevice(node, input);
   if (p.name !== undefined) node.name = p.name;
   if (p.visible !== undefined) node.visible = p.visible;
   if (p.locked !== undefined) node.locked = p.locked;
@@ -76,6 +78,26 @@ export async function applyProps(node: SceneNode, p: AnyProps, ctx: ApplyCtx, is
     }
     node.description = p.description;
   }
+}
+
+function withDevice(node: SceneNode, p: AnyProps): AnyProps {
+  const frame = deviceFrame(p);
+  if (!frame) return p;
+  if (!('layoutMode' in node)) throw new Error(`device only applies to frames, not ${node.type}.`);
+  return {
+    ...p,
+    width: p.width ?? frame.width,
+    height: p.height ?? frame.height,
+    clip: frame.clip,
+    layoutGrids: p.layoutGrids ?? frame.layoutGrids,
+    minHeight: p.minHeight ?? (growsDown(node, p) ? frame.height : undefined),
+  };
+}
+
+export function growsDown(node: SceneNode, p: AnyProps): boolean {
+  if (p.device === undefined || p.height !== undefined || p.heightMode !== undefined) return false;
+  const layout = p.layout ?? ('layoutMode' in node ? node.layoutMode : 'NONE');
+  return layout !== 'NONE';
 }
 
 const ALIGN: Record<string, 'MIN' | 'CENTER' | 'MAX'> = { START: 'MIN', CENTER: 'CENTER', END: 'MAX' };
@@ -271,8 +293,10 @@ export function applyPlacement(node: SceneNode, p: AnyProps, isNew: boolean): vo
   let hm = p.heightMode;
   if (isNew && node.type !== 'INSTANCE') {
     const canHug = (figma.editorType as string) !== 'slides' || selfAL;
-    if (canHug && wm === undefined && p.width === undefined && (selfAL || isText)) wm = 'HUG';
-    if (canHug && hm === undefined && p.height === undefined && (selfAL || isText)) hm = 'HUG';
+    const sized = p.device !== undefined;
+    if (growsDown(node, p)) hm = 'HUG';
+    if (canHug && wm === undefined && p.width === undefined && !sized && (selfAL || isText)) wm = 'HUG';
+    if (canHug && hm === undefined && p.height === undefined && !sized && (selfAL || isText)) hm = 'HUG';
   }
   for (const [axis, mode] of [
     ['widthMode', wm],

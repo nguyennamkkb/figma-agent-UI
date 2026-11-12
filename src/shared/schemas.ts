@@ -62,6 +62,7 @@ const Sizing = z.enum(['FIXED', 'HUG', 'FILL']);
 export const GridSpec = z.strictObject({
   pattern: z.enum(['COLUMNS', 'ROWS', 'GRID']),
   count: z.union([z.number().int().min(1), z.literal('auto')]).optional().describe('Columns/rows; default 4 columns, "auto" = Infinity'),
+  gutter: z.number().min(0).optional().describe('Space between columns/rows; default 16'),
   margin: z.number().min(0).optional().describe('Outer margin (STRETCH) or offset; default 16'),
   size: z.number().min(1).optional().describe('Column/row width for non-STRETCH alignment, or GRID cell size'),
   alignment: z.enum(['STRETCH', 'CENTER', 'MIN', 'MAX']).optional(),
@@ -116,6 +117,13 @@ const frameProps = {
   clip: z.boolean().optional(),
   variableModes: z.record(z.string(), z.string()).optional().describe('{ "Collection": "Mode" }, e.g. dark mode'),
   layoutGrids: LayoutGrids.optional().describe('Layout grids: [{pattern, count, gutter, margin}], { preset } or { style }'),
+  device: z
+    .enum(['mobile', 'tablet'])
+    .optional()
+    .describe('Screen frame preset: mobile 393×852 (iOS + Android), tablet 834×1194; sets size, clip and grid (+ safe-area rows). Explicit width/height/clip/layoutGrids win'),
+  orientation: z.enum(['portrait', 'landscape']).optional().describe('With device: landscape swaps width and height'),
+  safeArea: z.boolean().optional().describe('With device: false drops the safe-area row bands (top status bar, bottom home indicator)'),
+  systemBars: z.boolean().optional().describe('With device: false skips the locked overlay/status-bar and overlay/home-indicator layers (added last, absolute)'),
 };
 
 const textProps = {
