@@ -28,7 +28,6 @@ async function startBridge(opts: Partial<{ port: number; portRange: number; host
   return bridge;
 }
 
-// Fake plugin: answers requests with the given handler.
 function fakePlugin(
   b: Bridge,
   handler: (cmd: string, params: unknown) => unknown,
@@ -40,7 +39,6 @@ function fakePlugin(
   sockets.push(ws);
   ws.on('message', async (data) => {
     const msg = JSON.parse(String(data));
-    // The bridge also pushes "notice" messages; they are not command replies.
     if (msg.type !== 'request') return;
     try {
       const result = await handler(msg.command, msg.params);
@@ -58,7 +56,6 @@ function fakePlugin(
   });
 }
 
-// Occupies a port so the bridge has to move to the next one.
 function occupyPort(): Promise<{ port: number; close: () => Promise<void> }> {
   const server = createServer();
   return new Promise((resolve) => {

@@ -1,23 +1,28 @@
-// Pure page planning for `manage_pages` (figma-ui-flow Stage 1: the standard
-// file skeleton). No Figma API here, so the safety rules are unit-testable.
 
 export interface PageRef {
   id: string;
   name: string;
 }
 
-// file-standards.md §1.2 — the standard page order.
-export const MASTER_PAGES = [
-  '📘 Cover',
-  '📝 Brief',
-  '🧪 Explore',
-  '🎨 Foundations',
-  '🧩 Components',
-  '📱 Screens',
-  '▶️ Prototype',
-  '✅ Ready for dev',
-  '🗄 Archive',
-];
+export const COVER_PAGE = '🏠 Cover';
+export const FOUNDATIONS_PAGE = '01 · Foundations';
+export const COMPONENTS_PAGE = '02 · Components';
+export const TEMPLATES_PAGE = '03 · Templates';
+export const ASSETS_PAGE = '04 · Assets';
+export const SCREENS_PAGE = '05 · Screens & Flows';
+export const EXPLORE_PAGE = '06 · Explore (WIP)';
+
+export const MASTER_PAGES = [COVER_PAGE, FOUNDATIONS_PAGE, COMPONENTS_PAGE, TEMPLATES_PAGE, ASSETS_PAGE, SCREENS_PAGE, EXPLORE_PAGE];
+
+const LEGACY_EXPLORE_PAGES = ['🧪 Explore'];
+
+export function findExplorePage<T extends { name: string }>(pages: readonly T[]): T | undefined {
+  return (
+    pages.find((p) => p.name === EXPLORE_PAGE) ??
+    pages.find((p) => LEGACY_EXPLORE_PAGES.includes(p.name)) ??
+    pages.find((p) => /explore/i.test(p.name))
+  );
+}
 
 export interface ManagePagesInput {
   template?: boolean;
@@ -42,8 +47,16 @@ export interface PagePlan {
 const find = (pages: PageRef[], ref: string): PageRef | undefined =>
   pages.find((p) => p.id === ref) ?? pages.find((p) => p.name === ref);
 
-// Builds the operation list. Never returns a plan that would delete every page:
-// Figma requires a file to keep at least one.
+export const PENDING_PREFIX = 'pending:';
+
+export function resolvePageIds(ids: readonly string[], created: readonly PageRef[]): string[] {
+  return ids.map((id) => {
+    if (!id.startsWith(PENDING_PREFIX)) return id;
+    const name = id.slice(PENDING_PREFIX.length);
+    return created.find((c) => c.name === name)?.id ?? id;
+  });
+}
+
 export function planPages(existing: PageRef[], input: ManagePagesInput): PagePlan {
   const plan: PagePlan = { ops: [], skipped: [], problems: [] };
   let current = existing.map((p) => ({ ...p }));
@@ -55,7 +68,7 @@ export function planPages(existing: PageRef[], input: ManagePagesInput): PagePla
       continue;
     }
     plan.ops.push({ op: 'create', name });
-    current.push({ id: `pending:${name}`, name });
+    current.push({ id: `${PENDING_PREFIX}${name}`, name });
   }
 
   for (const r of input.rename ?? []) {

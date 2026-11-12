@@ -1,0 +1,324 @@
+{
+  "type": "frame",
+  "name": "Cover · <Product>",
+  "width": 3840,
+  "height": 2160,
+  "layout": "NONE",
+  "clip": true,
+  "fill": "#070707",
+  "children": [
+    {
+      "type": "ellipse",
+      "name": "decor/glow-top",
+      "x": 392,
+      "y": -229,
+      "width": 1027,
+      "height": 420,
+      "fill": {
+        "gradient": "LINEAR",
+        "angle": 180,
+        "stops": [
+          {
+            "color": "#FFFFFF",
+            "position": 0
+          },
+          {
+            "color": "#FFFFFF00",
+            "position": 1
+          }
+        ]
+      },
+      "effects": [
+        {
+          "layerBlur": 300
+        }
+      ],
+      "opacity": 0.5
+    },
+    {
+      "type": "rect",
+      "name": "decor/glow-top-color",
+      "x": 392,
+      "y": -868,
+      "width": 1210,
+      "height": 1210,
+      "opacity": 0.35,
+      "fill": {
+        "gradient": "ANGULAR",
+        "stops": [
+          {
+            "color": "#FF00D6",
+            "position": 0.09
+          },
+          {
+            "color": "#FFC700",
+            "position": 0.3
+          },
+          {
+            "color": "#45F6D7",
+            "position": 0.5
+          },
+          {
+            "color": "#4643FF",
+            "position": 0.73
+          },
+          {
+            "color": "#FF0000",
+            "position": 0.9
+          }
+        ]
+      },
+      "effects": [
+        {
+          "layerBlur": 300
+        }
+      ]
+    },
+    {
+      "type": "ellipse",
+      "name": "decor/glow-title",
+      "x": 2411,
+      "y": 760,
+      "width": 1133,
+      "height": 188,
+      "fill": {
+        "gradient": "LINEAR",
+        "angle": 270,
+        "stops": [
+          {
+            "color": "#00FF0000",
+            "position": 0
+          },
+          {
+            "color": "#00D1FF",
+            "position": 0.25
+          },
+          {
+            "color": "#FA00FF",
+            "position": 0.5
+          },
+          {
+            "color": "#FC1B01",
+            "position": 0.75
+          },
+          {
+            "color": "#FFE800",
+            "position": 1
+          }
+        ]
+      },
+      "effects": [
+        {
+          "layerBlur": 500
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "name": "Title",
+      "x": 480,
+      "y": 753,
+      "width": 2880,
+      "widthMode": "FIXED",
+      "heightMode": "HUG",
+      "layout": "VERTICAL",
+      "children": [
+        {
+          "type": "text",
+          "name": "Text",
+          "text": "<PRODUCT> (<PHASE>)",
+          "fontFamily": "Anton",
+          "fontStyle": "Regular",
+          "fontSize": 600,
+          "lineHeight": 390,
+          "textAlign": "CENTER",
+          "verticalAlign": "BOTTOM",
+          "decoration": "UNDERLINE",
+          "fill": "#FFFFFF",
+          "widthMode": "FILL"
+        }
+      ],
+      "clip": false
+    },
+    {
+      "type": "rect",
+      "name": "Divider",
+      "x": 334,
+      "y": 1680,
+      "width": 3242,
+      "height": 4,
+      "fill": "#FFFFFF3B"
+    },
+    {
+      "type": "frame",
+      "name": "Info",
+      "x": 300,
+      "y": 1818,
+      "width": 3240,
+      "widthMode": "FIXED",
+      "heightMode": "HUG",
+      "layout": "HORIZONTAL",
+      "justify": "SPACE_BETWEEN",
+      "align": "START",
+      "children": [
+        {
+          "type": "frame",
+          "name": "Meta",
+          "layout": "HORIZONTAL",
+          "gap": 150,
+          "widthMode": "HUG",
+          "heightMode": "HUG",
+          "children": [
+            {
+              "type": "frame",
+              "name": "Team",
+              "layout": "VERTICAL",
+              "gap": 24,
+              "widthMode": "HUG",
+              "heightMode": "HUG",
+              "children": [
+                {
+                  "type": "text",
+                  "name": "Label",
+                  "text": "Team",
+                  "fontFamily": "Open Sans",
+                  "fontStyle": "Regular",
+                  "fontSize": 70,
+                  "textCase": "UPPER",
+                  "fill": "#FFFFFF"
+                },
+                {
+                  "type": "text",
+                  "name": "Value",
+                  "text": "<BU>: <Lead>",
+                  "fontFamily": "Epilogue",
+                  "fontStyle": "SemiBold",
+                  "fontSize": 52,
+                  "maxLines": 1,
+                  "fill": "#FFFFFF"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "name": "Dev",
+              "layout": "VERTICAL",
+              "gap": 24,
+              "widthMode": "HUG",
+              "heightMode": "HUG",
+              "children": [
+                {
+                  "type": "text",
+                  "name": "Label",
+                  "text": "Dev",
+                  "fontFamily": "Open Sans",
+                  "fontStyle": "Regular",
+                  "fontSize": 70,
+                  "textCase": "UPPER",
+                  "fill": "#FFFFFF"
+                },
+                {
+                  "type": "text",
+                  "name": "Value",
+                  "text": "<Developer>",
+                  "fontFamily": "Epilogue",
+                  "fontStyle": "SemiBold",
+                  "fontSize": 52,
+                  "maxLines": 1,
+                  "fill": "#FFFFFF"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "name": "Owner",
+              "layout": "VERTICAL",
+              "gap": 24,
+              "widthMode": "HUG",
+              "heightMode": "HUG",
+              "children": [
+                {
+                  "type": "text",
+                  "name": "Label",
+                  "text": "Owner",
+                  "fontFamily": "Open Sans",
+                  "fontStyle": "Regular",
+                  "fontSize": 70,
+                  "textCase": "UPPER",
+                  "fill": "#FFFFFF"
+                },
+                {
+                  "type": "text",
+                  "name": "Value",
+                  "text": "<Owner>",
+                  "fontFamily": "Epilogue",
+                  "fontStyle": "SemiBold",
+                  "fontSize": 52,
+                  "maxLines": 1,
+                  "fill": "#FFFFFF"
+                }
+              ]
+            },
+            {
+              "type": "frame",
+              "name": "Timeline",
+              "layout": "VERTICAL",
+              "gap": 24,
+              "widthMode": "HUG",
+              "heightMode": "HUG",
+              "children": [
+                {
+                  "type": "text",
+                  "name": "Label",
+                  "text": "Timeline",
+                  "fontFamily": "Open Sans",
+                  "fontStyle": "Regular",
+                  "fontSize": 70,
+                  "textCase": "UPPER",
+                  "fill": "#FFFFFF"
+                },
+                {
+                  "type": "text",
+                  "name": "Value",
+                  "text": "Start: <DD/MM> - End: <DD/MM/YYYY>",
+                  "fontFamily": "Epilogue",
+                  "fontStyle": "SemiBold",
+                  "fontSize": 52,
+                  "maxLines": 1,
+                  "fill": "#FFFFFF"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "name": "Badges",
+          "layout": "HORIZONTAL",
+          "gap": 30,
+          "justify": "END",
+          "widthMode": "HUG",
+          "heightMode": "HUG",
+          "children": [
+            {
+              "type": "instance",
+              "name": "Type",
+              "component": "Type",
+              "variant": {
+                "Type": "figma"
+              }
+            },
+            {
+              "type": "instance",
+              "name": "Progress",
+              "component": "Progress",
+              "variant": {
+                "Process": "in progress"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -33,6 +33,9 @@ Types: `frame`, `text`, `rect`, `ellipse`, `svg`, `image`, `instance`, `section`
   "stroke": { "color": "#E2E8F0", "width": 1, "align": "INSIDE" },   // width n or [t,r,b,l]; dash [4,4]
   "effects": "md",                 // none|sm|md|lg|xl | [{x,y,blur,spread,color,type}] | [{layerBlur}] | [{backgroundBlur}] | {style}
   "layoutGrids": { "preset": "mobile" },   // or [{pattern, count, gutter, margin}] | {style}
+  "device": "mobile",              // screen preset: mobile 393×852 | tablet 834×1194 | duo-outer 466×678 | duo-inner 951×669 → size, clip, grid + safe area
+  "orientation": "landscape",      // with device: swap width/height (tablet 1194×834)
+  "safeArea": false,               // with device: drop the safe-area bands (mobile top 59 / bottom 34, tablet 24 / 20)
   "variableModes": { "Semantic": "Dark" },
   "children": [
     { "type": "text", "text": "Welcome back", "fontSize": 28, "fontWeight": 700,
@@ -83,12 +86,16 @@ Off-centre icons come from: no `layout` (icon stuck at 0,0), `justify`/`align` l
 
 ## 5. Building in passes
 
+**Screen frames:** `device: "mobile"` (393×852, iOS and Android) or `device: "tablet"` (834×1194, `orientation: "landscape"` for 1194×834) sets the fixed size, `clip: true`, the platform column grid and two safe-area row bands (orange, layout grid only — no layers, nothing in exports). Explicit `width`/`height`/`clip`/`layoutGrids` win (explicit `layoutGrids` also drops the safe-area bands); test sizes (375, 440) = `device` + `width`. Keep content out of the bands: header `paddingTop` ≥ the top band, footer `paddingBottom` ≥ the bottom band.
+
+**Duo foldable:** `device: "duo-outer"` (466×678, radius 0/40/40/0) and `"duo-inner"` (951×669, radius 36) have a fixed height and no status bar or home indicator. The system UI is an 84 px rail on the right: safe-area column (orange) + `overlay/system-chrome` (camera on outer, time, status; absolute, locked). Inner adds `overlay/hinge` (x 462, 27 wide): keep text and controls off it. Build the screen as `layout: "HORIZONTAL"` → `Content` (FILL, padding 20) + `Vertical Bar` (84 FIXED, FILL height, padding top 172 outer / 122 inner, 24 right, 12 left): Back → prominent action → toolbar group → flexible space → tab bar (inner: compressed to the selected tab, sidebar navigates). `orientation` is ignored.
+
 The build loop in figma-ui-flow locks the layout first, then fills it:
 
 ```jsonc
 // Pass 1 — frame + regions + sized placeholder blocks (1 call)
-{ "tree": { "type": "frame", "name": "Paywall / Timeline", "width": 390, "height": 844,
-  "layout": "VERTICAL", "fill": { "var": "color/bg/default" }, "layoutGrids": { "preset": "mobile" },
+{ "tree": { "type": "frame", "name": "Paywall / Timeline", "device": "mobile",
+  "layout": "VERTICAL", "fill": { "var": "color/bg/default" },
   "children": [
     { "type": "frame", "name": "Header",  "layout": "HORIZONTAL", "widthMode": "FILL", "padding": [54, 24, 8, 24], "justify": "SPACE_BETWEEN", "align": "CENTER" },
     { "type": "frame", "name": "Content", "layout": "VERTICAL",   "widthMode": "FILL", "heightMode": "FILL", "padding": [0, 24], "gap": 24, "children": [

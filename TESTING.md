@@ -69,7 +69,7 @@ Chạy trên page `🤖 Agent sandbox` của một file nháp. Trước tiên: `
 - [ ] `search_design_system{query: "button"}` trên file có component → hit có `properties`; query vô nghĩa → `hint` gợi ý tạo mới.
 - [ ] `import_tokens{path: <skill>/assets/tokens.example.json, dryRun: true}` → 2 collection; chạy thật → Primitives (scopes rỗng) + Semantic (alias). Gói free: cảnh báo mode Dark, không lỗi. Gọi lại lần 2 → mọi variable `skip`.
 - [ ] `create_styles` 1 text (fontSize bind `{var}`), 1 paint `{var}`, 1 effect `md`, 1 grid `{preset: "mobile"}` → đủ 4 style; gọi lại với `onExisting: "error"` → lỗi, không sinh style thừa.
-- [ ] `render_foundations{page: "🎨 Foundations"}` → swatch bind đúng variable (chọn chip → panel hiện tên variable), specimen dùng text style.
+- [ ] `render_foundations{page: "01 · Foundations"}` → swatch bind đúng variable (chọn chip → panel hiện tên variable), specimen dùng text style.
 - [ ] `create_component_set` Button 2 State × 2 Size + property `Label` (TEXT) và `Has icon` (BOOLEAN) → panel Properties có đủ; instance đổi Label được; tên variant `Size=md, State=Default`.
 - [ ] `create_component_set` với layer `targets` sai → cảnh báo, set vẫn tạo; variant trùng → lỗi, canvas sạch.
 - [ ] `stress_test{id: <card>, modes: {"Semantic": "Dark"}}` → Section "Stress / …" ở Explore; `overflow` liệt kê text tràn.
@@ -109,3 +109,33 @@ Ghi chú để không vấp lại:
 - `search_design_system` hiện đích của alias; `render_foundations` trả kết quả gọn thay vì map hàng trăm id.
 
 Ghi chú: `import_tokens` trên gói 1 mode ghi mode đầu (Light) và cảnh báo Dark — đúng thiết kế. Annotation đọc lại có cả `label` và `labelMarkdown`. Grid không hiện trong ảnh `screenshot` (Figma không export grid) — kiểm bằng `layoutGrids`.
+
+## J. FigJam (specs/001-figjam-integration, v1.4.0)
+
+Chuẩn bị: `npm run build`, **import lại plugin** trong Figma (manifest thêm `figjam` vào `editorType`), mở một board FigJam nháp (không phải board workshop thật), chạy plugin, Connect.
+
+- [ ] `figma_status` liệt kê đúng board FigJam; `versionCheck` ✅; `missingCommands` rỗng.
+- [ ] Đọc: chọn sticky + shape + connector → `get_selection` hiện `STICKY` (text + author), `SHAPE_WITH_TEXT` (shape + text), `CONNECTOR` (from/to endpoint).
+- [ ] `get_node` trên table → rows/columns/cell matrix; trên widget/stamp → `readOnly: true`.
+- [ ] `render_tree` một lệnh: section "Workshop" + 2 shape nối bằng connector (dùng key `"Workshop/step-1"`) + 3 sticky màu + table 2×3 → connector cắm đúng endpoint; Cmd+Z một lần xoá sạch.
+- [ ] `render_tree` với connector `from` trỏ id đã xoá → lỗi rõ ràng, **không còn node thừa** trên board.
+- [ ] `update_nodes` sửa text 2 sticky + 1 id sai → 2 cái đổi, 1 cái nằm trong `failed`.
+- [ ] `set_interactions` / `bind_variables` / `create_variables` trên board → message *"Design-only…"*, board không đổi.
+- [ ] Table > 400 cell: `get_node` trả `cellsTruncated: true` thay vì dump toàn bộ.
+- [ ] Mở đồng thời 1 file Design + board FigJam: tool không truyền `file` → báo rõ cần chọn file, không đoán bừa.
+- [ ] Đóng/mở lại plugin trong FigJam → tự kết nối lại, không phải nhập token.
+
+Ghi chú để không vấp lại:
+
+- `editorType` trong `manifest.json` đổi ⇒ **phải import lại plugin** (Figma cache manifest lúc import).
+- FigJam text nằm ở sublayer (`node.text`), không phải `TextNode` — sửa text qua `text`/`cells`, không dùng text style.
+- Caps hợp lệ: `NONE | ARROW_EQUILATERAL | ARROW_LINES | TRIANGLE_FILLED | DIAMOND_FILLED | CIRCLE_FILLED` (`"ARROW"` không tồn tại).
+- `SHAPE_WITH_TEXT.cornerRadius` là readonly — không truyền `radius` cho shape.
+- Endpoint nối mặc định `magnet: 'AUTO'`; connector không loop lên chính nó.
+
+### Kết quả chạy thực tế §J (2026-11-09, board FigJam nháp, plugin 1.4.0)
+
+- Đủ 10/10 mục: đọc board (sticky/shape/connector/table/widget-readonly), dựng Workshop starter 1 lệnh (section + 2 shape + connector key cùng lệnh + 3 sticky + table 2×3), update batch + `failed` riêng id sai, connector trỏ id xoá → lỗi + board sạch, Design-only refusal đúng câu, dual-file routing hỏi rõ, reconnect không cần nhập token.
+- Lộ 3 bug đã sửa: connector resolve endpoint quá sớm trong `applyProps` (chuyển sang pass 2), `find_nodes` crash trên TABLE_CELL không tên (guard + tìm cả sublayer text), rollback để lọt connector trôi (track mọi node đã tạo, áp dụng cả component variant).
+- Ghi nhận: màu fill sticky bị FigJam ép về palette (vd `#FFE066` hiện nâu) — hành vi của editor, không phải bug; cell TABLE_CELL serialize `visible: false` nhưng đọc matrix qua `cellAt` vẫn đủ.
+- Board trả sạch sau test (topLevelCount 0).

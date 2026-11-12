@@ -1,7 +1,5 @@
-// figma-ui-flow Stage 3 Playground / handoff-qa D2: copies of a frame
-// under hostile content (long text, large type, narrow/wide, other mode),
-// side by side in one Section, plus a cheap overflow check per copy.
 import type { StressTestInput } from '../../shared/schemas';
+import { findExplorePage } from '../../shared/pageplan';
 import { loadNodeFonts } from '../fonts';
 import { freeSpot, getSceneNode } from '../util';
 
@@ -13,14 +11,11 @@ const outside = (inner: Box, outer: Box) =>
   inner.x + inner.width > outer.x + outer.width + 0.5 ||
   inner.y + inner.height > outer.y + outer.height + 0.5;
 
-// Text that spills out of its clipping ancestor, or past the copy itself.
 function overflowing(root: SceneNode): string[] {
   const bad: string[] = [];
   if (!('findAll' in root)) return bad;
   const rootBox = root.absoluteBoundingBox;
   for (const t of root.findAll((n) => n.type === 'TEXT') as TextNode[]) {
-    // absoluteRenderBounds is already clipped by the parent, which hides the
-    // very overflow we look for: compare the layout box instead.
     const box = t.absoluteBoundingBox;
     if (!box || !rootBox) continue;
     let clip: BaseNode | null = t.parent;
@@ -41,7 +36,7 @@ async function mutateTexts(root: SceneNode, fn: (t: TextNode) => void) {
 
 export async function stressTest(p: StressTestInput) {
   const source = await getSceneNode(p.id);
-  const explore = figma.root.children.find((x) => x.name === (p.page ?? '🧪 Explore'));
+  const explore = p.page ? figma.root.children.find((x) => x.name === p.page) : findExplorePage(figma.root.children);
   if (p.page && !explore) throw new Error(`Page "${p.page}" not found.`);
   const page = explore ?? figma.currentPage;
   if (page !== figma.currentPage) await page.loadAsync();
@@ -62,7 +57,6 @@ export async function stressTest(p: StressTestInput) {
   const collections = p.modes ? await figma.variables.getLocalVariableCollectionsAsync() : [];
 
   for (const c of [{ kind: 'original', modes: undefined }, ...all]) {
-    // Instances of the component under test, not detached copies.
     const copy = source.type === 'COMPONENT' ? source.createInstance() : source.clone();
     section.appendChild(copy);
     copy.name = `${source.name} / ${c.kind}`;
@@ -71,7 +65,6 @@ export async function stressTest(p: StressTestInput) {
     if (c.kind === 'long-text') await mutateTexts(copy, (t) => (t.characters = `${t.characters} ${t.characters}`.trim()));
     if (c.kind === 'empty-text') await mutateTexts(copy, (t) => (t.characters = ''));
     if (c.kind === 'large-text') {
-      // ≈ iOS AX / Android 200% font scale on body sizes.
       await mutateTexts(copy, (t) => {
         if (typeof t.fontSize === 'number') t.fontSize = Math.round(t.fontSize * 1.5);
       });

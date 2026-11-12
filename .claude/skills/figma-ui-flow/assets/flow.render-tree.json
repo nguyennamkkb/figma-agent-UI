@@ -1,0 +1,29 @@
+{
+  "type": "section",
+  "name": "Flow · <Product>",
+  "padding": 80,
+  "gap": 40,
+  "children": [
+    {
+      "type": "frame",
+      "name": "flow/text-block",
+      "layout": "VERTICAL",
+      "gap": 16,
+      "padding": 32,
+      "radius": 16,
+      "fill": "#FFFFFF",
+      "children": [
+        { "type": "text", "name": "flow/text-title", "text": "Flow (text) · one transition per line: FROM --[action]--> TO", "fontFamily": "Roboto Mono", "fontSize": 20, "fontWeight": 600, "color": "#0F172A" },
+        {
+          "type": "text",
+          "name": "flow/text",
+          "fontFamily": "Roboto Mono",
+          "fontSize": 16,
+          "lineHeight": 26,
+          "color": "#0F172A",
+          "text": "SCR-01 <Screen> --[<Action>]--> SCR-02 <Screen>\nSCR-02 <Screen> --[<Action>]--> SCR-03 <Screen>"
+        }
+      ]
+    }
+  ]
+}

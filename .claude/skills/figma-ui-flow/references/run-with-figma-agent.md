@@ -38,24 +38,25 @@ The bridge between the workflow (this skill) and the tools (the `figma-agent-too
 | Stage | Task | Tool |
 |---|---|---|
 | 0 | Orientation | `figma_status` → `get_document_info` → `get_design_system` |
-| 1 | 9-page skeleton | `manage_pages{template: true, dryRun: true}` to preview, then run for real |
+| 1 | 7-page skeleton | `manage_pages{template: true, dryRun: true}` to preview, then run for real; `render_tree{tree: assets/cover.render-tree.json}` on `🏠 Cover` → `update_nodes` for the parts in `file-standards.md` §1.3; brief as a `Brief · <Product>` frame next to it |
 | 2 | Tokens from JSON | `import_tokens{path, dryRun: true}`: lints like `check_tokens.py`, then run for real |
 | 2 | Individual variables | `create_variables{collection, modes, variables, onExisting}` |
 | 2 | Text/paint/effect/grid styles | `create_styles{styles: [...]}`; text styles can bind `fontSize: {var}` |
-| 2 | Foundations page | `render_foundations{page: "🎨 Foundations"}` |
+| 2 | Foundations page | `render_foundations{page: "01 · Foundations"}` |
 | 3 | Search first | `search_design_system{query: "button"}` |
 | 3 | Component set + properties | `create_component_set{name, variants: [{props, tree}], properties}` |
 | 3 | Playground | `stress_test{id, cases, modes}` → `screenshot{id: sectionId}` |
-| 4 | 2–3 directions | One section per direction in `🧪 Explore`, each screen in it is a Sketch per §4 (Pass 1–2, just enough to compare) → **stop at the gate** |
-| 5 | Screens by flow | Empty section `render_tree{page: "📱 Screens", tree: {type: "section", name: "<Flow>"}}`, then **each screen per §4** (first one New build, the rest From template) with `parentId` = section; screen name `Flow / Screen / State` |
-| 5 | Dark mode | Frame with `variableModes: {"Semantic": "Dark"}` (requires a multi-mode plan) |
-| 6 | Prototype | `set_interactions{items: [{id, reactions: [{action: "NAVIGATE", destination, transition: {duration: {var: "duration/base"}, easing: "standard"}}]}], flowStart}` |
+| 4 | 2–3 directions | One section per direction (`Explore · <Direction>`) in `06 · Explore (WIP)`, each screen in it is a Sketch per §4 (Pass 1–2, just enough to compare) → **stop at the gate** |
+| 5 | Screens by flow | One section per screen `render_tree{page: "05 · Screens & Flows", tree: {type: "section", name: "SCR-NN · <Screen>"}}`, frames named `SCR-NN · <Screen> · <State>`, then **each screen per §4** (first one New build, the rest From template) with `parentId` = section; screen name `Flow / Screen / State` |
+| 5 | Second theme *(theme = Both only)* | Copy of a finished screen with `variableModes: {"Semantic": "Dark"}` (requires a multi-mode plan). Single theme: skip |
+| 5 | Flow overview | `render_tree{tree: assets/flow.render-tree.json}` on `05`, one `FROM --[action]--> TO` line per transition (`file-standards.md` §2.2.1); thumbnails + arrows via `execute_code` |
+| 6 | Prototype | read `flow/text` line by line → one reaction per line; `set_interactions{items: [{id, reactions: [{action: "NAVIGATE", destination, transition: {duration: {var: "duration/base"}, easing: "standard"}}]}], flowStart}` |
 | 6 | Interactive component | `set_interactions` on a variant with `action: "CHANGE_TO"`, `destination` = target variant |
 | 7 | QA | `audit_design{format: "markdown"}` → paste into the QA report |
 | 7 | Fix raw fill/spacing/radius | `bind_variables{rootId}` (dryRun by default) → review `ambiguous` → add `map` → `dryRun: false` |
 | 7 | Fix default names | `rename_by_rule{rootId}` (dryRun by default) → `dryRun: false` |
 | 8 | Annotation | `annotate{items: [{id, label, properties}]}` |
-| 8 | Ready for dev | `set_dev_status{ids: [sectionId], status: "READY_FOR_DEV"}` |
+| 8 | Ready for dev | `set_dev_status{ids: [<SCR-NN section id>], status: "READY_FOR_DEV"}` |
 | 8 | Tokens to code | `export_tokens{format: "css" \| "swift" \| "kotlin" \| "json", path}` |
 | 8 | Assets | `export_assets{ids, format, scales, outDir}` |
 

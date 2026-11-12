@@ -1,13 +1,10 @@
-// Single source of truth for tool inputs and the render_tree DSL. The server
-// validates with these schemas; the plugin only imports the inferred types.
 import { z } from 'zod';
 
-// ---------------------------------------------------------------- primitives
 
 export const VarRef = z.strictObject({
   var: z
     .string()
-    .describe('Local variable name ("color/primary"), "Collection/name", or a "VariableID:..." id'),
+    .describe('Variable name ("color/primary", local or a library variable used on the page), "Collection/name", a "VariableID:..." id, or a library variable key'),
 });
 export const NumOrVar = z.union([z.number(), VarRef]);
 
@@ -17,7 +14,7 @@ const ScaleMode = z.enum(['FILL', 'FIT', 'CROP', 'TILE']);
 export const PaintInput = z.union([
   ColorString,
   VarRef,
-  z.strictObject({ style: z.string().describe('Local paint style name') }),
+  z.strictObject({ style: z.string().describe('Paint style name (local or library used on the page), style id, or library style key') }),
   z.strictObject({
     gradient: z.enum(['LINEAR', 'RADIAL', 'ANGULAR', 'DIAMOND']),
     angle: z.number().optional().describe('CSS degrees for LINEAR; default 180 (top → bottom)'),
@@ -50,7 +47,7 @@ export const Shadow = z.strictObject({
 });
 export const Effects = z.union([
   z.enum(['none', 'sm', 'md', 'lg', 'xl']).describe('Shadow preset (Tailwind-like)'),
-  z.strictObject({ style: z.string().describe('Local effect style name') }),
+  z.strictObject({ style: z.string().describe('Effect style name (local or library used on the page), style id, or library style key') }),
   z.array(
     z.union([
       Shadow,
@@ -65,6 +62,7 @@ const Sizing = z.enum(['FIXED', 'HUG', 'FILL']);
 export const GridSpec = z.strictObject({
   pattern: z.enum(['COLUMNS', 'ROWS', 'GRID']),
   count: z.union([z.number().int().min(1), z.literal('auto')]).optional().describe('Columns/rows; default 4 columns, "auto" = Infinity'),
+  gutter: z.number().min(0).optional().describe('Space between columns/rows; default 16'),
   margin: z.number().min(0).optional().describe('Outer margin (STRETCH) or offset; default 16'),
   size: z.number().min(1).optional().describe('Column/row width for non-STRETCH alignment, or GRID cell size'),
   alignment: z.enum(['STRETCH', 'CENTER', 'MIN', 'MAX']).optional(),
@@ -72,12 +70,11 @@ export const GridSpec = z.strictObject({
   visible: z.boolean().optional(),
 });
 export const LayoutGrids = z.union([
-  z.strictObject({ style: z.string().describe('Local grid style name') }),
+  z.strictObject({ style: z.string().describe('Grid style name (local or library used on the page), style id, or library style key') }),
   z.strictObject({ preset: z.enum(['mobile', 'tablet', 'desktop', 'baseline']).describe('file-standards §4 presets') }),
   z.array(GridSpec),
 ]);
 
-// ---------------------------------------------------------------- property groups
 
 const baseProps = {
   name: z.string().optional(),
@@ -120,6 +117,15 @@ const frameProps = {
   clip: z.boolean().optional(),
   variableModes: z.record(z.string(), z.string()).optional().describe('{ "Collection": "Mode" }, e.g. dark mode'),
   layoutGrids: LayoutGrids.optional().describe('Layout grids: [{pattern, count, gutter, margin}], { preset } or { style }'),
+  device: z
+    .enum(['mobile', 'tablet', 'duo-outer', 'duo-inner'])
+    .optional()
+    .describe(
+      'Screen frame preset: mobile 393×852 (iOS + Android), tablet 834×1194, duo-outer 466×678 / duo-inner 951×669 (foldable: 84 px system rail on the right, hinge at x 462 on inner, fixed height). Sets size, clip, radius and grid (+ safe area). Explicit width/height/clip/layoutGrids/radius win',
+    ),
+  orientation: z.enum(['portrait', 'landscape']).optional().describe('With device: landscape swaps width and height (ignored for duo)'),
+  safeArea: z.boolean().optional().describe('With device: false drops the safe-area row bands (top status bar, bottom home indicator)'),
+  systemBars: z.boolean().optional().describe('With device: false skips the locked overlay/status-bar and overlay/home-indicator layers (duo: overlay/system-chrome rail + overlay/hinge; added last, absolute)'),
 };
 
 const textProps = {
@@ -136,11 +142,11 @@ const textProps = {
   textCase: z.enum(['ORIGINAL', 'UPPER', 'LOWER', 'TITLE']).optional(),
   decoration: z.enum(['NONE', 'UNDERLINE', 'STRIKETHROUGH']).optional(),
   maxLines: z.number().int().positive().optional().describe('Truncate with ellipsis'),
-  textStyle: z.string().optional().describe('Local text style name'),
+  textStyle: z.string().optional().describe('Text style name (local or library used on the page), style id, or library style key'),
 };
 
 const instanceProps = {
-  component: z.string().describe('Component or component set: node id, published key, or local name'),
+  component: z.string().describe('Component or component set: node id, published key, local name, or name of a library component used on the page'),
   variant: z.record(z.string(), z.string()).optional().describe('{ "Size": "Large" }'),
   properties: z
     .record(z.string(), z.union([z.string(), z.boolean()]))
@@ -149,7 +155,6 @@ const instanceProps = {
   texts: z.record(z.string(), z.string()).optional().describe('{ "text layer name": "new text" }'),
 };
 
-// ---------------------------------------------------------------- tree DSL
 
 const FrameBase = z.strictObject({
   type: z.literal('frame'),
@@ -175,8 +180,78 @@ export const ImageSpec = z.strictObject({
   scaleMode: ScaleMode.optional(),
 });
 export const InstanceSpec = z.strictObject({ type: z.literal('instance'), ...baseProps, ...instanceProps });
-// Sections group screens of one flow (file-standards.md §5). Only valid on a
-// page or inside another section; children without x/y flow left → right.
+const FigjamShape = z.enum([
+  'SQUARE', 'ELLIPSE', 'ROUNDED_RECTANGLE', 'DIAMOND', 'TRIANGLE_UP', 'TRIANGLE_DOWN',
+  'PARALLELOGRAM_RIGHT', 'PARALLELOGRAM_LEFT', 'TRAPEZOID', 'PREDEFINED_PROCESS',
+  'SHIELD', 'DOCUMENT_SINGLE', 'DOCUMENT_MULTIPLE', 'MANUAL_INPUT', 'HEXAGON',
+  'CHEVRON', 'PENTAGON', 'OCTAGON', 'STAR', 'PLUS', 'ARROW_LEFT', 'ARROW_RIGHT',
+  'SUMMING_JUNCTION', 'OR', 'SPEECH_BUBBLE', 'INTERNAL_STORAGE',
+  'ENG_DATABASE', 'ENG_QUEUE', 'ENG_FILE', 'ENG_FOLDER',
+]);
+const FigjamCodeLanguage = z.enum([
+  'TYPESCRIPT', 'CPP', 'RUBY', 'CSS', 'JAVASCRIPT', 'HTML', 'JSON', 'GRAPHQL',
+  'PYTHON', 'GO', 'SQL', 'SWIFT', 'KOTLIN', 'RUST', 'BASH', 'PLAINTEXT', 'DART',
+]);
+const FigjamStrokeCap = z.enum([
+  'NONE', 'ARROW_EQUILATERAL', 'ARROW_LINES', 'TRIANGLE_FILLED', 'DIAMOND_FILLED', 'CIRCLE_FILLED',
+]);
+export const StickySpec = z.strictObject({
+  type: z.literal('sticky'),
+  ...baseProps,
+  text: z.string().min(1),
+  color: Fill.optional().describe('Sticky fill (default FigJam yellow); {var} is Design-only and rejected in FigJam'),
+  isWide: z.boolean().optional().describe('Wide rectangular sticky instead of square'),
+});
+export const ShapeSpec = z.strictObject({
+  type: z.literal('shape'),
+  ...baseProps,
+  shape: FigjamShape.describe('ShapeWithText outline; DIAMOND/CHEVRON suit decisions/flows'),
+  text: z.string().optional(),
+});
+export const ConnectorSpec = z.strictObject({
+  type: z.literal('connector'),
+  ...baseProps,
+  from: z.string().describe('Node id, or a "Root/Child" ids-map key from the same render_tree call'),
+  to: z.string().describe('Node id, or a "Root/Child" ids-map key from the same render_tree call'),
+  lineType: z.enum(['ELBOWED', 'STRAIGHT', 'CURVED']).default('ELBOWED'),
+  caps: z.strictObject({ start: FigjamStrokeCap.optional(), end: FigjamStrokeCap.optional() }).optional(),
+  text: z.string().optional().describe('Label on the connector'),
+});
+export const CodeSpec = z.strictObject({
+  type: z.literal('code'),
+  ...baseProps,
+  code: z.string().min(1),
+  language: FigjamCodeLanguage.default('PLAINTEXT'),
+});
+export const TableSpec = z.strictObject({
+  type: z.literal('table'),
+  ...baseProps,
+  rows: z.number().int().min(1),
+  columns: z.number().int().min(1),
+  cells: z.array(z.array(z.string())).optional().describe('Row-major cell text; must be exactly rows×columns'),
+});
+export type StickySpec = z.infer<typeof StickySpec>;
+export type ShapeSpec = z.infer<typeof ShapeSpec>;
+export type ConnectorSpec = z.infer<typeof ConnectorSpec>;
+export type CodeSpec = z.infer<typeof CodeSpec>;
+export type TableSpec = z.infer<typeof TableSpec>;
+const SlideTransitionStyle = z.enum([
+  'NONE', 'DISSOLVE', 'SMART_ANIMATE',
+  'SLIDE_FROM_LEFT', 'SLIDE_FROM_RIGHT', 'SLIDE_FROM_BOTTOM', 'SLIDE_FROM_TOP',
+  'PUSH_FROM_LEFT', 'PUSH_FROM_RIGHT', 'PUSH_FROM_BOTTOM', 'PUSH_FROM_TOP',
+  'MOVE_FROM_LEFT', 'MOVE_FROM_RIGHT', 'MOVE_FROM_TOP', 'MOVE_FROM_BOTTOM',
+  'SLIDE_OUT_TO_LEFT', 'SLIDE_OUT_TO_RIGHT', 'SLIDE_OUT_TO_TOP', 'SLIDE_OUT_TO_BOTTOM',
+  'MOVE_OUT_TO_LEFT', 'MOVE_OUT_TO_RIGHT', 'MOVE_OUT_TO_TOP', 'MOVE_OUT_TO_BOTTOM',
+]);
+export const SlideSpec = z.strictObject({
+  type: z.literal('slide'),
+  name: z.string().optional(),
+  row: z.number().int().min(0).optional().describe('Grid row for the new slide; default appends'),
+  col: z.number().int().min(0).optional().describe('Grid column for the new slide'),
+  transition: z.strictObject({ style: SlideTransitionStyle.optional(), duration: z.number().min(0).max(10).optional() }).optional(),
+  skipped: z.boolean().optional().describe('Skip this slide in presentation'),
+});
+export type SlideSpec = z.infer<typeof SlideSpec>;
 const SectionBase = z.strictObject({
   type: z.literal('section'),
   name: z.string().optional().describe('Flow name, e.g. "Checkout"'),
@@ -195,6 +270,7 @@ export type SvgSpec = z.infer<typeof SvgSpec>;
 export type ImageSpec = z.infer<typeof ImageSpec>;
 export type InstanceSpec = z.infer<typeof InstanceSpec>;
 export type SectionSpec = z.infer<typeof SectionBase> & { children?: TreeNode[] };
+export type SlideSpecNode = SlideSpec & { children?: TreeNode[] };
 export type TreeNode =
   | FrameSpec
   | TextSpec
@@ -203,14 +279,21 @@ export type TreeNode =
   | SvgSpec
   | ImageSpec
   | InstanceSpec
-  | SectionSpec;
+  | SectionSpec
+  | SlideSpecNode
+  | z.infer<typeof StickySpec>
+  | z.infer<typeof ShapeSpec>
+  | z.infer<typeof ConnectorSpec>
+  | z.infer<typeof CodeSpec>
+  | z.infer<typeof TableSpec>;
 
-// Recursive: declared through z.lazy with an explicit type to break the cycle.
 export const TreeNode: z.ZodType<TreeNode> = z.lazy(() => TreeNodeUnion);
 export const FrameSpec = FrameBase.extend({ children: z.array(TreeNode).optional() });
 export const SectionSpec = SectionBase.extend({ children: z.array(TreeNode).optional() });
+export const SlideSpecNode = SlideSpec.extend({ children: z.array(TreeNode).optional() });
 const TreeNodeUnion = z.discriminatedUnion('type', [
   SectionSpec,
+  SlideSpecNode,
   FrameSpec,
   TextSpec,
   RectSpec,
@@ -218,13 +301,17 @@ const TreeNodeUnion = z.discriminatedUnion('type', [
   SvgSpec,
   ImageSpec,
   InstanceSpec,
+  StickySpec,
+  ShapeSpec,
+  ConnectorSpec,
+  CodeSpec,
+  TableSpec,
 ]);
 
 export type PaintInput = z.infer<typeof PaintInput>;
 export type FillInput = z.infer<typeof Fill>;
 export type NumOrVar = z.infer<typeof NumOrVar>;
 
-// Every property the update tool can patch onto an existing node.
 export const UpdateProps = z.strictObject({
   ...baseProps,
   ...frameProps,
@@ -233,20 +320,33 @@ export const UpdateProps = z.strictObject({
   ...instanceProps,
   component: z.string().optional().describe('Instances only: swap to this component'),
   description: z.string().optional(),
+  shape: FigjamShape.optional(),
+  from: z.string().optional(),
+  to: z.string().optional(),
+  lineType: z.enum(['ELBOWED', 'STRAIGHT', 'CURVED']).optional(),
+  code: z.string().optional(),
+  language: FigjamCodeLanguage.optional(),
+  rows: z.number().int().min(1).optional(),
+  columns: z.number().int().min(1).optional(),
+  cells: z.array(z.array(z.string())).optional(),
+  isWide: z.boolean().optional(),
+  skipped: z.boolean().optional(),
+  transition: z.strictObject({ style: SlideTransitionStyle.optional(), duration: z.number().min(0).max(10).optional() }).optional(),
 });
 export type UpdateProps = z.infer<typeof UpdateProps>;
 
-// Union of every spec's properties, used internally by the plugin appliers.
 export type AnyProps = Partial<UpdateProps> & {
   type?: TreeNode['type'];
   svg?: string;
   src?: string;
   imageBase64?: string;
   scaleMode?: z.infer<typeof ScaleMode>;
+  caps?: { start?: z.infer<typeof FigjamStrokeCap>; end?: z.infer<typeof FigjamStrokeCap> };
   children?: TreeNode[];
+  row?: number;
+  col?: number;
 };
 
-// ---------------------------------------------------------------- tool inputs
 
 const NodeId = z.string().describe('Node id, e.g. "12:34"');
 
@@ -321,7 +421,6 @@ export const ExecuteCodeInput = z.object({
   timeoutMs: z.number().int().min(1000).max(300000).default(30000),
 });
 
-// figma-ui-flow Stage 7: one read-only call returns the QA report.
 export const AuditInput = z.object({
   rootId: NodeId.optional().describe('Audit this subtree; default: the current page'),
   checks: z
@@ -332,9 +431,6 @@ export const AuditInput = z.object({
   format: z.enum(['json', 'markdown']).default('json').describe('markdown = the skill QA report template'),
 });
 
-// figma-ui-flow Stage 2: variables in one call (collection, modes,
-// aliases, scopes). Figma rejects addMode when the plan allows one mode only;
-// that case is reported as a warning, not a failure.
 export const CreateVariablesInput = z.object({
   collection: z.string().min(1).describe('Collection name; created when missing'),
   modes: z.array(z.string().min(1)).optional().describe('Mode names; the first is the default. Default: ["Default"]'),
@@ -356,9 +452,8 @@ export const CreateVariablesInput = z.object({
     .describe('A variable with the same name already in this collection: fail, keep it, or overwrite its values/scopes'),
 });
 
-// figma-ui-flow Stage 1: the standard page skeleton and page maintenance.
 export const ManagePagesInput = z.object({
-  template: z.boolean().optional().describe('Create the missing pages of the 9-page master skeleton'),
+  template: z.boolean().optional().describe('Create the missing pages of the 7-page master skeleton (🏠 Cover, 01 · Foundations … 06 · Explore (WIP))'),
   create: z.array(z.string().min(1)).optional(),
   rename: z.array(z.strictObject({ page: z.string(), to: z.string().min(1) })).optional(),
   delete: z.array(z.string()).optional(),
@@ -366,13 +461,12 @@ export const ManagePagesInput = z.object({
   dryRun: z.boolean().default(false).describe('Return the plan without touching the file'),
 });
 
-// figma-ui-flow rule #3 "search before you create".
 export const SearchDesignSystemInput = z.object({
   query: z.string().describe('Name or words, e.g. "button primary", "text/secondary", "elevation"'),
   kinds: z
     .array(z.enum(['component', 'variable', 'style']))
     .default(['component', 'variable', 'style']),
-  includeLibraries: z.boolean().default(false).describe('Also search variables of enabled team libraries'),
+  includeLibraries: z.boolean().default(false).describe('Also search library components, variables and styles used on the current page, and variables of enabled libraries'),
   limit: z.number().int().min(1).max(200).default(20),
 });
 
@@ -447,7 +541,7 @@ export const StressTestInput = z.object({
     .array(z.enum(['long-text', 'large-text', 'narrow', 'wide', 'empty-text']))
     .default(['long-text', 'large-text', 'narrow']),
   modes: z.record(z.string(), z.string()).optional().describe('Also render one copy with these variable modes, e.g. { "Semantic": "Dark" }'),
-  page: z.string().optional().describe('Page for the copies; default "🧪 Explore" when it exists, else the current page'),
+  page: z.string().optional().describe('Page for the copies; default "06 · Explore (WIP)" (or another Explore page) when it exists, else the current page'),
 });
 
 const Trigger = z.union([

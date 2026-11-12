@@ -24,7 +24,7 @@ Source of truth: tool descriptions in `src/server/index.ts` and input schemas in
 | `get_design_system` | `include` (`variables`,`styles`,`components`,`library`), `componentLimit` 200, `usedIn: nodeId` | Variables with modes/values, paint/text/effect/grid styles, local components with properties. `usedIn` = only what is bound inside that node (the remote MCP's `get_variable_defs`). |
 | `search_design_system` | `query`, `kinds` (`component`,`variable`,`style`), `includeLibraries`, `limit` 20 | Ranked matches; variables show collection, resolved value, primitive or not, alias target. **Call before creating any component, token or style.** |
 | `get_selection` | `depth` 1, `maxNodes` 300 | Serialized selected layers. |
-| `get_node` | `ids: string[]` (**array**), `depth` 2, `maxNodes` 300 | Same vocabulary as `render_tree` (layout, sizing, fills as hex or variable names). Raise `maxNodes` when the result says `truncated`. |
+| `get_node` | `ids: string[]` (**array**), `depth` 2, `maxNodes` 300 | Same vocabulary as `render_tree` (layout, sizing, fills as hex or variable names). Raise `maxNodes` when the result says `truncated` (node count only). Text is returned in full up to 5000 characters, then cut with `…`; `find_nodes` shows only the first 80. |
 | `find_nodes` | `rootId`, `types` (`["TEXT"]`), `name`, `text` (case-insensitive substrings), `limit` 50 | Locate layers the user mentions but you cannot see. |
 | `list_fonts` | `family` substring, `limit` | Exact style names — `"Semi Bold"` not `"SemiBold"`. Call whenever the brief uses a family other than Inter. |
 | `set_current_page` | `page` | Prefer the `page` param of each tool instead. |
@@ -33,7 +33,7 @@ Source of truth: tool descriptions in `src/server/index.ts` and input schemas in
 
 | Tool | Key params | Returns / notes |
 |---|---|---|
-| `render_tree` | `tree`, `parentId`, `index`, `defaultFont`, `select` true | `rootId`, `created`, `bounds`, `ids` (name path → id, `#2` for repeats). Failure rolls back the partial tree (`safeToRetry… true`). `warnings` (only when present): `icon-offcenter` slots whose glyph is off the slot centre, with the cause. Full DSL: `render-tree-dsl.md`. Node types: `frame` `text` `rect` `ellipse` `svg` `image` `instance` `section`. Images work everywhere: `render_tree`, `update_nodes`, and `create_component_set` variant trees (server inlines local paths/URLs to base64). |
+| `render_tree` | `tree`, `parentId`, `index`, `defaultFont`, `select` true | `rootId`, `created`, `bounds`, `ids` (name path → id, `#2` for repeats). Failure rolls back the partial tree (`safeToRetry… true`). `warnings` (only when present): `icon-offcenter` slots whose glyph is off the slot centre, with the cause. Full DSL: `render-tree-dsl.md`. Screen frames: `device: "mobile"|"tablet"|"duo-outer"|"duo-inner"` (+ `orientation`, `safeArea`, `systemBars`). Node types: `frame` `text` `rect` `ellipse` `svg` `image` `instance` `section`. Images work everywhere: `render_tree`, `update_nodes`, and `create_component_set` variant trees (server inlines local paths/URLs to base64). |
 | `update_nodes` | `updates: [{id, props}]` | `{updated, failed, warnings?}` — per item; `warnings` lists icon slots (the updated nodes and their parents) left off-centre. `props` = render_tree keys + instance `variant`, `properties`, `texts`, `component` (swap). Instance sublayer ids look like `I1006:42;1006:41`. |
 | `move_nodes` | `ids`, `parentId`, `index`, `x`, `y` | Reparent/reorder; `x`/`y` only outside auto layout. |
 | `clone_node` | `id`, `parentId`, `index`, `x`, `y` | The copy (id). |
@@ -44,11 +44,11 @@ Source of truth: tool descriptions in `src/server/index.ts` and input schemas in
 
 | Tool | Key params | Returns / notes |
 |---|---|---|
-| `manage_pages` | `template` (9-page skeleton), `create`, `rename[{page,to}]`, `delete`, `order`, `dryRun` false | Run `dryRun: true` first to show the plan. |
+| `manage_pages` | `template` (7-page skeleton: `🏠 Cover`, `01 · Foundations` … `06 · Explore (WIP)`), `create`, `rename[{page,to}]`, `delete`, `order`, `dryRun` false | Run `dryRun: true` first to show the plan. |
 | `import_tokens` | `tokens` (JSON) **or** `path` (absolute, read by the server), `dryRun`, `onExisting` `skip`, `allowLintErrors` | Lints exactly like `figma-ui-flow/scripts/check_tokens.py` before touching Figma; errors stop the import. Top-level group → collection (`primitives` → `Primitives`), `$extensions.modes` → modes, `{primitives.color.white}` → alias, scopes inferred (primitives `[]`). |
 | `create_variables` | `collection`, `modes` (first = default), `variables[{name, type COLOR|FLOAT|STRING|BOOLEAN, scopes, values{mode: value | {alias}}}]`, `onExisting` `error` | Alias as `"color/gray/900"` or `"Primitives/color/gray/900"`. Free plan: one mode per collection → extra modes come back as warnings. |
 | `create_styles` | `styles[{kind: text|paint|effect|grid, name, …}]`, `onExisting` | Text styles may bind `fontSize: {var}`. Effect needs `effects: […]` (not flat x/y/blur keys). New styles are removed if any spec fails. |
-| `render_foundations` | `collections`, `page` (e.g. `"🎨 Foundations"`) | Swatches, type specimen, spacing ruler, radius, elevation — all bound to the real variables/styles. Compact result (rootId + counts). |
+| `render_foundations` | `collections`, `page` (e.g. `"01 · Foundations"`) | Swatches, type specimen, spacing ruler, radius, elevation — all bound to the real variables/styles. Compact result (rootId + counts). |
 | `export_tokens` | `format` `json|css|swift|kotlin`, `collections`, `path` | Code text; written to `path` by the server when given. Motion durations stay in ms. |
 
 ## 4. Components
