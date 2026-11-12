@@ -95,11 +95,54 @@ export function shortPath(path: string, home: string, platform: Platform): strin
   return (platform === 'win32' ? '%USERPROFILE%' : '~') + path.slice(home.length);
 }
 
+export const CODEX_STARTUP_TIMEOUT_SEC = 120;
+export const CODEX_TOOL_TIMEOUT_SEC = 300;
+
+export function codexConfigPath(home: string, env: NodeJS.ProcessEnv): string {
+  return join(env.CODEX_HOME || join(home, '.codex'), 'config.toml');
+}
+
+const CODEX_HEADER = /^\s*\[\s*mcp_servers\s*\.\s*(?:figma-agent|"figma-agent"|'figma-agent')\s*(?:\.[^\]]*)?\]\s*(?:#.*)?$/;
+const ANY_HEADER = /^\s*\[/;
+
+export function withoutCodexServer(toml: string): string {
+  const kept: string[] = [];
+  let skipping = false;
+  for (const line of toml.split(/\r?\n/)) {
+    if (CODEX_HEADER.test(line)) {
+      skipping = true;
+      continue;
+    }
+    if (skipping && ANY_HEADER.test(line)) skipping = false;
+    if (!skipping) kept.push(line);
+  }
+  return kept.join('\n').replace(/\n{3,}/g, '\n\n').replace(/\s+$/, '');
+}
+
+export function hasCodexServer(toml: string): boolean {
+  return toml.split(/\r?\n/).some((line) => CODEX_HEADER.test(line));
+}
+
+export function withCodexServer(toml: string, cmd: ServerCommand): string {
+  const rest = withoutCodexServer(toml);
+  const block = [
+    `[mcp_servers.${SERVER_NAME}]`,
+    `command = ${JSON.stringify(cmd.command)}`,
+    `args = [${cmd.args.map((a) => JSON.stringify(a)).join(', ')}]`,
+    `startup_timeout_sec = ${CODEX_STARTUP_TIMEOUT_SEC}`,
+    `tool_timeout_sec = ${CODEX_TOOL_TIMEOUT_SEC}`,
+  ].join('\n');
+  return (rest ? `${rest}\n\n` : '') + block + '\n';
+}
+
 export function tokenCopyHint(platform: Platform): string {
   if (platform === 'darwin') return 'pbcopy < ~/.figma-agent/token';
   if (platform === 'win32') return 'type %USERPROFILE%\\.figma-agent\\token | clip';
   return 'xclip -selection clipboard < ~/.figma-agent/token';
 }
+
+export type McpClient = 'claude' | 'opencode' | 'codex';
+export const MCP_CLIENTS: readonly McpClient[] = ['claude', 'opencode', 'codex'];
 
 export type CliOptions = {
   command: 'install' | 'uninstall' | 'doctor' | 'help';
@@ -107,7 +150,7 @@ export type CliOptions = {
   verbose: boolean;
   skills: boolean;
   mcp: boolean;
-  clients: Set<'claude' | 'opencode'>;
+  clients: Set<McpClient>;
   skillTargets: Set<SkillTarget['id']>;
 };
 
@@ -130,7 +173,7 @@ export function parseArgs(argv: string[]): CliOptions {
     verbose: rest.includes('--verbose') || rest.includes('-v'),
     skills: !rest.includes('--no-skills'),
     mcp: !rest.includes('--no-mcp'),
-    clients: list(value('--client'), ['claude', 'opencode'] as const),
+    clients: list(value('--client'), MCP_CLIENTS),
     skillTargets: list(value('--skills-to'), ['claude', 'opencode', 'agents'] as const),
   };
 }

@@ -8,6 +8,8 @@ import {
   BUNDLED_SKILLS,
   PLUGIN_FILES,
   SERVER_NAME,
+  codexConfigPath,
+  hasCodexServer,
   isNpxInstall,
   npxSpecFrom,
   opencodeConfigPath,
@@ -17,8 +19,10 @@ import {
   skillTargets,
   tokenCopyHint,
   withClaudeServer,
+  withCodexServer,
   withOpencodeServer,
   withoutClaudeServer,
+  withoutCodexServer,
   withoutOpencodeServer,
   type CliOptions,
   type ServerCommand,
@@ -70,6 +74,21 @@ function readJson<T>(file: string): T | undefined {
   } catch {
     return undefined;
   }
+}
+
+function readText(file: string): string | undefined {
+  try {
+    return readFileSync(file, 'utf8');
+  } catch {
+    return undefined;
+  }
+}
+
+function writeTextWithBackup(file: string, text: string) {
+  if (options.dryRun) return;
+  mkdirSync(dirname(file), { recursive: true });
+  if (existsSync(file)) copyFileSync(file, `${file}.bak`);
+  writeFileSync(file, text);
 }
 
 function writeJsonWithBackup(file: string, data: unknown) {
@@ -189,6 +208,16 @@ function configureOpencode(cmd: ServerCommand): string | undefined {
   return undefined;
 }
 
+function configureCodex(cmd: ServerCommand): string | undefined {
+  const file = codexConfigPath(home, process.env);
+  try {
+    writeTextWithBackup(file, withCodexServer(readText(file) ?? '', cmd));
+    return undefined;
+  } catch (e) {
+    return e instanceof Error ? e.message : String(e);
+  }
+}
+
 function configureMcp() {
   const cmd = resolveServerCommand();
   const done: string[] = [];
@@ -205,6 +234,12 @@ function configureMcp() {
     if (err) errors.push(`OpenCode: ${err}`);
     else done.push('OpenCode');
     details.push(`OpenCode     ${tilde(opencodeConfigPath(home, process.env))}`);
+  }
+  if (options.clients.has('codex')) {
+    const err = configureCodex(cmd);
+    if (err) errors.push(`Codex: ${err}`);
+    else done.push('Codex');
+    details.push(`Codex        ${tilde(codexConfigPath(home, process.env))}`);
   }
   details.push(`command      ${[cmd.command, ...cmd.args].join(' ')}`);
   if (done.length > 0) row('ok', 'MCP', `${done.join(', ')} ${dim(`(${describeCommand(cmd)})`)}`, details);
@@ -228,6 +263,12 @@ function unconfigureMcp() {
     if (config) writeJsonWithBackup(file, withoutOpencodeServer(config));
     done.push('OpenCode');
   }
+  if (options.clients.has('codex')) {
+    const file = codexConfigPath(home, process.env);
+    const toml = readText(file);
+    if (toml && hasCodexServer(toml)) writeTextWithBackup(file, withoutCodexServer(toml) + '\n');
+    done.push('Codex');
+  }
   row('ok', 'MCP', `removed from ${done.join(', ')}`);
 }
 
@@ -236,7 +277,7 @@ function nextSteps() {
   out(`  ${bold('Next steps')}`);
   out(`  1. Figma → Plugins → Development → Import plugin from manifest…`);
   out(`     ${tilde(join(pluginDir, 'manifest.json'))}`);
-  out(`  2. Restart Claude Code / OpenCode`);
+  out(`  2. Restart Claude Code / OpenCode / Codex`);
   out(`  3. Copy the token   ${tokenCopyHint(platform)}`);
   out(`  4. Open the plugin in Figma → paste the token → Connect`);
   out();
@@ -315,6 +356,9 @@ async function doctor() {
     const config = readJson<{ mcp?: Record<string, unknown> }>(opencodeConfigPath(home, process.env));
     (config?.mcp?.[SERVER_NAME] ? configured : missing).push('OpenCode');
   }
+  if (options.clients.has('codex')) {
+    (hasCodexServer(readText(codexConfigPath(home, process.env)) ?? '') ? configured : missing).push('Codex');
+  }
   if (missing.length === 0) row('ok', 'MCP', configured.join(', '));
   else row('warn', 'MCP', `not configured: ${missing.join(', ')}${configured.length ? ` · ok: ${configured.join(', ')}` : ''}`);
 
@@ -336,7 +380,7 @@ function help() {
     figma-agent-ui doctor    [options]   check the setup
 
   Options
-    --client claude,opencode             MCP clients to configure (default: all)
+    --client claude,opencode,codex       MCP clients to configure (default: all)
     --skills-to claude,opencode,agents   global skill folders (default: all)
     --no-skills                          skip skills
     --no-mcp                             skip MCP client config

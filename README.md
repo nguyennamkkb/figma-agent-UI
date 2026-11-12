@@ -1,6 +1,6 @@
 # figma-agent-UI
 
-Plugin Figma + MCP server giúp AI agent (Claude Code, OpenCode, hoặc bất kỳ MCP client nào) **đọc, tạo, sửa và tự chụp màn hình kiểm tra** thiết kế ngay trong file Figma đang mở.
+Plugin Figma + MCP server giúp AI agent (Claude Code, OpenCode, Codex, hoặc bất kỳ MCP client nào) **đọc, tạo, sửa và tự chụp màn hình kiểm tra** thiết kế ngay trong file Figma đang mở.
 
 ```
 MCP client ──stdio──► MCP server (dist/server.mjs)
@@ -13,7 +13,7 @@ MCP client ──stdio──► MCP server (dist/server.mjs)
 
 - **Figma desktop** (macOS hoặc Windows): plugin dạng development chỉ import được trong app desktop.
 - **Node.js ≥ 20** và **git** (cách A cài trực tiếp từ GitHub).
-- Một MCP client: Claude Code, OpenCode, hoặc client bất kỳ hỗ trợ MCP qua stdio.
+- Một MCP client: Claude Code, OpenCode, Codex, hoặc client bất kỳ hỗ trợ MCP qua stdio.
 - Tuỳ chọn: Python 3 cho script kiểm tra token của skill `figma-ui-flow`.
 
 ## Cài đặt
@@ -26,14 +26,14 @@ npx -y github:nguyennamkkb/figma-agent-UI#v1.5.1 install
 
 Lệnh này chạy được trên macOS, Windows và Linux, và làm 3 việc:
 - copy plugin ra `~/.figma-agent/plugin/` (Windows: `%USERPROFILE%\.figma-agent\plugin\`)
-- cài 6 skill vào thư mục skill **global** của Claude Code (`~/.claude/skills/`), OpenCode (`~/.config/opencode/skills/`) và agent chung (`~/.agents/skills/`); skill cũ cùng tên bị thay bằng bản mới
-- thêm MCP server `figma-agent` vào Claude Code (user scope) và OpenCode (`~/.config/opencode/opencode.json`, có backup `.bak`); trên Windows lệnh tự dùng `cmd /c npx`
+- cài 6 skill vào thư mục skill **global** của Claude Code (`~/.claude/skills/`), OpenCode (`~/.config/opencode/skills/`) và agent chung (`~/.agents/skills/`, Codex đọc thư mục này); skill cũ cùng tên bị thay bằng bản mới
+- thêm MCP server `figma-agent` vào Claude Code (user scope), OpenCode (`~/.config/opencode/opencode.json`) và Codex (`~/.codex/config.toml`, hoặc `$CODEX_HOME/config.toml`), mỗi file đều có backup `.bak`; trên Windows lệnh tự dùng `cmd /c npx`
 
 Lần chạy đầu mất vài chục giây vì phải tải và build.
 
 Sau đó làm tay một lần:
 1. **Figma desktop** → Plugins → Development → *Import plugin from manifest…* → chọn `~/.figma-agent/plugin/manifest.json`.
-2. **Khởi động lại** Claude Code / OpenCode để client chạy server.
+2. **Khởi động lại** Claude Code / OpenCode / Codex để client chạy server.
 3. **Lấy token** (sinh ở lần server chạy đầu): macOS `pbcopy < ~/.figma-agent/token` · Windows `type %USERPROFILE%\.figma-agent\token | clip` · Linux `cat ~/.figma-agent/token`. Hoặc hỏi agent gọi tool `figma_status`.
 4. Trong file Figma, chạy plugin **figma-agent-UI**, dán token → **Connect**. Lần sau plugin tự kết nối.
 
@@ -47,7 +47,7 @@ Tuỳ chọn của `install`/`uninstall`/`doctor`:
 
 | Tuỳ chọn | Ý nghĩa |
 |---|---|
-| `--client claude,opencode` | chỉ cấu hình các client này (mặc định: cả hai) |
+| `--client claude,opencode,codex` | chỉ cấu hình các client này (mặc định: cả ba) |
 | `--skills-to claude,opencode,agents` | chỉ cài skill vào các thư mục này (mặc định: cả ba) |
 | `--no-skills` / `--no-mcp` | bỏ qua skill / bỏ qua cấu hình MCP |
 | `--dry-run` | chỉ in ra sẽ thay đổi gì |
@@ -77,7 +77,7 @@ npm run build          # code.js (plugin) + dist/server.mjs (MCP server)
 
 ### Nhiều agent dùng chung
 
-Nhiều agent (Claude Code, OpenCode…) dùng chung **một cổng**: server khởi động đầu tiên làm *hub* ở 3055 và giữ kết nối với plugin; các server sau nối vào hub, lệnh của chúng đi qua hub. Agent giữ hub thoát thì các agent còn lại tự bầu hub mới và plugin tự kết nối lại. `figma_status` cho biết `role` (`hub`/`agent`) và số `agents`. Không cần chạy service nền: mỗi client tự khởi chạy server.
+Nhiều agent (Claude Code, OpenCode, Codex…) dùng chung **một cổng**: server khởi động đầu tiên làm *hub* ở 3055 và giữ kết nối với plugin; các server sau nối vào hub, lệnh của chúng đi qua hub. Agent giữ hub thoát thì các agent còn lại tự bầu hub mới và plugin tự kết nối lại. `figma_status` cho biết `role` (`hub`/`agent`) và số `agents`. Không cần chạy service nền: mỗi client tự khởi chạy server.
 
 Đặt `FIGMA_AGENT_HUB=0` để tắt hub: khi đó mỗi server tự lấy một cổng trống trong dải 3055–3075 và ghi cổng thật vào `~/.figma-agent/port`; panel plugin dò đúng dải đó.
 
@@ -87,6 +87,7 @@ Biến môi trường: `FIGMA_AGENT_TOKEN` (cố định token), `FIGMA_AGENT_PO
 
 ### Timeout
 
+- Codex: `install` đặt `startup_timeout_sec = 120` (lần chạy `npx` đầu phải tải và build) và `tool_timeout_sec = 300` cho các tool dài.
 - OpenCode: `timeout` trong `opencode.json` là thời gian **lấy danh sách tool**, không phải thời gian chạy tool → không cần chỉnh.
 - Claude Code: mặc định rất dài (`MCP_TOOL_TIMEOUT`), idle 30 phút với stdio → không cần chỉnh. Nếu đặt `timeout` riêng cho server trong `.mcp.json`, đặt ≥ 300000 cho các tool dài (`import_tokens`, `render_foundations`, `execute_code`).
 
@@ -101,7 +102,7 @@ Biến môi trường: `FIGMA_AGENT_TOKEN` (cố định token), `FIGMA_AGENT_PO
 | Token bị từ chối | Token trong plugin khác `~/.figma-agent/token`: dán lại token mới, hoặc xoá file token rồi khởi động lại client |
 | `npx` lỗi 404 / đòi đăng nhập | Máy chưa có quyền truy cập repo GitHub hoặc thiếu git |
 | `npx` chạy xong không in gì (exit 128) | Git không lấy được repo: chưa có quyền vào repo private hoặc sai tag. Kiểm tra bằng `git ls-remote https://github.com/nguyennamkkb/figma-agent-UI` |
-| Client không thấy tool `figma-agent` | Khởi động lại client; kiểm tra bằng `claude mcp get figma-agent` hoặc `opencode mcp list` |
+| Client không thấy tool `figma-agent` | Khởi động lại client; kiểm tra bằng `claude mcp get figma-agent`, `opencode mcp list` hoặc `codex mcp get figma-agent` |
 | Plugin bị treo sau `execute_code` | Vòng lặp vô hạn làm chết sandbox: đóng và mở lại plugin (server không cần khởi động lại) |
 
 ## Tool

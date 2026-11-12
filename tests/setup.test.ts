@@ -7,7 +7,11 @@ import {
   shortPath,
   skillTargets,
   tokenCopyHint,
+  codexConfigPath,
+  hasCodexServer,
   withClaudeServer,
+  withCodexServer,
+  withoutCodexServer,
   withOpencodeServer,
   withoutClaudeServer,
   withoutOpencodeServer,
@@ -71,6 +75,57 @@ describe('setup: client configs', () => {
   });
 });
 
+describe('setup: Codex config.toml', () => {
+  const cmd = { command: 'npx', args: ['-y', 'github:a/b#v1'] };
+  const existing = [
+    'model = "gpt-5"',
+    '',
+    '[mcp_servers.opencode_console]',
+    'url = "https://opencode.ai/console/mcp"',
+    '',
+    '[mcp_servers.figma-agent]',
+    'command = "node"',
+    'args = ["/old/server.mjs"]',
+    '',
+    '[mcp_servers.figma-agent.env]',
+    'FIGMA_AGENT_PORT = "3055"',
+    '',
+    '[tui]',
+    'screen_reader_detection_done = true',
+  ].join('\n');
+
+  it('replaces the old figma-agent block and keeps everything else', () => {
+    const next = withCodexServer(existing, cmd);
+    expect(next).not.toContain('/old/server.mjs');
+    expect(next).not.toContain('[mcp_servers.figma-agent.env]');
+    expect(next).toContain('[mcp_servers.opencode_console]');
+    expect(next).toContain('[tui]\nscreen_reader_detection_done = true');
+    expect(next).toContain('model = "gpt-5"');
+    expect(next.match(/\[mcp_servers\.figma-agent\]/g)).toHaveLength(1);
+    expect(next).toContain('args = ["-y", "github:a/b#v1"]');
+    expect(next).toContain('startup_timeout_sec = 120');
+    expect(next.endsWith('\n')).toBe(true);
+  });
+
+  it('writes into an empty file and escapes Windows paths', () => {
+    const next = withCodexServer('', { command: 'C:\\node\\node.exe', args: ['C:\\repo\\dist\\server.mjs'] });
+    expect(next.startsWith('[mcp_servers.figma-agent]')).toBe(true);
+    expect(next).toContain('command = "C:\\\\node\\\\node.exe"');
+  });
+
+  it('detects and removes the entry, including the quoted form', () => {
+    expect(hasCodexServer(existing)).toBe(true);
+    expect(hasCodexServer(withoutCodexServer(existing))).toBe(false);
+    expect(hasCodexServer('[mcp_servers."figma-agent"]\ncommand = "x"')).toBe(true);
+    expect(withoutCodexServer('[mcp_servers.figma-agent-other]\ncommand = "x"')).toContain('figma-agent-other');
+  });
+
+  it('honours CODEX_HOME', () => {
+    expect(codexConfigPath('/h', {}).replaceAll('\\', '/')).toBe('/h/.codex/config.toml');
+    expect(codexConfigPath('/h', { CODEX_HOME: '/c' }).replaceAll('\\', '/')).toBe('/c/config.toml');
+  });
+});
+
 describe('setup: paths and args', () => {
   it('lists the three global skill folders', () => {
     const dirs = skillTargets('/h', {}).map((t) => t.dir.replaceAll('\\', '/'));
@@ -98,6 +153,6 @@ describe('setup: paths and args', () => {
     expect(o.verbose).toBe(false);
     expect(parseArgs(['install', '--verbose']).verbose).toBe(true);
     expect(parseArgs([]).command).toBe('help');
-    expect(parseArgs(['doctor']).clients.size).toBe(2);
+    expect(parseArgs(['doctor']).clients.size).toBe(3);
   });
 });
