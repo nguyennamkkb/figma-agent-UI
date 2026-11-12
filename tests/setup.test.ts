@@ -6,6 +6,7 @@ import {
   serverCommand,
   shortPath,
   skillTargets,
+  staleNpxCopies,
   tokenCopyHint,
   codexConfigPath,
   hasCodexServer,
@@ -154,5 +155,20 @@ describe('setup: paths and args', () => {
     expect(parseArgs(['install', '--verbose']).verbose).toBe(true);
     expect(parseArgs([]).command).toBe('help');
     expect(parseArgs(['doctor']).clients.size).toBe(3);
+  });
+});
+describe('staleNpxCopies', () => {
+  const ours = (tag: string) => ({ 'figma-agent-ui': `github:nguyennamkkb/figma-agent-UI${tag}` });
+  it('picks old figma-agent copies and keeps the running one and other packages', () => {
+    const entries = [
+      { dir: '/c/a', dependencies: ours('#v1.5.0') },
+      { dir: '/c/b', dependencies: ours('') },
+      { dir: '/c/c', dependencies: { prettier: '3' } },
+      { dir: '/c/d', dependencies: { ...ours(''), prettier: '3' } },
+      { dir: '/c/e' },
+      { dir: '/c/f', dependencies: { 'figma-agent-UI': 'github:nguyennamkkb/figma-agent-UI#v1.4.0' } },
+    ];
+    expect(staleNpxCopies(entries, '/c/b')).toEqual(['/c/a', '/c/f']);
+    expect(staleNpxCopies(entries, undefined)).toEqual(['/c/a', '/c/b', '/c/f']);
   });
 });
