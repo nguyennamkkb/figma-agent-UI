@@ -22,7 +22,7 @@
 - [ ] Every fill/stroke/text color is bound to a Semantic variable or style.
 - [ ] Every text layer uses a text style.
 - [ ] Spacing and radius are bound to variables; no odd values off the scale (13, 17, 22…).
-- [ ] Switching Light/Dark mode: no element keeps a wrong color.
+- [ ] *(theme = Both only)* Switching Light/Dark mode: no element keeps a wrong color. Single theme: every screen is in the chosen theme and no unused mode is left in the Semantic collection.
 
 ### C. Layout
 - [ ] Content frames use Auto Layout; resizing does not break (see `file-standards.md` 3.5).

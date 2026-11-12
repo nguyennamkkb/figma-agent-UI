@@ -8,7 +8,7 @@ Helpers available in `execute_code`: `h.solid(hex)`, `h.rgb(hex)`, `h.hex(rgb)`,
 
 ## 1. Switch page and get a node
 ```js
-const page = figma.root.children.find(p => p.name === '🧪 Explore');
+const page = figma.root.children.find(p => p.name === '06 · Explore (WIP)');
 await figma.setCurrentPageAsync(page);          // do not assign figma.currentPage directly
 const node = await figma.getNodeByIdAsync('12:34');
 ```

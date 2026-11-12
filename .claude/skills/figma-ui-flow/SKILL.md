@@ -22,13 +22,31 @@ Let `SKILL_DIR` be the directory containing this file.
 | Page structure, layer/frame naming, Auto Layout, grids | `references/file-standards.md` |
 | Variables, tokens, styles, components, variants, libraries | `references/design-system.md` |
 | Moodboards, direction exploration, critique, Motion, shaders, AI | `references/creative-process.md` |
+| Why this screen and why this way: brief priorities, screen contract, monetization rules, 4 handoff questions | `references/decision-playbook.md` |
 | QA, accessibility, Dev Mode, developer handoff (iOS/Android/Web) | `references/handoff-qa.md` |
 | Skill assessment, learning path, shortcuts | `references/skill-ladder.md` |
 | Check a token JSON file (names, aliases, contrast) | `scripts/check_tokens.py` |
 | Brief template / QA report template | `assets/brief.template.md`, `assets/qa-report.template.md` |
-| Two-level token JSON template with Light/Dark | `assets/tokens.example.json` |
+| Two-level token JSON template with Light/Dark (theme = Both; for a single theme keep only that mode's key) | `assets/tokens.example.json` |
 
 Do not read everything at once. Each stage below states which file it needs.
+
+## Theme scope — Light, Dark, or Both (decided once, in the brief)
+
+Drawing a second theme roughly doubles colour, QA and review work, so the theme is a **brief decision, not a default**. Before any token or screen work, the user picks one of:
+
+| Choice | Semantic colour collection | Screens drawn | Checks |
+|---|---|---|---|
+| **Light only** | 1 mode named `Light` | Light only | contrast in Light |
+| **Dark only** | 1 mode named `Dark` | Dark only | contrast in Dark |
+| **Both** | 2 modes `Light` + `Dark` (needs a paid Figma plan; the free plan allows 1 mode) | built in the **primary** theme; the other theme is a mode switch on a copy at the end, never redrawn | contrast + `stress_test` in both modes, mode-switch QA |
+
+Rules:
+- Ask it in Stage 1 together with the other brief questions; record it on the brief's **Theme** line. If the user does not answer, use the theme of their reference image, else **Light only**, and say so.
+- **Sketch** mode never asks: it uses the reference's theme, else Light.
+- Single theme: no Dark/Light variants, no theme states, no mode checks — skip every step below marked *(Both only)*. Still bind every colour to Semantic tokens, so adding the second theme later is just adding a mode and filling its values.
+- **Both:** pick the primary theme (the one most users see first). Build, review and reach DoD in the primary theme; add the second theme after Stage 4's direction is approved, by filling the second mode's values and switching `variableModes` on a copy of each finished screen. Never duplicate screens to repaint them by hand.
+- Changing the choice later: single → Both = add a mode and fill values; Both → single = delete the unused mode. Neither requires redrawing.
 
 **Platform knowledge in other skills** — load it when the screen belongs to that platform; do not copy it here:
 
@@ -37,7 +55,8 @@ Do not read everything at once. Each stage below states which file it needs.
 | Touch targets, states, feedback, sheet/dialog/snackbar, thumb zone, gestures | `mobile-ux-fundamentals` |
 | Layout, information density, avoiding card stacks/meaningless emptiness, visual review | `mobile-ui-master` |
 | iPhone / iPad / Watch / Widget per HIG | `apple-design-iphone`, `apple-design-ipad`, `apple-design-watch`, `apple-design-widget` |
-| Prompts for illustrations, hero images, backgrounds | `generating-oneshot-image-prompts` |
+| Visual style from a named style, reference image or brief; reliable DNA extraction; iOS + Android mapping | `style-direction` |
+| Prompts for illustrations, hero images, backgrounds; transparent cut-out assets | `asset-generator` |
 
 ## 11 core rules (they override any personal habit)
 
@@ -47,8 +66,8 @@ Do not read everything at once. Each stage below states which file it needs.
 4. **Meaningful names, no default names.** No `Frame 12`, `Rectangle 4`, `Group 7` in anything handed off.
 5. **Semantics first, values second.** Tokens are named by role (`color/text/primary`), not by value (`blue-500`) — except at the primitive level.
 6. **Explore wide before going deep.** Every creative problem gets at least 2–3 genuinely different directions before one is polished.
-7. **Every state is drawn.** Default, pressed, disabled, loading, empty, error, long content, large text, dark mode.
-8. **Keep draft and approved areas separate.** Explore on the `🧪 Explore` page; only approved work goes into `✅ Ready`.
+7. **Every state is drawn.** Default, pressed, disabled, loading, empty, error, long content, large text — in the themes chosen in the brief (see *Theme scope*), and only those.
+8. **Keep draft and approved areas separate.** Explore and stress-test on `06 · Explore (WIP)`; only approved screens live on `05 · Screens & Flows`, marked Ready for dev per screen Section; rejected work moves to an `Archive · …` Section in `06`.
 9. **Non-destructive.** The agent does not delete or overwrite the user's work; edit on a copy or branch, and confirm before changing anything out of scope.
 10. **Check numbers every write, eyes every pass.** After every write, read back sizes (`get_node`): fixed sizes kept, children fit, FILL/HUG as planned. At the end of each pass, screenshot the screen and compare it with the intent; screenshot an individual block only when it is visually unusual. Never report "done" without looking.
 11. **One screen at a time, outside-in, in three passes.** Pass 1 Layout (frame + regions + sized placeholder blocks, locked while empty) → Pass 2 Fill (components first, then content by cluster) → Pass 3 Lock (audit + stress → DoD). Pick the mode first: Sketch, From template, or New build. Start the next screen only once the current one meets the Definition of Done. Details: `references/build-loop.md`.
@@ -79,15 +98,15 @@ Not every task runs all 8. Determine the entry point in Stage 0, then run from t
 
 Read `references/file-standards.md` and `assets/brief.template.md`.
 
-1. Lock a minimal brief: product, users, platform (iOS / Android / Web / cross-platform), business goal, constraints (existing brand, deadline, accessibility), success criteria. Ask about anything missing — at most 3–4 questions, batched in one message.
-2. Set up the file skeleton using the standard pages (Cover, Brief, Explore, Foundations, Components, Screens, Prototype, Ready, Archive).
+1. Lock a minimal brief: product, users, **platform (iOS / Android / Both / Web)**, **theme (Light only / Dark only / Both — see *Theme scope*)**, business goal (priority now, aha moment, monetization, one metric + guardrail — `decision-playbook.md`), constraints (existing brand, deadline, accessibility), success criteria. Ask about anything missing — at most 3–4 questions, batched in one message; the platform and theme questions are always among them unless the user already said it. **Both platforms:** one shared token set and component library; design the primary platform first and redraw only screens whose patterns differ in an `Adaptive · Android` (or `Adaptive · iOS`) Section — see `style-direction/references/platform-mapping.md`.
+2. Set up the file skeleton with the 7 standard pages — `🏠 Cover`, `01 · Foundations`, `02 · Components`, `03 · Templates`, `04 · Assets`, `05 · Screens & Flows`, `06 · Explore (WIP)` — build the cover from `assets/cover.render-tree.json` (parts to replace: `file-standards.md` §1.3) and put the brief as a `Brief · <Product>` frame next to it. Name every Section and screen per `file-standards.md` §2.2 (`SCR-NN · <Screen> · <State>`).
 3. **Gate:** present a one-page brief + the file skeleton. Wait for the user's confirmation before continuing.
 
 ### Stage 2 — Foundations
 
 Read `references/design-system.md` sections 1–4.
 
-1. Variables in 3 levels: **Primitives** (raw palette, number scales) → **Semantic** (roles, with Light/Dark… modes) → **Component** (only when truly needed).
+1. Variables in 3 levels: **Primitives** (raw palette, number scales) → **Semantic** (roles; modes = the brief's theme choice: 1 mode for a single theme, `Light` + `Dark` for Both) → **Component** (only when truly needed).
 2. Typography scale, spacing scale (4/8 grid), radius, elevation, motion tokens.
 3. Set `scopes` on each variable so it only appears where it applies.
 4. If tokens exist as JSON: run `python3 SKILL_DIR/scripts/check_tokens.py <file.json>` and fix every error before continuing.
@@ -100,11 +119,11 @@ Read `references/design-system.md` sections 5–8.
 1. Build order: atoms (icon, text, divider) → basic elements (button, input, chip, avatar) → composites (card, list row, nav bar, tab bar, sheet).
 2. Each component: clear anatomy, correct Auto Layout, 100% token binding, component properties instead of redundant variants, all states, a description and documentation link.
 3. Name variants as `Property=Value`. Name properties consistently across the whole library.
-4. Build a "Playground" page to test each component: stretch it, long text, switch modes, change sizes.
+4. Build a "Playground" page to test each component: stretch it, long text, change sizes, switch modes *(Both only)*.
 
 ### Stage 4 — Creative exploration → *gate*
 
-Read `references/creative-process.md`.
+Read `references/creative-process.md`. When the user names a style, gives a reference image, or asks for "a style" for the app, run the **`style-direction`** skill for this stage: it measures the reference's DNA with confidence levels, proposes Safe / Balanced / Bold directions valid on every target platform, and returns a Style brief + `tokens.json` that feed back into Stage 2.
 
 1. Gather references and build a moodboard annotated with "what to take from this".
 2. Diverge: create **2–3 genuinely different directions** (different in concept, not just color), each applied to the same 1–2 "key" screens.
@@ -117,12 +136,12 @@ Read `references/creative-process.md`.
 Read `references/build-loop.md` — **mandatory** for every screen.
 
 1. **Pick the mode:** **Sketch** (quick idea, Stage 4), **From template** (a similar screen exists: clone and edit what differs), **New build** (complex, no template). First screen of a set = New build, the rest = From template.
-2. **Pass 0 Prepare:** screen goal, one primary CTA, real content, a region map down to block sizes, which blocks repeat (→ components), images generated up front.
+2. **Pass 0 Prepare:** the screen contract (`decision-playbook.md`: purpose, entry → exit, one primary action, information order, states), real content, a region map down to block sizes, which blocks repeat (→ components), images generated up front.
 3. **Pass 1 Layout (1–2 writes):** root frame at the platform size (`file-standards.md` section 4) + named regions + **sized placeholder blocks** carrying their final Auto Layout. Numeric check, then one screenshot: the screen should already read as the final layout in grey boxes.
 4. **Pass 2 Fill:** components first for anything repeated ≥ 3 times (Stage 3), then fill placeholders **by cluster** (several blocks per write) and add real text, icons, images in batches. Numeric check after each write; one screenshot at the end of the pass, extra ones only for unusual blocks.
 5. **Pass 3 Lock:** audit + stress + one final screenshot, fix until it meets the **Definition of Done** (skipped in Sketch).
-6. Screen meets DoD → report in one line → only then move to the next screen, in From-template mode. State variants (empty, loading, error, long text, large text, dark) are From-template screens of the one that met DoD.
-7. Arrange left → right by flow, group with Sections, name them `Flow / Screen / State`.
+6. Screen meets DoD → report in one line → only then move to the next screen, in From-template mode. State variants (empty, loading, error, long text, large text) are From-template screens of the one that met DoD. *(Both only)* the second theme is a `variableModes` switch on a copy, made after all screens meet DoD in the primary theme.
+7. One Section per screen on `05 · Screens & Flows`, arranged left → right in flow order; names per `file-standards.md` §2.2: Section `SCR-NN · <Screen>`, frames `SCR-NN · <Screen> · <State>[ · <Theme>]`, event feedback `FBK-NN · <Screen> · <Event>`. Keep a `Flow · <Product>` overview Section with `flow/SCR-NN · …` thumbnails.
 
 ### Stage 6 — Prototype and motion
 
@@ -145,13 +164,13 @@ Read `references/handoff-qa.md` sections 1–3, use `assets/qa-report.template.m
 
 Read `references/handoff-qa.md` sections 4–6.
 
-1. Mark Ready for dev per Section, write annotations for behavior that isn't visible (logic, edge cases, animation, accessibility).
+1. Mark Ready for dev per screen Section (`SCR-NN · …`), write annotations for behavior that isn't visible (logic, edge cases, animation, accessibility).
 2. Map tokens to code (Swift/Kotlin/CSS) using the table in `handoff-qa.md`. If Code Connect is available, connect components to the real code.
 3. Write the library version changelog; publish the library with a description of the changes.
 
 ## Output by mode
 
-**Agent:** real changes in the Figma file + a short report: what was created/edited (with node IDs or links), which decisions were locked, what remains open. Don't re-describe what the user can open and see for themselves.
+**Agent:** real changes in the Figma file + a short report: what was created/edited (with node IDs or links), which decisions were locked, what remains open; at handoff, one line each for the 4 questions in `decision-playbook.md`. Don't re-describe what the user can open and see for themselves.
 
 **Designer:** an instruction document containing: goal → steps (numbered, naming the exact menu/shortcut/panel) → value tables (tokens, naming) → self-check checklist. Each step is specific enough to follow without guessing.
 
@@ -160,7 +179,7 @@ Read `references/handoff-qa.md` sections 4–6.
 - No default-named layers remain in the scope worked on.
 - No hand-typed colors/font sizes/spacing outside the primitive level.
 - Content frames all use Auto Layout; test resizing doesn't break them.
-- All states and dark mode are present (if the project has modes).
+- All states are present in the chosen theme(s) — and no screens were drawn for a theme the brief did not choose.
 - Body text contrast ≥ 4.5:1, large text and UI elements ≥ 3:1.
 - Agent: screenshotted and reviewed the final result; deleted nothing out of scope.
 - Every screen went through Pass 1 → 3 (Sketch: 1 → 2) and met the Definition of Done before the next screen started.
@@ -171,6 +190,7 @@ Read `references/handoff-qa.md` sections 4–6.
 - **Jumping straight to pixels** without a brief and tokens → everything must be redone when the direction changes.
 - **Variant explosion** (Size × State × Icon × Theme = hundreds) → use boolean/instance-swap properties and variable modes instead of variants.
 - **Dark mode by duplicating screens** → use modes on the Semantic collection.
+- **Drawing both themes by default** → the brief decides the theme; a single-theme project never gets Dark/Light variants or mode checks.
 - **Groups instead of Frames** → Groups have no Auto Layout, padding, or clipping; use Groups only for illustrations.
 - **"Creative" = adding effects** → creativity lies in how content is organized and the emotion it evokes; effects only serve the idea.
 - **Agent writes a big chunk before checking** (a whole finished screen, or all 3 screens, in one write) → errors pile on errors and fixing costs many times more. Lock the layout with placeholders first, then fill.

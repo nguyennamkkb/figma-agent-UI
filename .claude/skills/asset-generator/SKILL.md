@@ -1,12 +1,24 @@
 ---
-name: generating-oneshot-image-prompts
-description: Generates production-ready, one-shot AI image prompts optimized for 1:1, 3:4, 4:3, 2:3, 3:2, 16:9, 9:16 and full-screen iPhone 9:19.5 aspect ratios, plus a Series mode that keeps a whole app's image set consistent and crafted (a style from the style library, fixed style block, confirmed hex palette, a taste gate against bland clip art, stated coverage so art fills its slot) and records exact iOS sizes (pt, @2x/@3x px), safe zones and placement for each asset. Use when the user asks to write an image prompt, plan onboarding or in-app illustrations, fill an image asset list (_assets.md), create visual art/photography prompts, design marketing visuals, or optimize prompts for Midjourney, Flux, DALL-E, Stable Diffusion, or Imagen. Do NOT trigger on CSS layout, front-end image resizing, or Python image processing code requests.
+name: asset-generator
+description: Generates production-ready AI image prompts and cut-out transparent PNG assets for app design work in Figma. Part A writes one-shot prompts for 1:1, 3:4, 4:3, 2:3, 3:2, 16:9, 9:16 and 9:19.5 plus a Series mode that keeps a whole app image set consistent (style block, hex palette, taste gate, coverage). Part B generates ONE cut-out asset (icon, mascot, sticker, illustration, object) on a chromakey background with the Gemini image MCP and removes it into a clean transparent PNG via scripts/remove_bg.py with no fringe. Use when the user asks to write an image prompt, plan onboarding or in-app illustrations, fill an image asset list (_assets.md), create visual art prompts for Midjourney Flux DALL-E Stable Diffusion Imagen, or needs a transparent-background asset or background removal from a chromakey image. Do NOT trigger on CSS layout, front-end image resizing, or Python image processing code requests.
 ---
 
-# Purpose
+# Asset Generator
+
+Two modes in one skill. Pick once per request, then follow only that part.
+
+| Request | Mode |
+|---|---|
+| Write a prompt for a scene, hero, background, illustration, photo, marketing visual, or an `_assets.md` entry | **Part A — Prompt** |
+| Generate one cut-out subject (icon, mascot, sticker, object, badge) on a chromakey background and remove it into a transparent PNG | **Part B — Cut-out** |
+
+A scene that fills its slot uses Part A. A subject laid over native UI uses Part B.
+
+# Part A — One-shot image prompts
+
 Transform brief user concepts into **One-Shot Image Generation Prompts** with strict medium consistency, exact color control, and tailored spatial composition across the standard aspect ratios (`1:1`, `3:4`, `4:3`, `2:3`, `3:2`, `16:9`, `9:16`, and the full-screen iPhone ratio `9:19.5`). Ensure the image generator produces the exact intended framing and style on the first run without token contradiction.
 
-# Gotchas
+## Gotchas
 1. **Medium Cross-Contamination (CRITICAL):** Never mix 3D/photographic tokens (*lens focal length, f-stop aperture, shallow depth of field, foreground-to-background layering, realistic surface patina/grain, screen glow, environmental portrait, documentary perspective*) into a **2D Flat Vector / UI Illustration** prompt. Doing so breaks flat rendering and causes unwanted 3D shading or photorealistic artifacts.
 2. **Aspect Ratio Blindness:** Never simply append `--ar 16:9` or `--ar 9:16` without adjusting spatial composition phrasing. Always use the medium-appropriate framing directives from Step 2.
 3. **Inline Negative Phrasing (Zero-"No" Rule):** Never write negative words (*"no", "not", "without", "nothing", "never", "empty of"*) inside the main positive prompt (e.g., never write *"no gradient, no horizon line, nothing placed"*). Diffusion and transformer models attend to the negated nouns and render them anyway. Express all constraints as affirmative states (*"solid uniform flat fill, seamless background"*) and isolate all exclusions inside the Negative Prompt block.
@@ -16,7 +28,7 @@ Transform brief user concepts into **One-Shot Image Generation Prompts** with st
    - Eliminate abstract emotional adjectives (*"trustworthy, even-handed, quiet, deliberate"*) and filler buzzwords (*"8k, masterpiece, best quality, trending on ArtStation"*). Every token must describe a visible physical or geometric property.
 6. **Bland by default (CRITICAL for app art):** "minimalist", "single small object", "centred icon", "generous negative space around the perimeter" produce clip art that sits shrunk in the middle of its slot. App images need a subject that acts, a visual metaphor, three depth layers (backdrop shape → subject → floating accents) and a stated coverage ("the group spans 90 percent of the width, cut by the bottom edge"). Run the taste gate and coverage table in `references/style-library.md` §1 and §5 for every app prompt.
 
-# Inputs
+## Inputs
 - **Core Subject:** The main entity, scene, or graphic concept requested by the user.
 - **Medium Mode:**
   - **Mode A (Photography / 3D / Cinematic):** Realistic photography, studio still-life, macro, or 3D renders.
@@ -24,13 +36,13 @@ Transform brief user concepts into **One-Shot Image Generation Prompts** with st
 - **Target Aspect Ratio:** `1:1`, `3:4`, `4:3`, `2:3`, `3:2`, `16:9`, `9:16` or `9:19.5` (Default to `1:1` primary + quick variants if unspecified). For an app asset, the ratio comes from its surface (the `ios-app-imagery` skill's `references/surfaces.md`).
 - **Color Palette / Hex Tokens (Optional):** Specific Hex codes for background, primary ink/stroke, and accent colors (Default to natural palette for Mode A, or specify cohesive Hex tokens if part of a multi-asset series).
 
-# Procedure
+## Procedure
 
-## Step 1: Select the Medium Track
+### Step 1: Select the Medium Track
 Determine whether the target image belongs to **Mode A (Photography / 3D)** or **Mode B (2D Flat Vector / Illustration)**. All subsequent layers MUST strictly follow the selected track.
 - *Engineering Flag:* If the requested asset is purely basic geometric primitives (e.g., a blank rounded rectangle border or an exact $N \times M$ mathematical grid with zero organic illustration), include a brief note recommending native code/Figma rendering alongside the AI prompt.
 
-## Step 2: Apply Aspect Ratio Composition Rules (Medium-Specific)
+### Step 2: Apply Aspect Ratio Composition Rules (Medium-Specific)
 Select and inject the spatial framing directives matching BOTH the target aspect ratio and the selected Medium Mode:
 
 | Aspect Ratio | Mode A: Photography / 3D Directives | Mode B: 2D Flat Vector / UI Illustration Directives |
@@ -44,30 +56,30 @@ Select and inject the spatial framing directives matching BOTH the target aspect
 | **`9:19.5`** (Full-screen iPhone) | `Full-height vertical composition`, `subject in the central band`, `quiet top and bottom edges`, `35mm lens`. | `Full-height 9:19.5 vertical composition`, `scene covering every edge`, `subject in the central band`, `lower third as plain ground inside the scene`. |
 | **`9:16`** (Tall Vertical) | `Tall vertical composition`, `strong vertical leading lines`, `full-body or vertical studio framing with generous headroom and foreground depth`. | `Tall 9:16 vertical composition`, `vertically stacked 2D arrangement covering the full width`, `a plain-ground band where the UI overlays`. |
 
-## Step 3: Assemble the 5-Layer One-Shot Formula
+### Step 3: Assemble the 5-Layer One-Shot Formula
 Construct the prompt as a single cohesive, affirmative English paragraph ordered from highest to lowest token priority:
 
 > **`[1. Medium & Canvas]` + `[2. Subject & Geometry/Details]` + `[3. State & Arrangement]` + `[4. Aspect-Ratio Framing]` + `[5. Color Palette & Lighting/Fill]`**
 
-### Track A: Photography / 3D Formula
+#### Track A: Photography / 3D Formula
 1. **Layer 1 (Medium & Canvas):** Define the exact photographic style (e.g., *Overhead flat lay studio macro photography*, *Restrained studio still-life photograph*).
 2. **Layer 2 (Subject & Micro-Details):** Specify physical materials and tactile textures (e.g., *blank handmade cotton paper sheet with subtle laid-paper grain and soft deckle edges*).
 3. **Layer 3 (State & Arrangement):** Describe physical placement and stillness or motion (e.g., *resting flat with a clean vertical gap between the journal and envelope*).
 4. **Layer 4 (Aspect-Ratio Framing & Optics):** Insert **Mode A** directives from Step 2 (including focal length and depth of field).
 5. **Layer 5 (Lighting & Color Palette):** Specify light direction, shadow softness, and tonal palette with Hex anchors if required (e.g., *soft diffused top-left studio daylight, monochromatic warm cream palette #FAF6F0 with gentle natural edge falloff*).
 
-### Track B: 2D Flat Vector / UI Illustration Formula
+#### Track B: 2D Flat Vector / UI Illustration Formula
 1. **Layer 1 (Medium & Canvas):** Define the 2D graphic medium and solid background color with Hex code (e.g., *Editorial flat vector illustration with a fine even charcoal outline #1A1918 on every shape, on a solid uniform warm cream background #FAF6F0*).
 2. **Layer 2 (Subject & Crisp Geometry):** Describe simplified 2D shapes, line weights, and crisp vector edges without 3D textures (e.g., *a young woman in a mustard cardigan #C5A059 reading an open hardback while walking, a small yellow bird perched on her bun, a sprig of leaves and a round wall clock floating beside her*).
 3. **Layer 3 (State & Arrangement):** Specify 2D alignment, spacing, and proportions (e.g., *mid-stride, leaning slightly forward, the figure and props spanning 90 percent of the width and 85 percent of the height*).
 4. **Layer 4 (Aspect-Ratio Framing):** Insert **Mode B** directives from Step 2 (strictly 2D layout and margin geometry — NO camera lenses or depth-of-field terms).
 5. **Layer 5 (Color & Fill Rules):** State exact Hex color assignments and affirmative flat-fill rules (e.g., *strictly two-tone palette using warm cream #FAF6F0 and charcoal black #1A1918, uniform flat unshaded solid fills throughout with crisp vector edges*).
 
-## Step 4: Handle Typography (If Requested)
+### Step 4: Handle Typography (If Requested)
 - If text is required: Enclose the exact string in double quotes (`featuring the exact text "YOUR TEXT"`) and specify font style, color Hex, and placement.
 - If text must NOT appear: Do not mention text in the positive prompt; place `text, letters, numbers, typography, watermark, signature` in the Negative Prompt block.
 
-## Step 5: Validation Loop
+### Step 5: Validation Loop
 Verify the drafted prompt against this checklist before outputting. Revise immediately if any check fails:
 - [ ] **Zero Medium Contamination:** If Mode B (2D Vector), are all camera lenses (`35mm`, `50mm`), depth terms (`foreground-to-background`, `shallow depth of field`, `environmental portrait`), lighting glow, and realistic aging textures (`patina`, `grain`) completely absent?
 - [ ] **Zero Inline Negatives:** Is the positive prompt 100% free of words like `"no"`, `"not"`, `"without"`, `"nothing"`, `"unrung"`, or `"empty of"`?
@@ -76,7 +88,7 @@ Verify the drafted prompt against this checklist before outputting. Revise immed
 - [ ] **Zero Abstract Filler:** Are non-visual emotional words (*"trustworthy, quiet, deliberate"*) and junk buzzwords (*"8k, masterpiece"*) stripped out?
 - [ ] **Taste and coverage (app art):** Does the prompt pass the taste gate T1–T12 in `references/style-library.md` — a subject that acts, a metaphor, three layers, a lead colour, and a stated coverage so the art fills its slot?
 
-# Series mode (app asset sets)
+## Series mode (app asset sets)
 
 Use when the request is a set of images for one app (onboarding heroes, empty states, success moments) or an `_assets.md` file in an `ios-*` spec. Read `references/style-library.md` and `references/series-consistency.md` first; the surface, concept, composition and size come from the `ios-app-imagery` skill (its `surfaces.md`, `composition.md` and `ios-asset-sizing.md`).
 
@@ -88,7 +100,7 @@ Use when the request is a set of images for one app (onboarding heroes, empty st
    - ```` ```negative ```` block: text, letters, numbers, logos, watermark, UI, device frame, shadow, reflection, checkerboard pattern, plus anything the style block excludes.
 3. **Validate the set** — every prompt passes the taste gate (`style-library.md` §1) including coverage, letter-free motifs and robust shapes; consecutive images change metaphor and composition; every prompt carries the same style block and only palette hex values; no image depends on baked-in text; full-bleed subjects survive a 390–440 pt crop. After generation, check every file with the `ios-app-imagery` skill's `scripts/measure_coverage.py` (ground, coverage, text contrast) and by eye (letter-like marks, hands, fragile details) before it is used.
 
-# Output Format
+## Output Format (Part A)
 Always return the final response using this exact template:
 
 ### Primary One-Shot Prompt (`[Selected Aspect Ratio]` — `[Mode A: Photography | Mode B: 2D Flat Vector]`)
@@ -110,3 +122,88 @@ For each other requested ratio, repeat the prompt with Layer 4 swapped for that 
 ### Notes
 - Engineering flag from Step 1, when it applies (render natively instead of generating).
 - Validation checklist from Step 5: all items passed.
+
+# Part B — Cut-out asset
+
+One request → **one generated image → one cut-out PNG** ready for Figma.
+
+## Why the usual approach leaves a purple/green ring
+Image models cannot output transparent pixels, so the asset is generated on a flat key color and the
+key is removed afterwards. Simple removers threshold the distance to the key: an edge pixel that is
+70% subject + 30% key is "far enough" to be kept fully opaque, so a 1–2px key-colored ring survives.
+Over-aggressive despill then flips it to the opposite color (green → purple, magenta → green).
+
+`scripts/remove_bg.py` fixes this by **unmixing** every edge pixel: it solves how much of the pixel is
+subject vs key, removes the key in exactly that proportion, and corrects rim-light spill without
+over-correcting. Always use it — never write an ad-hoc remover.
+
+Requirements: `pip install numpy pillow scipy`
+
+## Step 1 — Brief
+Confirm only what's missing: asset ID (`AST-###`), subject, style (match the project's design
+direction/tokens), main colors. Generate **one** image — no variants unless the user asks.
+
+## Step 2 — Key color
+| Subject contains… | Key |
+|---|---|
+| no strong green (default) | `#00FF00` pure green |
+| green (leaves, plants, green brand) | `#FF00FF` pure magenta |
+| both green and pink/purple | `#0000FF` pure blue |
+
+## Step 3 — Prompt (copy this template)
+```
+[Subject], [style, e.g. flat vector illustration / soft 3D clay / line icon], [colors from the design tokens],
+single subject, centered, fully visible, at least 10% empty margin on every side.
+BACKGROUND: one solid, flat, uniform pure [KEY NAME] ([HEX]) filling the entire background.
+No shadow, no floor, no gradient, no texture, no vignette on the background.
+No rim light, no glow, no outline or reflection in [KEY NAME]; the subject contains no [KEY NAME].
+Crisp clean edges.
+```
+Never write "transparent background" — the model paints a fake checkerboard.
+
+## Step 4 — Generate (gemini-image-mcp)
+Call `image_generate` once:
+- `prompt`: the filled template
+- `aspectRatio`: `"1:1"` (or the asset's shape: `3:4`, `4:3`, `9:16`, `16:9`)
+- `outputDir`: e.g. `assets/raw` — **don't** use `savePath` with a `.png` name: the service may return JPEG
+- `refImagePath`: an approved asset, when this one must match an existing style/character
+
+Use the `filePath` returned by the tool as the input for Step 5.
+
+## Step 5 — Remove the background
+```bash
+python scripts/remove_bg.py <filePath> -o assets/AST-004_mascot_happy.png
+```
+Defaults are measured from the image (key color, gradient, noise, spill width) — pass nothing else
+unless Step 6 tells you to. It writes:
+- `AST-004_mascot_happy.png` — transparent PNG, trimmed to the subject (+4px), no key color stored anywhere
+- `..._original.png` — the untouched generation (temp artifact, deleted on pass)
+- `..._preview.png` — the cut-out on white / black / gray + a 5x zoom of the edge (temp artifact, deleted on pass)
+- a JSON report on stdout; exit code `0` = pass, `2` = failed checks, `1` = unusable input
+
+## Step 6 — Verify (mandatory)
+1. Read the JSON: `pass`, `problems`, `warnings`.
+2. **Open `_preview.png` and look at the zoom yourself.** Pass only if there is no purple/green
+   ring on either background and the subject isn't clipped.
+3. If it fails, apply the fix from `problems` — **at most one retry**:
+
+| Problem | Fix |
+|---|---|
+| fringe on the edge ring | rerun with the suggested `--edge N` |
+| key color left inside the subject | regenerate with the other key color |
+| subject touches the border | regenerate with more margin |
+| background not a saturated key color | regenerate; the model ignored the background rule |
+| `halo` warning | fine if the design has a thin dark/light outline; otherwise check the zoom |
+
+Still failing after one retry → stop and show the user the preview with the problem; don't loop. Keep the preview and original in this fail case.
+
+4. On pass, delete the temp artifacts so only one result image remains:
+```bash
+rm <output-stem>_original.png <output-stem>_preview.png
+```
+After this step only `AST-###_<name>.png` exists.
+
+## Step 7 — Deliver
+- Send the PNG only (intermediates were deleted on pass). Place it in Figma only if asked.
+- Name files `AST-###_<name>.png` (lowercase snake_case).
+- Add a row to `spec/assets.md`: ID, screen ID, prompt, key color, file, status (draft/approved).

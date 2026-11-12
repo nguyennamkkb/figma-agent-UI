@@ -1,10 +1,11 @@
 import type { AnyProps, NumOrVar } from '../shared/schemas';
+import { deviceFrame } from '../shared/devices';
 import { GRID_PRESETS, toLayoutGrid } from '../shared/grids';
 import { expandSides, parseLetterSpacing, parseLineHeight, weightToStyle } from '../shared/values';
 import { loadFont, loadNodeFonts, resolveFont } from './fonts';
 import { resolveEffects, resolveFill } from './paints';
 import type { Resources } from './resources';
-import { isAutoLayout } from './util';
+import { findNode, isAutoLayout } from './util';
 
 export interface ApplyCtx {
   res: Resources;
@@ -22,7 +23,8 @@ async function setNum(node: SceneNode, field: BindField, v: NumOrVar, ctx: Apply
   (node as Bindable).setBoundVariable(field, await ctx.res.variable(v.var));
 }
 
-export async function applyProps(node: SceneNode, p: AnyProps, ctx: ApplyCtx, isNew: boolean): Promise<void> {
+export async function applyProps(node: SceneNode, input: AnyProps, ctx: ApplyCtx, isNew: boolean): Promise<void> {
+  const p = withDevice(node, input);
   if (p.name !== undefined) node.name = p.name;
   if (p.visible !== undefined) node.visible = p.visible;
   if (p.locked !== undefined) node.locked = p.locked;
@@ -30,11 +32,15 @@ export async function applyProps(node: SceneNode, p: AnyProps, ctx: ApplyCtx, is
   if (p.opacity !== undefined && 'opacity' in node) {
     await setNum(node, 'opacity', p.opacity, ctx, (n) => ((node as BlendMixin).opacity = n));
   }
+  if (figma.editorType === 'figjam') assertFigjamFill(p);
   if ('layoutMode' in node) await applyFrame(node as FrameNode, p, ctx);
   if (node.type === 'TEXT') await applyText(node, p, ctx, isNew);
+  if (p.text !== undefined) await applyFigjamText(node, p.text, ctx);
   if (node.type === 'INSTANCE') await applyInstance(node, p, ctx);
+  if ((p.from !== undefined || p.to !== undefined) && node.type === 'CONNECTOR') await rewireConnector(node, p);
+  if (node.type === 'SLIDE') await applySlide(node, p);
 
-  const fill = node.type === 'TEXT' ? (p.color ?? p.fill) : p.fill;
+  const fill = node.type === 'TEXT' || node.type === 'STICKY' ? (p.color ?? p.fill) : p.fill;
   if (fill !== undefined && 'fills' in node) {
     const r = await resolveFill(fill, ctx.res);
     if ('style' in r) await (node as MinimalFillsMixin).setFillStyleIdAsync(r.style.id);
@@ -72,6 +78,26 @@ export async function applyProps(node: SceneNode, p: AnyProps, ctx: ApplyCtx, is
     }
     node.description = p.description;
   }
+}
+
+function withDevice(node: SceneNode, p: AnyProps): AnyProps {
+  const frame = deviceFrame(p);
+  if (!frame) return p;
+  if (!('layoutMode' in node)) throw new Error(`device only applies to frames, not ${node.type}.`);
+  return {
+    ...p,
+    width: p.width ?? frame.width,
+    height: p.height ?? frame.height,
+    clip: frame.clip,
+    layoutGrids: p.layoutGrids ?? frame.layoutGrids,
+    minHeight: p.minHeight ?? (growsDown(node, p) ? frame.height : undefined),
+  };
+}
+
+export function growsDown(node: SceneNode, p: AnyProps): boolean {
+  if (p.device === undefined || p.height !== undefined || p.heightMode !== undefined) return false;
+  const layout = p.layout ?? ('layoutMode' in node ? node.layoutMode : 'NONE');
+  return layout !== 'NONE';
 }
 
 const ALIGN: Record<string, 'MIN' | 'CENTER' | 'MAX'> = { START: 'MIN', CENTER: 'CENTER', END: 'MAX' };
@@ -138,6 +164,57 @@ async function applyText(node: TextNode, p: AnyProps, ctx: ApplyCtx, isNew: bool
   }
 }
 
+export async function setSublayerText(sublayer: TextSublayerNode, text: string, ctx: ApplyCtx): Promise<void> {
+  const fn = sublayer.fontName as FontName | typeof figma.mixed | null | undefined;
+  if (fn === figma.mixed || !fn || !fn.family) await loadFont(await resolveFont(ctx.defaultFont, 'Regular'));
+  else await loadFont(fn);
+  sublayer.characters = text;
+}
+
+async function applyFigjamText(node: SceneNode, text: string, ctx: ApplyCtx): Promise<void> {
+  if (node.type === 'TEXT') return;
+  if (node.type === 'STICKY' || node.type === 'SHAPE_WITH_TEXT' || node.type === 'CONNECTOR') {
+    await setSublayerText(node.text, text, ctx);
+    return;
+  }
+  if (node.type === 'TABLE') throw new Error('Set table content with cells (a rows×columns matrix), not text.');
+}
+
+async function applySlide(node: SlideNode, p: AnyProps): Promise<void> {
+  if (p.transition !== undefined) {
+    const current = node.getSlideTransition();
+    node.setSlideTransition({
+      style: (p.transition.style ?? current.style) as SlideTransition['style'],
+      duration: p.transition.duration ?? current.duration,
+      curve: current.curve,
+      timing: current.timing,
+    });
+  }
+  if (p.skipped !== undefined) node.isSkippedSlide = p.skipped;
+}
+
+async function rewireConnector(node: ConnectorNode, p: AnyProps): Promise<void> {
+  const magnet = node.connectorLineType === 'STRAIGHT' ? 'CENTER' : 'AUTO';
+  if (p.from !== undefined) node.connectorStart = await endpointFor(p.from, 'from', magnet);
+  if (p.to !== undefined) node.connectorEnd = await endpointFor(p.to, 'to', magnet);
+}
+
+export async function endpointFor(ref: string, side: 'from' | 'to', magnet: 'AUTO' | 'CENTER' = 'AUTO'): Promise<ConnectorEndpoint> {
+  const target = await findNode(ref);
+  if (!target) throw new Error(`Connector "${side}" target not found: ${ref}.`);
+  if (target.type === 'DOCUMENT' || target.type === 'PAGE') throw new Error(`Connector "${side}" cannot attach to a ${target.type}.`);
+  return { endpointNodeId: target.id, magnet };
+}
+
+function assertFigjamFill(p: AnyProps): void {
+  for (const v of [p.fill, p.stroke?.color, p.color]) {
+    const items = Array.isArray(v) ? v : v === undefined ? [] : [v];
+    if (items.some((i) => typeof i === 'object' && i !== null && ('var' in i || 'style' in i))) {
+      throw new Error('Variables and styles are Design-only; use a hex color in FigJam.');
+    }
+  }
+}
+
 async function applyStroke(node: SceneNode, s: NonNullable<AnyProps['stroke']>, ctx: ApplyCtx) {
   const n = node as GeometryMixin & MinimalStrokesMixin & SceneNode;
   const r = await resolveFill(s.color, ctx.res);
@@ -158,6 +235,7 @@ async function applyStroke(node: SceneNode, s: NonNullable<AnyProps['stroke']>, 
 }
 
 async function applyRadius(node: SceneNode, radius: NonNullable<AnyProps['radius']>, ctx: ApplyCtx) {
+  if (node.type === 'SHAPE_WITH_TEXT') throw new Error('SHAPE_WITH_TEXT corner radius is fixed; omit radius.');
   if (!Array.isArray(radius)) {
     await setNum(node, 'cornerRadius', radius, ctx, (v) => ((node as CornerMixin).cornerRadius = v));
     return;
@@ -169,8 +247,6 @@ async function applyRadius(node: SceneNode, radius: NonNullable<AnyProps['radius
   }
 }
 
-// resize() resets both axes to FIXED; restore the axis that was not asked to
-// change so a width-only update keeps a hugging height.
 async function applySize(node: SceneNode, p: AnyProps, ctx: ApplyCtx) {
   if (p.width === undefined && p.height === undefined) return;
   if (!('resize' in node)) throw new Error(`${node.type} cannot be resized.`);
@@ -216,8 +292,11 @@ export function applyPlacement(node: SceneNode, p: AnyProps, isNew: boolean): vo
   let wm = p.widthMode;
   let hm = p.heightMode;
   if (isNew && node.type !== 'INSTANCE') {
-    if (wm === undefined && p.width === undefined && (selfAL || isText)) wm = 'HUG';
-    if (hm === undefined && p.height === undefined && (selfAL || isText)) hm = 'HUG';
+    const canHug = (figma.editorType as string) !== 'slides' || selfAL;
+    const sized = p.device !== undefined;
+    if (growsDown(node, p)) hm = 'HUG';
+    if (canHug && wm === undefined && p.width === undefined && !sized && (selfAL || isText)) wm = 'HUG';
+    if (canHug && hm === undefined && p.height === undefined && !sized && (selfAL || isText)) hm = 'HUG';
   }
   for (const [axis, mode] of [
     ['widthMode', wm],
