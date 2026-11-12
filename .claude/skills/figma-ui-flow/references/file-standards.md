@@ -38,7 +38,24 @@ Small projects (one person, one app) may merge Foundations + Components into the
 - There is no Brief, Prototype, Ready or Archive page: the brief is a frame on Cover, prototype wiring lives on the screens in `05`, "Ready" is the Dev Mode status of a screen Section, and rejected work goes to an `Archive · …` Section in `06`.
 
 ### 1.3 Cover
-A frame named `Cover · <Product>` (1600×960) with: project name, status (🟡 In progress / 🟢 Ready / ⚪ Archived), owner, last updated date, PRD/ticket link. Update it every time the status changes.
+One frame `Cover · <Product>` on `🏠 Cover`, built from `assets/cover.render-tree.json` (team standard): 3840×2160, black `#070707`, blurred colour glows, a huge title, a divider, an info row. Render it with `render_tree{tree}` (no `parentId`), then replace only these parts:
+
+| Part (layer path) | Replace with | Rule |
+|---|---|---|
+| `Title/Text` | `<PRODUCT> (<PHASE>)`, e.g. `HOME AI (F3)` | Anton 600, uppercase look; ≤ 12 characters fits one line — longer: lower `fontSize` (keep `lineHeight` ≈ 0.65 × size) |
+| `Info/Meta/Team/Value` | `<BU>: <lead>` | one line |
+| `Info/Meta/Dev/Value` | developer name(s) | one line |
+| `Info/Meta/Owner/Value` | product owner | one line |
+| `Info/Meta/Timeline/Value` | `Start: DD/MM - End: DD/MM/YYYY` | one line |
+| `Info/Badges/Type` | variant `Type`: `figma` / `figjam` | the file type |
+| `Info/Badges/Progress` | variant `Process`: `in progress` / `review` / `pending` / `approved` (shows COMPLETED) / `update` / `maintain` / `suspened` | change the variant when the status changes; never edit the badge text |
+| frame name | `Cover · <Product>` | |
+
+Everything else (background, `decor/…` glows, fonts, sizes, divider, spacing) stays as in the template. Labels (`Team`, `Dev`, `Owner`, `Timeline`) stay in English.
+
+- Badges are instances of the team's `Type` and `Progress` components. If the file can't resolve them (render fails with "No published component"), enable the team library or copy the two component sets into the file, then render again; as a last resort draw pills: radius 120, padding 24/32, Open Sans Bold 36 uppercase, fills `Gradient/Orange` `#FB9847→#FE6321` (in progress), `Gradient/Green` `#5DDD5E→#1F7E23` (approved), radial.
+- Pick the cover with **Set as thumbnail** (right-click the frame) so the file browser shows it.
+- The `Brief · <Product>` frame sits to the right of the cover, not inside it.
 
 ## 2. Naming rules
 

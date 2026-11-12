@@ -38,7 +38,7 @@ The bridge between the workflow (this skill) and the tools (the `figma-agent-too
 | Stage | Task | Tool |
 |---|---|---|
 | 0 | Orientation | `figma_status` → `get_document_info` → `get_design_system` |
-| 1 | 7-page skeleton | `manage_pages{template: true, dryRun: true}` to preview, then run for real; brief as a `Brief · <Product>` frame on `🏠 Cover` |
+| 1 | 7-page skeleton | `manage_pages{template: true, dryRun: true}` to preview, then run for real; `render_tree{tree: assets/cover.render-tree.json}` on `🏠 Cover` → `update_nodes` for the parts in `file-standards.md` §1.3; brief as a `Brief · <Product>` frame next to it |
 | 2 | Tokens from JSON | `import_tokens{path, dryRun: true}`: lints like `check_tokens.py`, then run for real |
 | 2 | Individual variables | `create_variables{collection, modes, variables, onExisting}` |
 | 2 | Text/paint/effect/grid styles | `create_styles{styles: [...]}`; text styles can bind `fontSize: {var}` |
