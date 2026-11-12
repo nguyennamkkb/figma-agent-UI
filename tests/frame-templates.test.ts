@@ -18,3 +18,17 @@ describe('frame templates', () => {
     expect(tree.type).toBe('frame');
   });
 });
+
+describe('flow overview template', () => {
+  const tree = JSON.parse(readFileSync(join(dir, '..', 'flow.render-tree.json'), 'utf8'));
+
+  it('is a valid render_tree section', () => {
+    expect(TreeNode.safeParse(tree).success).toBe(true);
+    expect(tree.type).toBe('section');
+  });
+
+  it('writes one FROM --[action]--> TO transition per line', () => {
+    const text: string = tree.children[0].children[1].text;
+    for (const line of text.split('\n')) expect(line).toMatch(/^SCR-\d{2} .+ --\[.+\]--> SCR-\d{2} .+$/);
+  });
+});

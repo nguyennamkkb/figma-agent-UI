@@ -1,6 +1,8 @@
 import { toHex } from '../shared/values';
 import { round2 } from './util';
 
+const TEXT_LIMIT = 5000;
+
 type Json = Record<string, unknown>;
 
 export class Serializer {
@@ -164,7 +166,7 @@ export class Serializer {
   }
 
   private async text(n: TextNode, out: Json) {
-    out.text = n.characters.length > 400 ? n.characters.slice(0, 400) + '…' : n.characters;
+    out.text = n.characters.length > TEXT_LIMIT ? n.characters.slice(0, TEXT_LIMIT) + '…' : n.characters;
     const font = n.fontName;
     out.font = font === figma.mixed ? 'MIXED' : `${font.family} ${font.style}`;
     out.fontSize = mixed(n.fontSize);
