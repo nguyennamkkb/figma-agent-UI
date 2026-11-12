@@ -91,16 +91,20 @@ One Section at the top of `05 · Screens & Flows`, above the screen Sections. It
 2. **Text flow** for people and agents: one text layer `flow/text`, monospace, **one transition per line**:
 
 ```text
-SCR-01 Welcome      --[Get started]-->       SCR-02 Onboarding
-SCR-04 Home         --[Tap habit]-->         SCR-05 Habit Detail
-SCR-10 Settings     --[Sign out]-->          SCR-01 Welcome
+FL-01 Onboarding · FL-02 Make a wallpaper
+
+FL-01.E01  ENTRY:first-launch --[replace]--> SCR-01 Welcome @5:1598
+FL-01.E02  SCR-01 @5:1598 --[push: Get started]--> SCR-02 @5:1599
+FL-01.E03  SCR-02 @5:1599 --[pop: back]--> SCR-01 @5:1598
+FL-02.E01  SCR-10 @5:1607 --[modal-full: New]--> SCR-11 @5:1608
 ```
 
 Rules for the text flow:
-- `FROM --[action]--> TO`: both ends are a full screen code `SCR-NN <Screen>` (or `FBK-NN …`) that matches a frame on the page; never `back`, `previous` or free text.
-- `[action]` is the visible label or gesture that triggers it (`[Save]`, `[Tab Stats]`, `[Swipe left]`), so it maps 1:1 to a prototype reaction (`set_interactions` NAVIGATE on that element).
-- List every transition, including returns (Cancel, Close, back chevrons, tabs); group lines by FROM screen in flow order; pad columns with spaces for reading — agents ignore the spacing.
-- The text is the source of truth for the flow: update it whenever a screen or transition is added, and build the prototype from it.
+- Line = `FL-NN.Exx  FROM @id --[nav: action]--> TO @id`. First line lists the flows `FL-NN <Name>`; `Exx` numbers the edges inside a flow.
+- Ends are screen codes `SCR-NN` (or `FBK-NN`) + `@<id>` of that screen's Section (from `render_tree`); the entry edge uses `ENTRY:<trigger>` and names its target (`SCR-01 Welcome @id`). Never `back` or free text as an end.
+- `@id` makes a line actionable: `select_nodes`, `get_node`, `screenshot`, or `set_interactions` `destination`. Fill ids once the Sections exist; if a Section is recreated, re-resolve by name `SCR-NN · …` (`find_nodes`) and replace it on every line.
+- `nav` is `push | pop | replace | modal | modal-full | dismiss`; `action` is the visible label or gesture (`Save`, `Tab Stats`, `Swipe left`, `back`), 1:1 with a prototype reaction. A condition may follow in the label (`iOS`, `denied (FBK-05)`).
+- List every transition, including returns; group by flow, then by FROM screen in order. The text is the source of truth: update it with every screen or transition change and build the prototype from it.
 
 Read it with `get_node{ids: [<flow/text id>]}` (full text up to 5000 characters; `find_nodes` shows only the first 80): split on newlines, and check the line count equals the layer height ÷ line height. Icon-only actions use their glyph or label (`[+]`, `[‹ Today]`). On `06 · Explore` the same Section works for an exploration; set `x`/`y` on the Section.
 

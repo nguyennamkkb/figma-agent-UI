@@ -13,7 +13,7 @@
       "radius": 16,
       "fill": "#FFFFFF",
       "children": [
-        { "type": "text", "name": "flow/text-title", "text": "Flow (text) · one transition per line: FROM --[action]--> TO", "fontFamily": "Roboto Mono", "fontSize": 20, "fontWeight": 600, "color": "#0F172A" },
+        { "type": "text", "name": "flow/text-title", "text": "Flow (text) · one edge per line: FL-NN.Exx  FROM @id --[nav: action]--> TO @id", "fontFamily": "Roboto Mono", "fontSize": 20, "fontWeight": 600, "color": "#0F172A" },
         {
           "type": "text",
           "name": "flow/text",
@@ -21,7 +21,7 @@
           "fontSize": 16,
           "lineHeight": 26,
           "color": "#0F172A",
-          "text": "SCR-01 <Screen> --[<Action>]--> SCR-02 <Screen>\nSCR-02 <Screen> --[<Action>]--> SCR-03 <Screen>"
+          "text": "FL-01 <Flow> · FL-02 <Flow>\n\nFL-01.E01  ENTRY:first-launch --[replace]--> SCR-01 <Screen> @<id>\nFL-01.E02  SCR-01 @<id> --[push: <Action>]--> SCR-02 @<id>\nFL-01.E03  SCR-02 @<id> --[pop: back]--> SCR-01 @<id>"
         }
       ]
     }

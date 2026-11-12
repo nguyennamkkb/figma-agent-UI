@@ -27,8 +27,10 @@ describe('flow overview template', () => {
     expect(tree.type).toBe('section');
   });
 
-  it('writes one FROM --[action]--> TO transition per line', () => {
+  it('writes one FL-NN.Exx FROM @id --[nav: action]--> TO @id edge per line', () => {
     const text: string = tree.children[0].children[1].text;
-    for (const line of text.split('\n')) expect(line).toMatch(/^SCR-\d{2} .+ --\[.+\]--> SCR-\d{2} .+$/);
+    const edges = text.split('\n').filter((line) => /^FL-\d{2}\.E\d{2} /.test(line));
+    expect(edges.length).toBeGreaterThan(0);
+    for (const line of edges) expect(line).toMatch(/^FL-\d{2}\.E\d{2} {2}(ENTRY:\S+|SCR-\d{2}( @\S+)?) --\[(replace|push|pop|modal|modal-full|dismiss)(: .+)?\]--> SCR-\d{2}( .+)? @\S+$/);
   });
 });
