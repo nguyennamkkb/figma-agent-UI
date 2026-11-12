@@ -118,12 +118,14 @@ const frameProps = {
   variableModes: z.record(z.string(), z.string()).optional().describe('{ "Collection": "Mode" }, e.g. dark mode'),
   layoutGrids: LayoutGrids.optional().describe('Layout grids: [{pattern, count, gutter, margin}], { preset } or { style }'),
   device: z
-    .enum(['mobile', 'tablet'])
+    .enum(['mobile', 'tablet', 'duo-outer', 'duo-inner'])
     .optional()
-    .describe('Screen frame preset: mobile 393×852 (iOS + Android), tablet 834×1194; sets size, clip and grid (+ safe-area rows). Explicit width/height/clip/layoutGrids win'),
-  orientation: z.enum(['portrait', 'landscape']).optional().describe('With device: landscape swaps width and height'),
+    .describe(
+      'Screen frame preset: mobile 393×852 (iOS + Android), tablet 834×1194, duo-outer 466×678 / duo-inner 951×669 (foldable: 84 px system rail on the right, hinge at x 462 on inner, fixed height). Sets size, clip, radius and grid (+ safe area). Explicit width/height/clip/layoutGrids/radius win',
+    ),
+  orientation: z.enum(['portrait', 'landscape']).optional().describe('With device: landscape swaps width and height (ignored for duo)'),
   safeArea: z.boolean().optional().describe('With device: false drops the safe-area row bands (top status bar, bottom home indicator)'),
-  systemBars: z.boolean().optional().describe('With device: false skips the locked overlay/status-bar and overlay/home-indicator layers (added last, absolute)'),
+  systemBars: z.boolean().optional().describe('With device: false skips the locked overlay/status-bar and overlay/home-indicator layers (duo: overlay/system-chrome rail + overlay/hinge; added last, absolute)'),
 };
 
 const textProps = {

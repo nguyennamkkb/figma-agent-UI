@@ -90,12 +90,14 @@ function withDevice(node: SceneNode, p: AnyProps): AnyProps {
     height: p.height ?? frame.height,
     clip: frame.clip,
     layoutGrids: p.layoutGrids ?? frame.layoutGrids,
+    radius: p.radius ?? frame.radius,
     minHeight: p.minHeight ?? (growsDown(node, p) ? frame.height : undefined),
   };
 }
 
 export function growsDown(node: SceneNode, p: AnyProps): boolean {
   if (p.device === undefined || p.height !== undefined || p.heightMode !== undefined) return false;
+  if (deviceFrame(p)?.fixedHeight) return false;
   const layout = p.layout ?? ('layoutMode' in node ? node.layoutMode : 'NONE');
   return layout !== 'NONE';
 }
