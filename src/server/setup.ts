@@ -122,11 +122,6 @@ function resolveServerCommand(): ServerCommand {
   });
 }
 
-function describeCommand(cmd: ServerCommand): string {
-  const spec = cmd.args.find((a) => a.startsWith('github:'));
-  return spec ? `npx ${spec}` : `node ${tilde(cmd.args[cmd.args.length - 1] ?? '')}`;
-}
-
 function selectedTargets(o: CliOptions) {
   return skillTargets(home, process.env).filter((t) => o.skillTargets.has(t.id));
 }
@@ -244,7 +239,7 @@ function configureMcp() {
     details.push(`Codex        ${tilde(codexConfigPath(home, process.env))}`);
   }
   details.push(`command      ${[cmd.command, ...cmd.args].join(' ')}`);
-  if (done.length > 0) row('ok', 'MCP', `${done.join(', ')} ${dim(`(${describeCommand(cmd)})`)}`, details);
+  if (done.length > 0) row('ok', 'MCP', done.join(', '), details);
   for (const e of errors) row('fail', 'MCP', e);
 }
 
@@ -283,7 +278,7 @@ function nextSteps() {
   out(`  3. Copy the token   ${tokenCopyHint(platform)}`);
   out(`  4. Open the plugin in Figma → paste the token → Connect`);
   out();
-  out(dim(`  Upgrade: re-run install with a newer tag, then reopen the plugin.`));
+  out(dim(`  Upgrade: re-run the same install command (add --prefer-online to npx), restart the client, then reopen the plugin.`));
   out();
 }
 
