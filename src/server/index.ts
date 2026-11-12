@@ -14,6 +14,7 @@ import { slug } from '../shared/rename';
 import sharp from 'sharp';
 import { Bridge, PluginError } from './bridge';
 import { inlineImages } from './images';
+import { tokenCopyHint } from './setup-lib';
 
 const log = (msg: string) => process.stderr.write(`[figma-agent] ${msg}\n`);
 const MAX_TEXT = Number(process.env.FIGMA_AGENT_MAX_OUTPUT ?? 20000);
@@ -653,7 +654,7 @@ function writePortFile(actualPort: number) {
 async function main() {
   await bridge.start();
   log(`token: ${token}  (stored in ~/.figma-agent/token, override with FIGMA_AGENT_TOKEN)`);
-  log('copy the token: pbcopy < ~/.figma-agent/token');
+  log(`copy the token: ${tokenCopyHint(process.platform)}`);
   await server.connect(new StdioServerTransport());
 }
 

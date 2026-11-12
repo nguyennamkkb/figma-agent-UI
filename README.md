@@ -11,13 +11,30 @@ Claude Code ──stdio──► MCP server (dist/server.mjs)
 
 ## Cài đặt
 
-### Cách A: npx (không cần clone)
+### Cách A: npx (không cần clone, macOS / Windows / Linux)
+
+Cần Node ≥ 20 và git.
 
 ```bash
-npx -y github:nguyennamkkb/figma-agent-UI#v1.4.0 install   # copy plugin ra ~/.figma-agent/plugin/ và in cấu hình MCP
+npx -y github:nguyennamkkb/figma-agent-UI#v1.5.0 install
 ```
 
-Sau đó import `~/.figma-agent/plugin/manifest.json` vào Figma một lần. Cấu hình MCP: `"command": "npx", "args": ["-y", "github:nguyennamkkb/figma-agent-UI#v1.4.0"]`. Lần chạy đầu build mất vài chục giây. Nâng cấp: đổi tag, chạy lại `install`, đóng rồi mở lại plugin.
+Lệnh này:
+- copy plugin ra `~/.figma-agent/plugin/` (Windows: `%USERPROFILE%\.figma-agent\plugin\`)
+- cài 6 skill (thay bản cũ cùng tên) vào `~/.claude/skills/`, `~/.config/opencode/skills/`, `~/.agents/skills/`
+- thêm MCP server `figma-agent` vào Claude Code (user scope) và OpenCode (`~/.config/opencode/opencode.json`, có backup `.bak`); trên Windows tự dùng `cmd /c npx`
+
+Sau đó import `~/.figma-agent/plugin/manifest.json` vào Figma desktop một lần, khởi động lại client, mở plugin và dán token.
+
+| Lệnh | Việc |
+|---|---|
+| `… install [--client claude,opencode] [--skills-to claude,opencode,agents] [--no-skills] [--no-mcp] [--dry-run]` | cài / nâng cấp |
+| `… doctor` | kiểm tra Node, git, plugin, skill, cấu hình MCP, token, cổng 3055 |
+| `… uninstall` | gỡ những gì `install` đã thêm (giữ token; plugin trong Figma gỡ tay) |
+
+Nâng cấp: chạy lại `install` với tag mới, rồi đóng và mở lại plugin. Lần chạy đầu build mất vài chục giây.
+
+Từ bản clone, `node bin/figma-agent-ui.mjs install` cũng làm như trên nhưng cấu hình MCP trỏ thẳng vào `dist/server.mjs` của bản clone.
 
 ### Cách B: clone
 

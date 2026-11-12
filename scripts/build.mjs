@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 import { execSync } from 'node:child_process';
 import { readFileSync, writeFileSync } from 'node:fs';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 import { build, context } from 'esbuild';
 
 const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
@@ -48,7 +50,7 @@ const define = {
     process.env.FIGMA_AGENT_TOKEN?.trim() ||
       (() => {
         try {
-          return readFileSync(`${process.env.HOME}/.figma-agent/token`, 'utf8').trim();
+          return readFileSync(join(homedir(), '.figma-agent', 'token'), 'utf8').trim();
         } catch {
           return '';
         }
@@ -78,14 +80,14 @@ const server = {
   logLevel: 'info',
 };
 
-const install = {
-  entryPoints: ['src/server/install.ts'],
+const setup = {
+  entryPoints: ['src/server/setup.ts'],
   bundle: true,
   platform: 'node',
   format: 'esm',
   target: 'node20',
   packages: 'external',
-  outfile: 'dist/install.mjs',
+  outfile: 'dist/setup.mjs',
   define,
   logLevel: 'info',
 };
@@ -93,7 +95,7 @@ const install = {
 const target = process.argv[2] ?? 'all';
 const watch = process.argv.includes('--watch');
 
-const jobs = target === 'all' ? [plugin, server, install] : target === 'plugin' ? [plugin] : target === 'server' ? [server, install] : null;
+const jobs = target === 'all' ? [plugin, server, setup] : target === 'plugin' ? [plugin] : target === 'server' ? [server, setup] : null;
 if (!jobs) {
   console.error(`usage: node scripts/build.mjs <all|plugin|server> [--watch]`);
   process.exit(2);

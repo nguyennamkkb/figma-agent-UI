@@ -1,6 +1,6 @@
 {
-  "name": "figma-agent-UI",
-  "version": "1.4.0",
+  "name": "figma-agent-ui",
+  "version": "1.5.0",
   "description": "Figma plugin + MCP server that lets an AI agent read, create, edit and screenshot designs",
   "main": "code.js",
   "bin": {
@@ -11,7 +11,13 @@
     "dist",
     "code.js",
     "ui.html",
-    "manifest.json"
+    "manifest.json",
+    ".claude/skills/figma-agent-tools",
+    ".claude/skills/figma-ui-flow",
+    ".claude/skills/app-asset-generator",
+    ".claude/skills/design-md-writer",
+    ".claude/skills/generating-oneshot-image-prompts",
+    ".claude/skills/ios-style-screen-creator"
   ],
   "engines": {
     "node": ">=20"
