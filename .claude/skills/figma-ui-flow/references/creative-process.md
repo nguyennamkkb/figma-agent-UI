@@ -35,7 +35,7 @@ Beyond the product brief (see `assets/brief.template.md`), also lock down:
 ## 3. References and moodboard
 
 1. Collect 15–30 references from many sources: products in the same industry, **outside the industry** (magazines, architecture, packaging, games, posters), nature, materials.
-2. Paste them into the Explore page, grouped by theme: color, typography, layout, imagery, motion, micro-details.
+2. Paste them into an `Explore · Moodboard` Section on `06 · Explore (WIP)`, grouped by theme: color, typography, layout, imagery, motion, micro-details.
 3. **Annotate each reference**: which *principle* you are taking ("information hierarchy through extra-large type", "background color changes with content"), not just "pretty".
 4. Distill 3–5 shared principles → these are the raw material for the directions.
 
@@ -85,7 +85,7 @@ One Section per direction in Explore:
 Give feedback as: *observation → impact → suggestion*. Avoid "I don't like it".
 
 ### 5.2 Convergence
-- The user picks or blends. Record the **reason for choosing** and the **reason for rejecting** in the Brief page.
+- The user picks or blends. Record the **reason for choosing** and the **reason for rejecting** in the `Brief · <Product>` frame on `🏠 Cover`; move rejected directions into an `Archive · <direction> — <reason>` Section.
 - Turn the winning direction into rules: update tokens, text styles, components. Losing directions → Archive (do not delete).
 
 ## 6. Visual polish

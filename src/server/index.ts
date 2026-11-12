@@ -502,7 +502,7 @@ If the file/plan allows one mode only, Figma rejects addMode: the call still cre
 });
 
 tool('manage_pages', {
-  description: `Create, rename, delete and reorder pages (figma-ui-flow Stage 1). template: true creates the missing pages of the standard skeleton (Cover / Brief / Explore / Foundations / Components / Screens / Prototype / Ready for dev / Archive).
+  description: `Create, rename, delete and reorder pages (figma-ui-flow Stage 1). template: true creates the missing pages of the standard skeleton (🏠 Cover / 01 · Foundations / 02 · Components / 03 · Templates / 04 · Assets / 05 · Screens & Flows / 06 · Explore (WIP)).
 Safety: never deletes the last page, refuses name collisions, reports unknown page refs in problems, and dryRun returns the plan without touching the file.`,
   input: S.ManagePagesInput,
   noPage: true,
@@ -570,7 +570,7 @@ Aliases stay aliases in json/css (var(--…)) and are resolved in swift/kotlin. 
 });
 
 tool('render_foundations', {
-  description: 'Draw the Foundations page content (figma-ui-flow Stage 2): colour swatches per collection/group, type specimen per text style, spacing ruler, radius and elevation samples — every sample bound to the real variable/style. Pass page: "🎨 Foundations". Returns the render_tree result.',
+  description: 'Draw the Foundations page content (figma-ui-flow Stage 2): colour swatches per collection/group, type specimen per text style, spacing ruler, radius and elevation samples — every sample bound to the real variable/style. Pass page: "01 · Foundations". Returns the render_tree result.',
   input: S.RenderFoundationsInput,
   timeoutMs: () => 180000,
 });
@@ -584,7 +584,7 @@ Validates duplicate/missing variant values, mixed size vocabularies and the 50-v
 });
 
 tool('stress_test', {
-  description: `Playground check (figma-ui-flow Stage 3, handoff-qa D2): copies a frame/component into a Section "Stress / <name>" (default on page 🧪 Explore) with long text (×2), large text (×1.5), narrow (−25%), wide (+50%), empty text and/or other variable modes, and reports text that overflows its clip area. Screenshot the returned sectionId to review; delete it afterwards.`,
+  description: `Playground check (figma-ui-flow Stage 3, handoff-qa D2): copies a frame/component into a Section "Stress / <name>" (default on page 06 · Explore (WIP), or another Explore page) with long text (×2), large text (×1.5), narrow (−25%), wide (+50%), empty text and/or other variable modes, and reports text that overflows its clip area. Screenshot the returned sectionId to review; delete it afterwards.`,
   input: S.StressTestInput,
   noPage: true,
   timeoutMs: () => 120000,

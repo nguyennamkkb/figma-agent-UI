@@ -69,7 +69,7 @@ Chạy trên page `🤖 Agent sandbox` của một file nháp. Trước tiên: `
 - [ ] `search_design_system{query: "button"}` trên file có component → hit có `properties`; query vô nghĩa → `hint` gợi ý tạo mới.
 - [ ] `import_tokens{path: <skill>/assets/tokens.example.json, dryRun: true}` → 2 collection; chạy thật → Primitives (scopes rỗng) + Semantic (alias). Gói free: cảnh báo mode Dark, không lỗi. Gọi lại lần 2 → mọi variable `skip`.
 - [ ] `create_styles` 1 text (fontSize bind `{var}`), 1 paint `{var}`, 1 effect `md`, 1 grid `{preset: "mobile"}` → đủ 4 style; gọi lại với `onExisting: "error"` → lỗi, không sinh style thừa.
-- [ ] `render_foundations{page: "🎨 Foundations"}` → swatch bind đúng variable (chọn chip → panel hiện tên variable), specimen dùng text style.
+- [ ] `render_foundations{page: "01 · Foundations"}` → swatch bind đúng variable (chọn chip → panel hiện tên variable), specimen dùng text style.
 - [ ] `create_component_set` Button 2 State × 2 Size + property `Label` (TEXT) và `Has icon` (BOOLEAN) → panel Properties có đủ; instance đổi Label được; tên variant `Size=md, State=Default`.
 - [ ] `create_component_set` với layer `targets` sai → cảnh báo, set vẫn tạo; variant trùng → lỗi, canvas sạch.
 - [ ] `stress_test{id: <card>, modes: {"Semantic": "Dark"}}` → Section "Stress / …" ở Explore; `overflow` liệt kê text tràn.

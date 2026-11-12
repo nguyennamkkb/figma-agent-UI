@@ -1,4 +1,5 @@
 import type { StressTestInput } from '../../shared/schemas';
+import { findExplorePage } from '../../shared/pageplan';
 import { loadNodeFonts } from '../fonts';
 import { freeSpot, getSceneNode } from '../util';
 
@@ -35,7 +36,7 @@ async function mutateTexts(root: SceneNode, fn: (t: TextNode) => void) {
 
 export async function stressTest(p: StressTestInput) {
   const source = await getSceneNode(p.id);
-  const explore = figma.root.children.find((x) => x.name === (p.page ?? '🧪 Explore'));
+  const explore = p.page ? figma.root.children.find((x) => x.name === p.page) : findExplorePage(figma.root.children);
   if (p.page && !explore) throw new Error(`Page "${p.page}" not found.`);
   const page = explore ?? figma.currentPage;
   if (page !== figma.currentPage) await page.loadAsync();

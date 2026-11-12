@@ -1,5 +1,5 @@
 import type { ManagePagesInput } from '../../shared/schemas';
-import { planPages, type PageRef } from '../../shared/pageplan';
+import { planPages, resolvePageIds, type PageRef } from '../../shared/pageplan';
 
 export async function managePages(p: ManagePagesInput) {
   const existing: PageRef[] = figma.root.children.map((x) => ({ id: x.id, name: x.name }));
@@ -33,7 +33,7 @@ export async function managePages(p: ManagePagesInput) {
         deleted.push({ id: op.id, name });
       }
     } else if (op.op === 'order') {
-      op.ids.forEach((id, index) => {
+      resolvePageIds(op.ids, created).forEach((id, index) => {
         const page = figma.root.children.find((x) => x.id === id);
         if (page) figma.root.insertChild(index, page);
       });

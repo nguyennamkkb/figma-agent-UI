@@ -1,6 +1,6 @@
 # Design brief — <Project name>
 
-> Place this on the 📝 Brief page (paste as text or link). For anything not yet known, write "TBD" — never leave it blank.
+> Place this in a `Brief · <Product>` frame on the `🏠 Cover` page, next to the cover (paste as text or link). For anything not yet known, write "TBD" — never leave it blank.
 
 ## 1. Product and goals
 - **Product:** <one-sentence description>

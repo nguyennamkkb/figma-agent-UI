@@ -65,7 +65,7 @@ Rules:
 5. **Semantics first, values second.** Tokens are named by role (`color/text/primary`), not by value (`blue-500`) — except at the primitive level.
 6. **Explore wide before going deep.** Every creative problem gets at least 2–3 genuinely different directions before one is polished.
 7. **Every state is drawn.** Default, pressed, disabled, loading, empty, error, long content, large text — in the themes chosen in the brief (see *Theme scope*), and only those.
-8. **Keep draft and approved areas separate.** Explore on the `🧪 Explore` page; only approved work goes into `✅ Ready`.
+8. **Keep draft and approved areas separate.** Explore and stress-test on `06 · Explore (WIP)`; only approved screens live on `05 · Screens & Flows`, marked Ready for dev per screen Section; rejected work moves to an `Archive · …` Section in `06`.
 9. **Non-destructive.** The agent does not delete or overwrite the user's work; edit on a copy or branch, and confirm before changing anything out of scope.
 10. **Check numbers every write, eyes every pass.** After every write, read back sizes (`get_node`): fixed sizes kept, children fit, FILL/HUG as planned. At the end of each pass, screenshot the screen and compare it with the intent; screenshot an individual block only when it is visually unusual. Never report "done" without looking.
 11. **One screen at a time, outside-in, in three passes.** Pass 1 Layout (frame + regions + sized placeholder blocks, locked while empty) → Pass 2 Fill (components first, then content by cluster) → Pass 3 Lock (audit + stress → DoD). Pick the mode first: Sketch, From template, or New build. Start the next screen only once the current one meets the Definition of Done. Details: `references/build-loop.md`.
@@ -97,7 +97,7 @@ Not every task runs all 8. Determine the entry point in Stage 0, then run from t
 Read `references/file-standards.md` and `assets/brief.template.md`.
 
 1. Lock a minimal brief: product, users, platform (iOS / Android / Web / cross-platform), **theme (Light only / Dark only / Both — see *Theme scope*)**, business goal, constraints (existing brand, deadline, accessibility), success criteria. Ask about anything missing — at most 3–4 questions, batched in one message; the theme question is always one of them unless the user already said it.
-2. Set up the file skeleton using the standard pages (Cover, Brief, Explore, Foundations, Components, Screens, Prototype, Ready, Archive).
+2. Set up the file skeleton with the 7 standard pages — `🏠 Cover`, `01 · Foundations`, `02 · Components`, `03 · Templates`, `04 · Assets`, `05 · Screens & Flows`, `06 · Explore (WIP)` — and put the brief as a `Brief · <Product>` frame on Cover. Name every Section and screen per `file-standards.md` §2.2 (`SCR-NN · <Screen> · <State>`).
 3. **Gate:** present a one-page brief + the file skeleton. Wait for the user's confirmation before continuing.
 
 ### Stage 2 — Foundations
@@ -139,7 +139,7 @@ Read `references/build-loop.md` — **mandatory** for every screen.
 4. **Pass 2 Fill:** components first for anything repeated ≥ 3 times (Stage 3), then fill placeholders **by cluster** (several blocks per write) and add real text, icons, images in batches. Numeric check after each write; one screenshot at the end of the pass, extra ones only for unusual blocks.
 5. **Pass 3 Lock:** audit + stress + one final screenshot, fix until it meets the **Definition of Done** (skipped in Sketch).
 6. Screen meets DoD → report in one line → only then move to the next screen, in From-template mode. State variants (empty, loading, error, long text, large text) are From-template screens of the one that met DoD. *(Both only)* the second theme is a `variableModes` switch on a copy, made after all screens meet DoD in the primary theme.
-7. Arrange left → right by flow, group with Sections, name them `Flow / Screen / State`.
+7. One Section per screen on `05 · Screens & Flows`, arranged left → right in flow order; names per `file-standards.md` §2.2: Section `SCR-NN · <Screen>`, frames `SCR-NN · <Screen> · <State>[ · <Theme>]`, event feedback `FBK-NN · <Screen> · <Event>`. Keep a `Flow · <Product>` overview Section with `flow/SCR-NN · …` thumbnails.
 
 ### Stage 6 — Prototype and motion
 
@@ -162,7 +162,7 @@ Read `references/handoff-qa.md` sections 1–3, use `assets/qa-report.template.m
 
 Read `references/handoff-qa.md` sections 4–6.
 
-1. Mark Ready for dev per Section, write annotations for behavior that isn't visible (logic, edge cases, animation, accessibility).
+1. Mark Ready for dev per screen Section (`SCR-NN · …`), write annotations for behavior that isn't visible (logic, edge cases, animation, accessibility).
 2. Map tokens to code (Swift/Kotlin/CSS) using the table in `handoff-qa.md`. If Code Connect is available, connect components to the real code.
 3. Write the library version changelog; publish the library with a description of the changes.
 

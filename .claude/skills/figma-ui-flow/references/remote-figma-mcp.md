@@ -60,7 +60,7 @@ Each `use_figma` script should:
 
 ## 4. Safety rules for writing
 
-1. **Scope:** only write within the page/section the user specified, or pages created by the agent (`🧪 Explore`, `🤖 Agent sandbox`).
+1. **Scope:** only write within the page/section the user specified, or pages created by the agent (`06 · Explore (WIP)`, `🤖 Agent sandbox`).
 2. **Never delete** nodes the user created. If something needs replacing → create a new version beside it, rename the old one to `old/…`, and ask the user whether to delete it.
 3. **Editing important things** (main library components, widely used variables) → report the impact scope (how many instances) first and wait for approval.
 4. **Prefer branches** (if the plan supports them) for large changes to library files.

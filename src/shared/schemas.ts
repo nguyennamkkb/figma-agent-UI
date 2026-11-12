@@ -443,7 +443,7 @@ export const CreateVariablesInput = z.object({
 });
 
 export const ManagePagesInput = z.object({
-  template: z.boolean().optional().describe('Create the missing pages of the 9-page master skeleton'),
+  template: z.boolean().optional().describe('Create the missing pages of the 7-page master skeleton (🏠 Cover, 01 · Foundations … 06 · Explore (WIP))'),
   create: z.array(z.string().min(1)).optional(),
   rename: z.array(z.strictObject({ page: z.string(), to: z.string().min(1) })).optional(),
   delete: z.array(z.string()).optional(),
@@ -531,7 +531,7 @@ export const StressTestInput = z.object({
     .array(z.enum(['long-text', 'large-text', 'narrow', 'wide', 'empty-text']))
     .default(['long-text', 'large-text', 'narrow']),
   modes: z.record(z.string(), z.string()).optional().describe('Also render one copy with these variable modes, e.g. { "Semantic": "Dark" }'),
-  page: z.string().optional().describe('Page for the copies; default "🧪 Explore" when it exists, else the current page'),
+  page: z.string().optional().describe('Page for the copies; default "06 · Explore (WIP)" (or another Explore page) when it exists, else the current page'),
 });
 
 const Trigger = z.union([

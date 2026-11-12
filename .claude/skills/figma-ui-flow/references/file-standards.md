@@ -22,22 +22,23 @@
 
 Small projects (one person, one app) may merge Foundations + Components into the product file, but still keep separate pages.
 
-### 1.2 Standard page order
+### 1.2 Standard page order (default for every new file)
 ```
-📘 Cover            cover image: name, status, owner, last updated
-📝 Brief            goals, users, constraints, document links
-🧪 Explore          drafts, moodboard, exploration directions
-🎨 Foundations      displays variables/styles (swatches, type specimen, spacing)
-🧩 Components       main components + Playground
-📱 Screens          screens organized by flow
-▶️ Prototype        wired flows for testing
-✅ Ready for dev    only approved work
-🗄 Archive          old versions, rejected directions (don't delete, so the reasoning can be looked up)
+🏠 Cover                 cover frame + the Brief frame
+01 · Foundations         one `Foundations` frame: swatches, type specimen, spacing, radius, elevation
+02 · Components          main components + Playground
+03 · Templates           reusable screen templates and content packs, cloned to start new screens
+04 · Assets              images, illustrations, icons, stickers, backgrounds
+05 · Screens & Flows     one Section per screen, the flow overview, adaptive layouts, prototype wiring
+06 · Explore (WIP)       directions, moodboards, drafts, stress tests, and the Archive sections
 ```
-Emoji make the page list quick to scan; if the team dislikes emoji, use number prefixes `00 Cover`, `10 Brief`…
+- Page names are exact: two-digit number, ` · ` (space, middle dot, space), title. Only Cover has an emoji and no number. `manage_pages{template: true}` creates exactly these 7 pages.
+- A page still being worked out keeps the `(WIP)` suffix; drop it when the page is stable (Explore keeps it for good).
+- Need another page? Add the next number (`07 · Prototype`, `08 · Handoff`…); never renumber existing pages.
+- There is no Brief, Prototype, Ready or Archive page: the brief is a frame on Cover, prototype wiring lives on the screens in `05`, "Ready" is the Dev Mode status of a screen Section, and rejected work goes to an `Archive · …` Section in `06`.
 
 ### 1.3 Cover
-A 1920×960 frame with: project name, status (🟡 In progress / 🟢 Ready / ⚪ Archived), owner, last updated date, PRD/ticket link. Update it every time the status changes.
+A frame named `Cover · <Product>` (1600×960) with: project name, status (🟡 In progress / 🟢 Ready / ⚪ Archived), owner, last updated date, PRD/ticket link. Update it every time the status changes.
 
 ## 2. Naming rules
 
@@ -47,9 +48,24 @@ A 1920×960 frame with: project name, status (🟡 In progress / 🟢 Ready / �
 - Title Case for components and properties: `List Row`, `State=Pressed`.
 - English for technical names (tokens, components, layers) to match code; other languages may be used for content, descriptions and annotations.
 
-### 2.2 Screens
-`[Flow] / [Screen] / [State]` — e.g. `Checkout / Payment / Error – card declined`.
-Add a platform suffix for multi-platform work: `… / iOS`, `… / Android`.
+### 2.2 Sections and screens
+Every top-level item on a page is a Section (or the single `Cover`/`Foundations` frame). Parts are joined with ` · `.
+
+| Where | Name | Example |
+|---|---|---|
+| `05` one Section per screen | `SCR-NN · <Screen>` | `SCR-08 · Paywall` |
+| screen frame inside it | `SCR-NN · <Screen> · <State>[ · <Theme>]` | `SCR-08 · Paywall · Default · Dark`, `SCR-09 · Home · Empty` |
+| feedback frame (alert, sheet, toast, result triggered by an event) | `FBK-NN · <Screen> · <Event>` | `FBK-06 · Paywall · Purchase Failed` |
+| flow overview Section | `Flow · <Product>`, thumbnails `flow/SCR-NN · <Screen>` | `Flow · Lumen` |
+| other device sizes | `Adaptive · <Device>[ · <Group>]` | `Adaptive · iPad`, `Adaptive · iPhone Duo · Onboarding` |
+| `02` component library | `<Product> · Components — <what is inside>` | `Lumen · Components — icons, buttons, chips` |
+| `03` / `04` groups | `<emoji> <Group> · <Kind>` (🧩 templates, 🖼 images) | `🧩 Content Packs · Templates`, `🖼 Wallpapers & Backgrounds` |
+| `06` exploration / archive | `Explore · <Topic>`, `Archive · <What and why>` | `Explore · Tab screens redesign`, `Archive · pre-v2 defaults` |
+
+- **Numbers:** `SCR` numbers follow the main flow order (two digits, `SCR-01` first); `FBK` numbers count separately across the whole product. A number is never reused or renumbered — a new screen takes the next free number even if it sits earlier in the flow.
+- **State:** Title Case, short: `Default`, `Empty`, `Loading`, `Error`, `Largest Text`, `Filter Empty`. `Default` is always the first frame.
+- **Theme suffix** ` · Light` / ` · Dark` only when the brief's theme is **Both**; a single-theme project leaves it off.
+- **Layout inside a screen Section:** `Default` top-left, states to the right in reading order, 80 px gaps; feedback frames after the states; the second theme (Both) on the row below its source.
 
 ### 2.3 Inner layers
 | Type | Name | Example |
@@ -119,7 +135,7 @@ Respect safe areas: status bar, Dynamic Island, home indicator (iOS); status bar
 
 ## 5. Sections, status and versions
 
-- Use **Sections** to group screens by flow; name each Section after its flow. Mark "Ready for dev" per Section.
+- One **Section per screen** on `05 · Screens & Flows` (`SCR-NN · <Screen>`, §2.2). Mark "Ready for dev" per screen Section in Dev Mode — there is no Ready page.
 - Status labels on the canvas (component or sticky): `🟡 WIP`, `🔵 In review`, `🟢 Approved`, `🔴 Needs changes`.
 - **Versions:** save versions manually (Save to version history) at each milestone: before a major direction change, after each review gate, before publishing the library. Version name: `v1.2 – Add dark mode to Settings`.
 - **Branching** (if your plan has it): every major change to a library file goes through a branch + review before merging.
@@ -127,7 +143,7 @@ Respect safe areas: status bar, Dynamic Island, home indicator (iOS); status bar
 ## 6. File hygiene
 
 Before every presentation or handoff:
-1. Delete unused hidden layers and experimental frames that strayed outside Explore.
+1. Delete unused hidden layers, empty text layers, and loose frames/instances sitting outside any Section (they collect at 0,0); experimental work belongs in `06 · Explore (WIP)`.
 2. No default names left (run `audit_design` then `rename_by_rule`, or a rename plugin).
 3. No orphaned styles/variables (defined but unused) — or note the reason for keeping them.
 4. Detach instances only when unavoidable and record why; detached instances are design debt.
