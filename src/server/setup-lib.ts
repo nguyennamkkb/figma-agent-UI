@@ -31,6 +31,21 @@ export function npxSpecFrom(hostDependencies: Record<string, string> | undefined
   return `${REPO_SPEC}#v${version}`;
 }
 
+export interface NpxCacheEntry {
+  dir: string;
+  dependencies?: Record<string, string>;
+}
+
+export function staleNpxCopies(entries: NpxCacheEntry[], currentDir: string | undefined): string[] {
+  return entries
+    .filter((e) => e.dir !== currentDir)
+    .filter((e) => {
+      const names = Object.keys(e.dependencies ?? {});
+      return names.length === 1 && names[0].toLowerCase() === PACKAGE_NAME;
+    })
+    .map((e) => e.dir);
+}
+
 export function serverCommand(opts: {
   platform: Platform;
   npxSpec?: string;

@@ -1,5 +1,5 @@
 import { spawnSync } from 'node:child_process';
-import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { createConnection } from 'node:net';
 import { homedir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -18,6 +18,7 @@ import {
   serverCommand,
   shortPath,
   skillTargets,
+  staleNpxCopies,
   tokenCopyHint,
   withClaudeServer,
   withCodexServer,
@@ -269,6 +270,47 @@ function unconfigureMcp() {
   row('ok', 'MCP', `removed from ${done.join(', ')}`);
 }
 
+function npxCacheDir() {
+  if (isNpxInstall(packageRoot)) return resolve(packageRoot, '..', '..', '..');
+  return join(process.env.npm_config_cache || join(home, '.npm'), '_npx');
+}
+
+function folderSize(dir: string): number {
+  let total = 0;
+  for (const entry of readdirSync(dir, { withFileTypes: true, recursive: true })) {
+    if (!entry.isFile()) continue;
+    try {
+      total += statSync(join(entry.parentPath, entry.name)).size;
+    } catch {
+      continue;
+    }
+  }
+  return total;
+}
+
+function cleanNpxCache(keepCurrent: boolean) {
+  const cache = npxCacheDir();
+  if (!existsSync(cache)) return;
+  const entries = readdirSync(cache).map((name) => {
+    const dir = join(cache, name);
+    return { dir, dependencies: readJson<{ dependencies?: Record<string, string> }>(join(dir, 'package.json'))?.dependencies };
+  });
+  const current = keepCurrent && isNpxInstall(packageRoot) ? resolve(packageRoot, '..', '..') : undefined;
+  const stale = staleNpxCopies(entries, current);
+  if (stale.length === 0) return;
+  let bytes = 0;
+  for (const dir of stale) {
+    try {
+      bytes += folderSize(dir);
+      if (!options.dryRun) rmSync(dir, { recursive: true, force: true });
+    } catch {
+      continue;
+    }
+  }
+  const label = keepCurrent ? 'old cop' + (stale.length === 1 ? 'y' : 'ies') : 'cop' + (stale.length === 1 ? 'y' : 'ies');
+  row('ok', 'Cleanup', `${options.dryRun ? 'would remove' : 'removed'} ${stale.length} ${label} from the npx cache (${Math.round(bytes / 1048576)} MB)`, [tilde(cache)]);
+}
+
 function nextSteps() {
   out();
   out(`  ${bold('Next steps')}`);
@@ -278,8 +320,6 @@ function nextSteps() {
   out(`  3. Copy the token   ${tokenCopyHint(platform)}`);
   out(`  4. Open the plugin in Figma → paste the token → Connect`);
   out();
-  out(dim(`  Upgrade: re-run the same install command (add --prefer-online to npx), restart the client, then reopen the plugin.`));
-  out();
 }
 
 function install() {
@@ -287,6 +327,7 @@ function install() {
   installPlugin();
   if (options.skills) installSkills();
   if (options.mcp) configureMcp();
+  cleanNpxCache(true);
   if (process.exitCode) {
     out();
     out(red('  Install finished with errors (see ✗ above).'));
@@ -302,6 +343,7 @@ function uninstall() {
   if (options.skills) uninstallSkills();
   if (!options.dryRun) rmSync(pluginDir, { recursive: true, force: true });
   row('ok', 'Plugin', `removed ${tilde(pluginDir)}`);
+  cleanNpxCache(false);
   out();
   out(dim('  Token kept. Remove the plugin in Figma → Plugins → Development by hand.'));
   out();
