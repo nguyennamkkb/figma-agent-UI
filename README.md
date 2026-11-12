@@ -21,12 +21,12 @@ MCP client ──stdio──► MCP server (dist/server.mjs)
 ### Cách A: npx (khuyên dùng, không cần clone)
 
 ```bash
-npx -y github:nguyennamkkb/figma-agent-UI#v1.5.2 install
+npx -y github:nguyennamkkb/figma-agent-UI#v1.5.3 install
 ```
 
 Lệnh này chạy được trên macOS, Windows và Linux, và làm 3 việc:
 - copy plugin ra `~/.figma-agent/plugin/` (Windows: `%USERPROFILE%\.figma-agent\plugin\`)
-- cài 6 skill vào thư mục skill **global** của Claude Code (`~/.claude/skills/`), OpenCode (`~/.config/opencode/skills/`) và agent chung (`~/.agents/skills/`, Codex đọc thư mục này); skill cũ cùng tên bị thay bằng bản mới
+- cài 5 skill vào thư mục skill **global** của Claude Code (`~/.claude/skills/`), OpenCode (`~/.config/opencode/skills/`) và agent chung (`~/.agents/skills/`, Codex đọc thư mục này); skill cũ cùng tên bị thay bằng bản mới, và skill đã gộp/thay thế (`app-asset-generator`, `generating-oneshot-image-prompts`, `ios-style-screen-creator`) bị xoá
 - thêm MCP server `figma-agent` vào Claude Code (user scope), OpenCode (`~/.config/opencode/opencode.json`) và Codex (`~/.codex/config.toml`, hoặc `$CODEX_HOME/config.toml`), mỗi file đều có backup `.bak`; trên Windows lệnh tự dùng `cmd /c npx`
 
 Lần chạy đầu mất vài chục giây vì phải tải và build.
@@ -57,10 +57,10 @@ Tuỳ chọn của `install`/`uninstall`/`doctor`:
 **Client khác** (Claude Desktop, Cursor…): thêm tay vào file cấu hình MCP của client:
 
 ```json
-{ "mcpServers": { "figma-agent": { "command": "npx", "args": ["-y", "github:nguyennamkkb/figma-agent-UI#v1.5.2"] } } }
+{ "mcpServers": { "figma-agent": { "command": "npx", "args": ["-y", "github:nguyennamkkb/figma-agent-UI#v1.5.3"] } } }
 ```
 
-Trên Windows dùng `"command": "cmd", "args": ["/c", "npx", "-y", "github:nguyennamkkb/figma-agent-UI#v1.5.2"]`.
+Trên Windows dùng `"command": "cmd", "args": ["/c", "npx", "-y", "github:nguyennamkkb/figma-agent-UI#v1.5.3"]`.
 
 ### Cách B: clone (để phát triển)
 
@@ -130,16 +130,15 @@ Mọi tool nhận `page` (id/tên) để chạy trên page đó rồi trả page
 
 **Figma Slides:** agent đọc và dựng slide trong deck Slides. 7 tool chỉ dành cho Design bị từ chối (`set_interactions`, `annotate`, `set_dev_status`, `bind_variables`, `create_component_set`, `stress_test`, `render_foundations`); variables, styles và token (`create_variables`, `create_styles`, `import_tokens`, `export_tokens`, `get_design_system`, `search_design_system`) vẫn dùng được. Chi tiết: `specs/002-slides-integration/`.
 
-**Skill:** repo kèm 6 skill trong `.claude/skills/`, được `install` cài global:
+**Skill:** repo kèm 5 skill trong `.claude/skills/`, được `install` cài global:
 
 | Skill | Dùng cho |
 |---|---|
 | `figma-agent-tools` | sổ tay mọi tool MCP: tham số, kết quả, lỗi, công thức `execute_code`, ảnh gemini |
 | `figma-ui-flow` | luồng và kiến thức tạo UI: 11 luật, 8 giai đoạn có gate, vòng dựng màn từ ngoài vào trong theo 3 lượt (`references/build-loop.md`) |
-| `app-asset-generator` | sinh asset ảnh nền trong suốt bằng `gemini-image-mcp` |
+| `asset-generator` | viết prompt ảnh theo tỉ lệ và bộ ảnh nhất quán cho app, và sinh asset nền trong suốt bằng `gemini-image-mcp` (gộp từ `app-asset-generator` + `generating-oneshot-image-prompts`) |
 | `design-md-writer` | viết `DESIGN.md` mô tả design system cho agent |
-| `generating-oneshot-image-prompts` | viết prompt ảnh theo tỉ lệ và bộ ảnh nhất quán cho app |
-| `ios-style-screen-creator` | dựng màn hình mobile theo một phong cách hoặc ảnh tham chiếu |
+| `style-direction` | chọn phong cách cho app iOS/Android: từ tên phong cách, ảnh tham chiếu hoặc brief; đo DNA có mức tin cậy (`scripts/extract_palette.py`), 3 hướng Safe/Balanced/Bold, xuất Style brief + `tokens.json` (thay `ios-style-screen-creator`) |
 
 Ví dụ DSL: `examples/fintech-wallet.json` (dán vào ô *Test render_tree locally* trong plugin để thử không cần agent).
 

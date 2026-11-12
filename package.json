@@ -14,10 +14,9 @@
     "manifest.json",
     ".claude/skills/figma-agent-tools",
     ".claude/skills/figma-ui-flow",
-    ".claude/skills/app-asset-generator",
+    ".claude/skills/asset-generator",
     ".claude/skills/design-md-writer",
-    ".claude/skills/generating-oneshot-image-prompts",
-    ".claude/skills/ios-style-screen-creator"
+    ".claude/skills/style-direction"
   ],
   "engines": {
     "node": ">=20"

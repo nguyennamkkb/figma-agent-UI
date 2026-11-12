@@ -6,6 +6,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   BUNDLED_SKILLS,
+  RETIRED_SKILLS,
   PLUGIN_FILES,
   SERVER_NAME,
   codexConfigPath,
@@ -155,6 +156,7 @@ function installSkills() {
     try {
       if (options.dryRun) continue;
       mkdirSync(target.dir, { recursive: true });
+      for (const name of RETIRED_SKILLS) rmSync(join(target.dir, name), { recursive: true, force: true });
       for (const name of available) {
         const dest = join(target.dir, name);
         rmSync(dest, { recursive: true, force: true });
@@ -174,7 +176,7 @@ function uninstallSkills() {
   const targets = selectedTargets(options);
   let removed = 0;
   for (const target of targets) {
-    for (const name of BUNDLED_SKILLS) {
+    for (const name of [...BUNDLED_SKILLS, ...RETIRED_SKILLS]) {
       const dir = join(target.dir, name);
       if (!existsSync(dir)) continue;
       removed += 1;

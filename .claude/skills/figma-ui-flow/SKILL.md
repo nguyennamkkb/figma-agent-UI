@@ -54,7 +54,8 @@ Rules:
 | Touch targets, states, feedback, sheet/dialog/snackbar, thumb zone, gestures | `mobile-ux-fundamentals` |
 | Layout, information density, avoiding card stacks/meaningless emptiness, visual review | `mobile-ui-master` |
 | iPhone / iPad / Watch / Widget per HIG | `apple-design-iphone`, `apple-design-ipad`, `apple-design-watch`, `apple-design-widget` |
-| Prompts for illustrations, hero images, backgrounds | `generating-oneshot-image-prompts` |
+| Visual style from a named style, reference image or brief; reliable DNA extraction; iOS + Android mapping | `style-direction` |
+| Prompts for illustrations, hero images, backgrounds; transparent cut-out assets | `asset-generator` |
 
 ## 11 core rules (they override any personal habit)
 
@@ -96,7 +97,7 @@ Not every task runs all 8. Determine the entry point in Stage 0, then run from t
 
 Read `references/file-standards.md` and `assets/brief.template.md`.
 
-1. Lock a minimal brief: product, users, platform (iOS / Android / Web / cross-platform), **theme (Light only / Dark only / Both — see *Theme scope*)**, business goal, constraints (existing brand, deadline, accessibility), success criteria. Ask about anything missing — at most 3–4 questions, batched in one message; the theme question is always one of them unless the user already said it.
+1. Lock a minimal brief: product, users, **platform (iOS / Android / Both / Web)**, **theme (Light only / Dark only / Both — see *Theme scope*)**, business goal, constraints (existing brand, deadline, accessibility), success criteria. Ask about anything missing — at most 3–4 questions, batched in one message; the platform and theme questions are always among them unless the user already said it. **Both platforms:** one shared token set and component library; design the primary platform first and redraw only screens whose patterns differ in an `Adaptive · Android` (or `Adaptive · iOS`) Section — see `style-direction/references/platform-mapping.md`.
 2. Set up the file skeleton with the 7 standard pages — `🏠 Cover`, `01 · Foundations`, `02 · Components`, `03 · Templates`, `04 · Assets`, `05 · Screens & Flows`, `06 · Explore (WIP)` — and put the brief as a `Brief · <Product>` frame on Cover. Name every Section and screen per `file-standards.md` §2.2 (`SCR-NN · <Screen> · <State>`).
 3. **Gate:** present a one-page brief + the file skeleton. Wait for the user's confirmation before continuing.
 
@@ -121,7 +122,7 @@ Read `references/design-system.md` sections 5–8.
 
 ### Stage 4 — Creative exploration → *gate*
 
-Read `references/creative-process.md`.
+Read `references/creative-process.md`. When the user names a style, gives a reference image, or asks for "a style" for the app, run the **`style-direction`** skill for this stage: it measures the reference's DNA with confidence levels, proposes Safe / Balanced / Bold directions valid on every target platform, and returns a Style brief + `tokens.json` that feed back into Stage 2.
 
 1. Gather references and build a moodboard annotated with "what to take from this".
 2. Diverge: create **2–3 genuinely different directions** (different in concept, not just color), each applied to the same 1–2 "key" screens.

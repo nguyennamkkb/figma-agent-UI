@@ -6,8 +6,12 @@ export const PACKAGE_NAME = 'figma-agent-ui';
 export const BUNDLED_SKILLS = [
   'figma-agent-tools',
   'figma-ui-flow',
-  'app-asset-generator',
+  'asset-generator',
   'design-md-writer',
+  'style-direction',
+] as const;
+export const RETIRED_SKILLS = [
+  'app-asset-generator',
   'generating-oneshot-image-prompts',
   'ios-style-screen-creator',
 ] as const;
