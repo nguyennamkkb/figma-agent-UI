@@ -147,7 +147,15 @@ Respect safe areas: status bar, Dynamic Island, home indicator (iOS); status bar
 
 > Device sizes change with each hardware generation. When a project targets specific devices, re-check the current dimensions.
 
-### 4.3 Grid
+### 4.3 Screen templates (`assets/frames/`)
+Pass 1 of every screen starts from a JSON skeleton, not from scratch: `assets/frames/<device>.render-tree.json` (`mobile`, `tablet`, `duo-outer`, `duo-inner`). Each holds the root frame (`SCR-NN · <Screen> · <Device>`), the named regions and tinted placeholder blocks. Render it with `render_tree{tree}` (set `x`/`y`), rename the frame, then resize or replace the blocks.
+
+Adding a device or web breakpoint = adding one file, no code change:
+- With a preset (`device` in `render_tree`): set `device` and let the preset draw size, grid and system overlays.
+- Without a preset (e.g. `web-1440.render-tree.json`): give the root an explicit `width`/`height` and `layoutGrids` per §4.2.
+- Keep the region names (`Header`, `Content`, `Footer`, `Block · …`) so the build loop addresses them the same way. `tests/frame-templates.test.ts` validates every file in the folder against the `render_tree` schema.
+
+### 4.4 Grid
 - Save layout grids as shared **styles** (`grid/mobile`, `grid/desktop`).
 - A 4pt baseline grid on mobile keeps text aligned; optional for web.
 

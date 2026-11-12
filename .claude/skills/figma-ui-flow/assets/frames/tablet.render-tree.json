@@ -1,0 +1,84 @@
+{
+  "type": "frame",
+  "name": "SCR-NN · <Screen> · Tablet",
+  "device": "tablet",
+  "layout": "VERTICAL",
+  "fill": "#FFFFFF",
+  "children": [
+    {
+      "type": "frame",
+      "name": "Header",
+      "layout": "HORIZONTAL",
+      "widthMode": "FILL",
+      "padding": [
+        40,
+        24,
+        8,
+        24
+      ],
+      "justify": "SPACE_BETWEEN",
+      "align": "CENTER",
+      "children": [
+        {
+          "type": "text",
+          "name": "Title",
+          "text": "Title",
+          "fontSize": 28,
+          "fontWeight": 700
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "name": "Content",
+      "layout": "VERTICAL",
+      "widthMode": "FILL",
+      "heightMode": "FILL",
+      "padding": [
+        0,
+        24
+      ],
+      "gap": 16,
+      "children": [
+        {
+          "type": "frame",
+          "name": "Block · Hero",
+          "widthMode": "FILL",
+          "height": 200,
+          "fill": "#FF00001A"
+        },
+        {
+          "type": "frame",
+          "name": "Block · List",
+          "widthMode": "FILL",
+          "height": 320,
+          "fill": "#FF00001A",
+          "layout": "VERTICAL",
+          "gap": 8
+        }
+      ]
+    },
+    {
+      "type": "frame",
+      "name": "Footer",
+      "layout": "VERTICAL",
+      "widthMode": "FILL",
+      "padding": [
+        12,
+        24,
+        32,
+        24
+      ],
+      "gap": 8,
+      "children": [
+        {
+          "type": "frame",
+          "name": "Block · CTA",
+          "widthMode": "FILL",
+          "height": 56,
+          "fill": "#FF00001A"
+        }
+      ]
+    }
+  ]
+}
