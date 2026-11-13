@@ -19,7 +19,7 @@ Let `SKILL_DIR` be the directory containing this file.
 | **Building any screen** — the three-pass outside-in loop, modes, check budget, Definition of Done | `references/build-loop.md` |
 | Session has `figma-agent` tools (`figma_status`, `render_tree`…): stage/pass → tool | `references/run-with-figma-agent.md` + the `figma-agent-tools` skill |
 | Session only has the official Figma MCP (`use_figma`…) | `references/remote-figma-mcp.md` |
-| Page structure, layer/frame naming, how `05 · Screens & Flows` is laid out (one Section per flow, text flow, notes), Auto Layout, grids | `references/file-standards.md` |
+| Page structure, layer/frame naming, how `05 · Screens & Flows` is laid out (one Section per flow, text flow, notes), Auto Layout, grids, ad slot sizes (native full, inline native) | `references/file-standards.md` |
 | Variables, tokens, styles, components, variants, libraries | `references/design-system.md` |
 | Moodboards, direction exploration, critique, Motion, shaders, AI | `references/creative-process.md` |
 | Why this screen and why this way: brief priorities, screen contract, monetization rules, 4 handoff questions | `references/decision-playbook.md` |

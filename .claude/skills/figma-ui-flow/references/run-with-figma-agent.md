@@ -65,6 +65,17 @@ The bridge between the workflow (this skill) and the tools (the `figma-agent-too
 
 Every write tool accepts `page` (id or name). When running multiple agents in parallel, always pass `page` instead of using `set_current_page`.
 
+### 3.1 Building a flow with subagents (masters → states)
+
+A flow of 15–25 frames goes fastest as: **main session prepares → capable agents build masters in parallel → cheap agents clone states → main session reviews and wires.**
+
+1. **Prepare (main session):** export the source photos (`export_assets` on the original's image nodes; hide overlaid badges for the export and restore them), write one shared brief file that every agent reads first. The brief holds: file names and the page to build on, the source frame id → target frame name table, image paths, token and text-style names, component names with their property keys, finished frames to copy patterns from, the house rules, and the tool quirks below.
+2. **Masters (e.g. Sonnet, in parallel):** one agent per screen family (home, editor, result…), each on its own canvas area of `06 · Explore (WIP)` (distinct x/y bands). Ask them to name layers clearly and report the frame ids and the key child ids.
+3. **States (e.g. Haiku):** after a master lands, an agent clones it per state with explicit steps: which ids to clone, new names and positions, which child to change and how. Cloning beats rebuilding: overlays (scrim, coach mark, progress ring, dialog instance) go on top of a clone.
+4. **Review (main session):** screenshot every frame; agents miss duplicated content, orphan words, and badges clipped by `clipsContent` on avatar containers. Fix in place, then swap the frames into the flow Section and redraw the text flow and connectors (`file-standards.md` §2.2.1 "Replacing a flow's screens").
+
+When the main session edits frames an agent is also working on, tell the agent explicitly which layers not to touch. Quirks worth putting in every brief: `h.solid(hex, opacity)` ignores the opacity (use 8-digit hex); multi-paint fills list the top paint first; `absolute: true` only works when the parent has auto layout (otherwise plain `x`/`y`); after setting a `{var}` fill with `update_nodes`, check the rendered colour; a FIXED width inside auto layout needs `widthMode: "FIXED"`.
+
 ## 4. Screen build loop: pass → tool
 
 Process, modes and checklists: `build-loop.md`. Mechanics: `figma-agent-tools` SKILL.md §4.
