@@ -121,8 +121,12 @@ Every top-level item on a page is a Section (or the single `Cover`/`Foundations`
 - **Magnets by position:** same row, target to the right → `RIGHT` → `LEFT`; same row, target to the left (pop, dismiss, back to start) → `BOTTOM` → `BOTTOM`, so it loops under the row; target on a lower row → `BOTTOM` → `TOP`; higher row → `TOP` → `BOTTOM`.
 - **Style:** ELBOWED, stroke `#FFFFFF66` (40% on the paint, not node opacity — node opacity also fades the label), 4 px, radius 24, start cap `NONE`, end cap `ARROW_LINES`.
 - **Labels only where a source branches** (the tapped element, or the frame when starting on frames, has ≥ 2 outgoing lines): the action without the nav prefix (`Swap Face (no PRO)`), Inter Medium 18 `#FFFFFF`, at full opacity. Linear lines stay unlabeled: an 80 gap cannot hold a label without covering screens.
+- **A label wider than the gap breaks the route:** between neighbouring frames (80 gap) a long label makes Figma route the elbow far around the canvas (bounds thousands of px tall). Create the connector without `text`, then set a short label (≤ 7 characters: `Swap`, `Upload`, `1 photo`) in the `execute_code` style pass; the full action stays in the text flow. Long vertical or cross-Section connectors can carry longer labels.
+- **The source is the state where the action is possible:** an edge triggered by a CTA starts on the frame where that CTA is enabled (`Ready`, not `Default` with a disabled button); `back`/`discard` starts on the state that has unsaved changes; a multi-step tutorial leaves from its last step. Fix the text-flow `@id` first, then draw.
 - `parentId` = the Section of the source frame; Figma moves a connector whose ends sit in different Sections up to the page — expected, leave it there.
-- Check after drawing: connector count = text-flow lines − `ENTRY` − merged pairs, and every connector has both ends attached.
+- Check after drawing: connector count = text-flow lines − `ENTRY` − merged pairs, and every connector has both ends attached. Judge routes by a `screenshot` of the Section, not by the connector's bounds (often stale in the plugin).
+
+**Replacing a flow's screens** (rebuild of flat images or old frames): build the new frames elsewhere (`06 · Explore (WIP)`), then for each old → new pair insert the new frame at the old one's index in the Section, copy its `x`/`y` and **name**, and delete the old one. Deleting a frame also deletes every connector attached to it, including connectors of other flows that point into it. So afterwards: (1) rewrite every `@id` of the old frames in the whole text flow, other flows' lines included; (2) list the flow lines whose connectors are gone and redraw them all, cross-Section ones at page level; (3) remove the new `figma-agent/connector-seed`.
 
 ### 2.2.2 Text flow (`Flow · <Product>`)
 One Section at the top of `05 · Screens & Flows`, above the flow Sections, drawn from `assets/flow.render-tree.json` (`render_tree{tree}`, replace `<Product>` and the lines). It holds one text layer `flow/text`, monospace, **one transition per line** — for people and agents:
@@ -219,6 +223,19 @@ Adding a device or web breakpoint = adding one file, no code change:
 ### 4.4 Grid
 - Save layout grids as shared **styles** (`grid/mobile`, `grid/desktop`).
 - A 4pt baseline grid on mobile keeps text aligned; optional for web.
+
+### 4.5 Ad slots (Android mobile, 360 × 800 frame)
+Two kinds; reuse the file's ad components (`search_design_system{query: "Native"}`) instead of drawing them.
+
+| Kind | Size | Placement | Component (measured in a shipped file) |
+|---|---|---|---|
+| **Native full** | 360 × 800 — the whole screen | its own frame between two screens, `FBK-NN · <Flow> · Native Ad Full`; it opens with `modal-full` and leaves with `dismiss: Close` | `Native full1`: status bar, media 327 × 584, `Ad` badge, `Native ad/Large` 360 × 157 with the CTA (`Install`) |
+| **Native** (inline) | 360 wide, **fixed height** — 272 in onboarding and language | pinned to the bottom, full width, `y` = frame height − slot height (528 on 800), bottom gap 0; height `FIXED`, never HUG | `Native-ads` set: `Size=300 / 280 / 260 / 240 / 220 / 140 / 100` (Native, 360 × that height; `100` is 108) and `Size=50 / 64` (Banner) |
+
+- Content above an inline native ends at the slot top: give `Content` the remaining height (800 − 272 = 528) so nothing hides behind the ad.
+- Every inline native carries the `Ad` + `Sponsored` labels of the component; never remove them.
+- A screen whose ad may be absent (premium user, no fill) gets a `· No Ads` state frame under it (row below, same x) with the content re-flowed into the freed height.
+- Mark ad screens with a yellow `Note · Ads` (§2.2.1) listing which frames hold native full vs. inline native and their heights.
 
 ## 5. Sections, status and versions
 
