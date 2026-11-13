@@ -1,6 +1,6 @@
 {
   "name": "figma-agent-ui",
-  "version": "1.5.7",
+  "version": "1.5.10",
   "description": "Figma plugin + MCP server that lets an AI agent read, create, edit and screenshot designs",
   "main": "code.js",
   "bin": {
@@ -30,7 +30,8 @@
     "typecheck": "tsc -p tsconfig.json && tsc -p tsconfig.server.json",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "test": "vitest run"
+    "test": "vitest run",
+    "sync:plugin": "node scripts/build.mjs all && node scripts/sync-plugin.mjs"
   },
   "author": "Nguyen Luong Nam <nguyennam.kkb@gmail.com>",
   "license": "MIT",

@@ -208,11 +208,16 @@ export const ShapeSpec = z.strictObject({
   shape: FigjamShape.describe('ShapeWithText outline; DIAMOND/CHEVRON suit decisions/flows'),
   text: z.string().optional(),
 });
+export const ConnectorMagnet = z
+  .enum(['AUTO', 'TOP', 'BOTTOM', 'LEFT', 'RIGHT', 'CENTER'])
+  .describe('Side of the endpoint node the line attaches to; default AUTO (CENTER for STRAIGHT)');
 export const ConnectorSpec = z.strictObject({
   type: z.literal('connector'),
   ...baseProps,
   from: z.string().describe('Node id, or a "Root/Child" ids-map key from the same render_tree call'),
   to: z.string().describe('Node id, or a "Root/Child" ids-map key from the same render_tree call'),
+  fromMagnet: ConnectorMagnet.optional(),
+  toMagnet: ConnectorMagnet.optional(),
   lineType: z.enum(['ELBOWED', 'STRAIGHT', 'CURVED']).default('ELBOWED'),
   caps: z.strictObject({ start: FigjamStrokeCap.optional(), end: FigjamStrokeCap.optional() }).optional(),
   text: z.string().optional().describe('Label on the connector'),
@@ -323,6 +328,8 @@ export const UpdateProps = z.strictObject({
   shape: FigjamShape.optional(),
   from: z.string().optional(),
   to: z.string().optional(),
+  fromMagnet: ConnectorMagnet.optional(),
+  toMagnet: ConnectorMagnet.optional(),
   lineType: z.enum(['ELBOWED', 'STRAIGHT', 'CURVED']).optional(),
   code: z.string().optional(),
   language: FigjamCodeLanguage.optional(),

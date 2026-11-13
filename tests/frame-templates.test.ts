@@ -19,16 +19,38 @@ describe('frame templates', () => {
   });
 });
 
-describe('flow overview template', () => {
-  const tree = JSON.parse(readFileSync(join(dir, '..', 'flow.render-tree.json'), 'utf8'));
+type Spec = { type: string; name?: string; text?: string; children?: Spec[] };
+const asset = (name: string): Spec => JSON.parse(readFileSync(join(dir, '..', name), 'utf8'));
+const byName = (node: Spec, name: string): Spec | undefined =>
+  node.name === name ? node : (node.children ?? []).map((c) => byName(c, name)).find(Boolean);
 
-  it('is a valid render_tree section', () => {
+describe('flow page templates', () => {
+  it.each(['flow.render-tree.json', 'flow-section.render-tree.json'])('%s is a valid render_tree section with a numbered title bar', (file) => {
+    const tree = asset(file);
     expect(TreeNode.safeParse(tree).success).toBe(true);
     expect(tree.type).toBe('section');
+    expect(byName(tree, 'Number')).toBeDefined();
+    expect(byName(tree, 'Name')).toBeDefined();
   });
 
-  it('writes one FROM --[action]--> TO transition per line', () => {
-    const text: string = tree.children[0].children[1].text;
-    for (const line of text.split('\n')) expect(line).toMatch(/^SCR-\d{2} .+ --\[.+\]--> SCR-\d{2} .+$/);
+  it('names flow sections FL-NN · <Flow>', () => {
+    expect(asset('flow-section.render-tree.json').name).toMatch(/^FL-NN · /);
+  });
+
+  it('ships a valid reviewer note frame', () => {
+    const note = asset('note.render-tree.json');
+    expect(TreeNode.safeParse(note).success).toBe(true);
+    expect(note.name).toMatch(/^Note · /);
+  });
+});
+
+describe('text flow template', () => {
+  const tree = asset('flow.render-tree.json');
+
+  it('writes one FL-NN.Exx FROM @id --[nav: action]--> TO @id edge per line', () => {
+    const text = byName(tree, 'flow/text')?.text ?? '';
+    const edges = text.split('\n').filter((line) => /^FL-\d{2}\.E\d{2} /.test(line));
+    expect(edges.length).toBeGreaterThan(0);
+    for (const line of edges) expect(line).toMatch(/^FL-\d{2}\.E\d{2} {2}(ENTRY:\S+|SCR-\d{2}( @\S+)?) --\[(replace|push|pop|modal|modal-full|dismiss)(: .+)?\]--> SCR-\d{2}( .+)? @\S+$/);
   });
 });

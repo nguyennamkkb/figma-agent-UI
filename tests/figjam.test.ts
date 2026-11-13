@@ -71,6 +71,14 @@ describe('FigJam DSL schemas (T013)', () => {
     expect(ok.type).toBe('connector');
   });
 
+  it('connector magnets accept the Figma vocabulary in trees and updates', () => {
+    const ok = TreeNode.parse({ type: 'connector', from: 'a', to: 'b', fromMagnet: 'RIGHT', toMagnet: 'LEFT' });
+    expect(ok.type).toBe('connector');
+    expect(() => TreeNode.parse({ type: 'connector', from: 'a', to: 'b', toMagnet: 'MIDDLE' })).toThrow();
+    expect(UpdateProps.safeParse({ toMagnet: 'TOP' }).success).toBe(true);
+    expect(UpdateProps.safeParse({ fromMagnet: 'left' }).success).toBe(false);
+  });
+
   it('update props accept FigJam patches', () => {
     const p = UpdateProps.parse({ text: 'new', from: '1:1', cells: [['a']] });
     expect(p.text).toBe('new');

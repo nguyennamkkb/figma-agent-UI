@@ -8,6 +8,7 @@ import { WebSocket } from 'ws';
 
 const SERVER = join(__dirname, '..', 'dist', 'server.mjs');
 const PORT = 3999;
+// 1×1 PNG: the server decodes screenshots with sharp, so it must be a real image.
 const TOKEN = 'e2e-token';
 const received: { command: string; params: Record<string, unknown> }[] = [];
 

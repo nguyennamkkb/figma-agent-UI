@@ -1,7 +1,8 @@
 import type { AnyProps, ConnectorSpec, RenderTreeInput, SectionSpec, TreeNode } from '../../shared/schemas';
 import { systemBarNodes } from '../../shared/devices';
 import { parseColor } from '../../shared/values';
-import { applyPlacement, applyProps, endpointFor, setSublayerText, type ApplyCtx } from '../apply';
+import { applyPlacement, applyProps, setSublayerText, type ApplyCtx } from '../apply';
+import { attachEndpoint, defaultMagnet, discardScratch, newConnector } from '../connectors';
 import { resolveFill } from '../paints';
 import { Resources } from '../resources';
 import { iconWarnings } from '../icons';
@@ -29,7 +30,7 @@ export async function renderTree(p: RenderTreeInput) {
     parent = figma.currentPage;
   }
   const ids: Record<string, string> = {};
-  const state: BuildState = { root: null, count: 0, created: [], deferred: [] };
+  const state: BuildState = { root: null, count: 0, created: [], deferred: [], scratch: [] };
 
   const t = p.tree as { x?: unknown; y?: unknown };
   const onPage = parent.type === 'PAGE' && t.x === undefined && t.y === undefined;
@@ -38,6 +39,7 @@ export async function renderTree(p: RenderTreeInput) {
   try {
     const root = await build(p.tree, parent, p.index, ctx, [], ids, state);
     await wireConnectors(state, ids);
+    discardScratch(state.scratch);
     if (spot) {
       root.x = spot.x;
       root.y = spot.y;
@@ -56,6 +58,7 @@ export async function renderTree(p: RenderTreeInput) {
       ...(warnings.length ? { warnings } : {}),
     };
   } catch (e) {
+    discardScratch(state.scratch);
     for (const n of state.created) {
       try {
         if (!n.removed) n.remove();
@@ -73,6 +76,7 @@ export interface BuildState {
   count: number;
   created: SceneNode[];
   deferred: { node: ConnectorNode; spec: ConnectorSpec }[];
+  scratch: SceneNode[];
 }
 
 export async function wireConnectors(state: BuildState, ids: Record<string, string>) {
@@ -80,9 +84,9 @@ export async function wireConnectors(state: BuildState, ids: Record<string, stri
     const fromRef = ids[spec.from] ?? spec.from;
     const toRef = ids[spec.to] ?? spec.to;
     if (fromRef === toRef) throw new Error(`Connector "${spec.name ?? 'connector'}" cannot loop onto itself.`);
-    const magnet = node.connectorLineType === 'STRAIGHT' ? 'CENTER' : 'AUTO';
-    node.connectorStart = await endpointFor(fromRef, 'from', magnet);
-    node.connectorEnd = await endpointFor(toRef, 'to', magnet);
+    const magnet = defaultMagnet(node);
+    await attachEndpoint(node, 'from', fromRef, spec.fromMagnet ?? magnet);
+    await attachEndpoint(node, 'to', toRef, spec.toMagnet ?? magnet);
   }
   state.deferred = [];
 }
@@ -102,7 +106,7 @@ export async function build(
     if (spec.type === 'section') return await buildSection(spec, parent, index, ctx, here, ids, state);
     if (spec.type === 'slide') return await buildSlide(spec, parent, index, ctx, here, ids, state);
     const props = { ...spec } as unknown as AnyProps;
-    const node = await create(spec, ctx, props);
+    const node = await create(spec, ctx, props, state);
     if (!state.root) state.root = node;
     state.count++;
     state.created.push(node);
@@ -247,6 +251,7 @@ async function create(
   spec: Exclude<TreeNode, SectionSpec | { type: 'slide' }>,
   ctx: ApplyCtx,
   props: AnyProps,
+  state: BuildState,
 ): Promise<SceneNode> {
   switch (spec.type) {
     case 'frame': {
@@ -310,7 +315,7 @@ async function create(
       return node;
     }
     case 'connector': {
-      const node = figma.createConnector();
+      const node = await newConnector(state.scratch);
       if (props.lineType !== undefined) node.connectorLineType = props.lineType;
       if (props.caps?.start) node.connectorStartStrokeCap = props.caps.start;
       if (props.caps?.end) node.connectorEndStrokeCap = props.caps.end;
@@ -318,6 +323,8 @@ async function create(
       delete props.caps;
       delete props.from;
       delete props.to;
+      delete props.fromMagnet;
+      delete props.toMagnet;
       return node;
     }
     case 'code': {

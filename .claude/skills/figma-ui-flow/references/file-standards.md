@@ -29,13 +29,13 @@ Small projects (one person, one app) may merge Foundations + Components into the
 02 · Components          main components + Playground
 03 · Templates           reusable screen templates and content packs, cloned to start new screens
 04 · Assets              images, illustrations, icons, stickers, backgrounds
-05 · Screens & Flows     one Section per screen, the flow overview, adaptive layouts, prototype wiring
+05 · Screens & Flows     the text flow, then one Section per user flow; adaptive layouts, prototype wiring
 06 · Explore (WIP)       directions, moodboards, drafts, stress tests, and the Archive sections
 ```
 - Page names are exact: two-digit number, ` · ` (space, middle dot, space), title. Only Cover has an emoji and no number. `manage_pages{template: true}` creates exactly these 7 pages.
 - A page still being worked out keeps the `(WIP)` suffix; drop it when the page is stable (Explore keeps it for good).
 - Need another page? Add the next number (`07 · Prototype`, `08 · Handoff`…); never renumber existing pages.
-- There is no Brief, Prototype, Ready or Archive page: the brief is a frame on Cover, prototype wiring lives on the screens in `05`, "Ready" is the Dev Mode status of a screen Section, and rejected work goes to an `Archive · …` Section in `06`.
+- There is no Brief, Prototype, Ready or Archive page: the brief is a frame on Cover, prototype wiring lives on the screens in `05`, "Ready" is the Dev Mode status of a flow Section, and rejected work goes to an `Archive · …` Section in `06`.
 
 ### 1.3 Cover
 One frame `Cover · <Product>` on `🏠 Cover`, built from `assets/cover.render-tree.json` (team standard): 3840×2160, black `#070707`, blurred colour glows, a huge title, a divider, an info row. Render it with `render_tree{tree}` (no `parentId`), then replace only these parts:
@@ -70,41 +70,80 @@ Every top-level item on a page is a Section (or the single `Cover`/`Foundations`
 
 | Where | Name | Example |
 |---|---|---|
-| `05` one Section per screen | `SCR-NN · <Screen>` | `SCR-08 · Paywall` |
-| screen frame inside it | `SCR-NN · <Screen> · <State>[ · <Theme>]` | `SCR-08 · Paywall · Default · Dark`, `SCR-09 · Home · Empty` |
-| feedback frame (alert, sheet, toast, result triggered by an event) | `FBK-NN · <Screen> · <Event>` | `FBK-06 · Paywall · Purchase Failed` |
-| flow overview Section (§2.2.1) | `Flow · <Product>`, thumbnails `flow/SCR-NN · <Screen>`, text flow `flow/text` | `Flow · Lumen` |
+| `05` flow map, first Section (§2.2.2) | `Flow · <Product>`, text layer `flow/text` | `Flow · Lumen` |
+| `05` one Section per flow (§2.2.1) | `FL-NN · <Flow>` | `FL-03 · AI Video` |
+| screen frame inside a flow Section | `SCR-NN · <Screen> · <State>[ · <Theme>]` | `SCR-08 · Paywall · Default · Dark`, `SCR-09 · Home · Empty` |
+| feedback frame (dialog, sheet, toast, loading, result triggered by an event) | `FBK-NN · <Screen> · <Event>` | `FBK-06 · Paywall · Purchase Failed` |
+| note beside a frame | `Note · <Topic>` | `Note · Animation` |
 | other device sizes | `Adaptive · <Device>[ · <Group>]` | `Adaptive · iPad`, `Adaptive · iPhone Duo · Onboarding` |
 | `02` component library | `<Product> · Components — <what is inside>` | `Lumen · Components — icons, buttons, chips` |
 | `03` / `04` groups | `<emoji> <Group> · <Kind>` (🧩 templates, 🖼 images) | `🧩 Content Packs · Templates`, `🖼 Wallpapers & Backgrounds` |
 | `06` exploration / archive | `Explore · <Topic>`, `Archive · <What and why>` | `Explore · Tab screens redesign`, `Archive · pre-v2 defaults` |
 
-- **Numbers:** `SCR` numbers follow the main flow order (two digits, `SCR-01` first); `FBK` numbers count separately across the whole product. A number is never reused or renumbered — a new screen takes the next free number even if it sits earlier in the flow.
-- **State:** Title Case, short: `Default`, `Empty`, `Loading`, `Error`, `Largest Text`, `Filter Empty`. `Default` is always the first frame.
+- **Flow numbers:** `FL-NN` follows the user's journey through the product — entry flows first (splash, onboarding, paywall), core features next, account/settings last. The number is the same in the Section name, its title bar and the text flow (`FL-03.E01`).
+- **Screen numbers:** `SCR` numbers follow the main flow order across the whole product (two digits, `SCR-01` first); `FBK` numbers count separately. A number is never reused or renumbered — a new screen takes the next free number even if it sits earlier in the flow.
+- **State:** Title Case, short: `Default`, `Empty`, `Loading`, `Error`, `Largest Text`, `Filter Empty`. `Default` comes first.
 - **Theme suffix** ` · Light` / ` · Dark` only when the brief's theme is **Both**; a single-theme project leaves it off.
-- **Layout inside a screen Section:** `Default` top-left, states to the right in reading order, 80 px gaps; feedback frames after the states; the second theme (Both) on the row below its source.
 
-### 2.2.1 Flow overview (`Flow · <Product>`)
-One Section at the top of `05 · Screens & Flows`, above the screen Sections. It holds two views of the same flow:
+### 2.2.1 Flow Sections (`FL-NN · <Flow>`)
+`05 · Screens & Flows` reads top → bottom like a table of contents: `Flow · <Product>` first, then one Section per flow, stacked in `FL` order. Each Section shows one user goal end to end, so a reviewer scans one strip per feature instead of hunting screens across the page.
 
-1. **Thumbnails + arrows** for people: a row of scaled copies `flow/SCR-NN · <Screen>` (scale 0.4, label above each) in main-flow order, joined by `flow/arrow N→M` vectors. Arrows are static drawings: they don't follow moved thumbnails.
-2. **Text flow** for people and agents: one text layer `flow/text`, monospace, **one transition per line**:
+**What goes where**
+- A **flow** = one user goal with a clear entry and exit (`Onboarding`, `AI Video`, `Remove Background`). 4–20 frames; split a longer one at a natural checkpoint.
+- A **catalog** Section collects frames reused by many flows and has no path of its own: `FL-NN · Dialogs`, `FL-NN · Settings`. Frames sit in one row; it gets no edges of its own in the text flow (its frames are reached from other flows).
+- Every frame lives **once**, in the first flow that reaches it. Other flows point to it by code in the text flow (`SCR-05`), not with a copy; when the strip would read wrong without it, add a `Note · Continues in FL-01` at that spot.
+- States and feedback stay next to their screen, in flow order: `SCR-12 · Crop · Default`, `SCR-12 · Crop · Vertical`, `FBK-04 · Crop · Loading` side by side — not in a separate states area.
+- *(Both only)* the second theme of a flow is a copy of its Section, `FL-NN · <Flow> · Dark`, placed right under it with `variableModes` switched — made after every screen of the flow meets DoD.
+
+**Section style** (from `assets/flow-section.render-tree.json`)
+- Section fill `#242424`, then `update_nodes` stroke `#FFFFFF73` 1 px inside, radius 12 (`render_tree` sections take no stroke/radius). Neutral dark reads well around both light and dark screens; keep it even for light-theme apps.
+- `Title` bar at (0, 0), full Section width, 104 high: `Number` cell 120 × 104 white, left corners 12, two-digit `NN` Inter Bold 36 `#121212`; `Name` cell fills the rest with a black → transparent gradient, padding 8/40, flow name Inter Semi Bold 40 white.
+- All flow Sections share one x and one width (the widest flow + margins), 400 apart vertically; resize the `Title` bar with the Section.
+
+**Frames inside a Section** (absolute `x`/`y`; Sections have no auto layout)
+| Measure | Value |
+|---|---|
+| first row top | `y` 304 (200 under the title bar) |
+| left margin / right and bottom margin | 200 / 200 |
+| gap between frames in a row | 80 |
+| next row | previous row top + tallest frame in it + 400 |
+
+- **Main row = the happy path**, left → right: entry screen → steps → result. States and feedback slot in after the screen that triggers them.
+- **Branch rows** below the main row: alternatives (`2 photos` vs `1 photo`), errors, upsells (paywall from a locked feature), secondary tools. A branch row starts under the frame it leaves from, so the eye drops straight down.
+- A scrolling screen keeps its full content height (e.g. 393 × 1264) and pushes the next row down; don't crop it.
+- Fit the content: Section width/height = content + margins after each row is added.
+
+**Notes** (`assets/note.render-tree.json`): yellow `#FFE477` card, radius 16, padding 16/20, 360 wide, title Inter Bold 16 + body Inter 14, `#121212`. Use one for what the frame cannot show — animation, a condition (`only first launch`), an ad slot, a data rule. Place it 40 under its frame (or in the gap beside it), never over a screen. Notes are for reviewers on the canvas; layer-level dev notes still go in `annotate` at handoff.
+
+**Connectors are optional** — only when the user asks; the text flow (§2.2.2) carries the logic and is the only source for them:
+- **One connector per text-flow line**, named after it: `FL-NN.Exx · <nav: action>`. Skip the `ENTRY:` line (no source frame). Two lines with the same FROM and TO become one connector (`FL-03.E03+E04 · push: Try Now (1 or 2 photos)`).
+- **Ends:** start on the element the user taps (button, card) so the line says *what* triggers the move; when the screen has no layers (flat image, pasted mockup) start on the frame. End on the target's `Default` frame (the `@id`).
+- **Magnets by position:** same row, target to the right → `RIGHT` → `LEFT`; same row, target to the left (pop, dismiss, back to start) → `BOTTOM` → `BOTTOM`, so it loops under the row; target on a lower row → `BOTTOM` → `TOP`; higher row → `TOP` → `BOTTOM`.
+- **Style:** ELBOWED, stroke `#FFFFFF66` (40% on the paint, not node opacity — node opacity also fades the label), 4 px, radius 24, start cap `NONE`, end cap `ARROW_LINES`.
+- **Labels only where a source branches** (the tapped element, or the frame when starting on frames, has ≥ 2 outgoing lines): the action without the nav prefix (`Swap Face (no PRO)`), Inter Medium 18 `#FFFFFF`, at full opacity. Linear lines stay unlabeled: an 80 gap cannot hold a label without covering screens.
+- `parentId` = the Section of the source frame; Figma moves a connector whose ends sit in different Sections up to the page — expected, leave it there.
+- Check after drawing: connector count = text-flow lines − `ENTRY` − merged pairs, and every connector has both ends attached.
+
+### 2.2.2 Text flow (`Flow · <Product>`)
+One Section at the top of `05 · Screens & Flows`, above the flow Sections, drawn from `assets/flow.render-tree.json` (`render_tree{tree}`, replace `<Product>` and the lines). It holds one text layer `flow/text`, monospace, **one transition per line** — for people and agents:
 
 ```text
-SCR-01 Welcome      --[Get started]-->       SCR-02 Onboarding
-SCR-04 Home         --[Tap habit]-->         SCR-05 Habit Detail
-SCR-10 Settings     --[Sign out]-->          SCR-01 Welcome
+FL-01 Onboarding · FL-02 Make a wallpaper
+
+FL-01.E01  ENTRY:first-launch --[replace]--> SCR-01 Welcome @5:1598
+FL-01.E02  SCR-01 @5:1598 --[push: Get started]--> SCR-02 @5:1599
+FL-01.E03  SCR-02 @5:1599 --[pop: back]--> SCR-01 @5:1598
+FL-02.E01  SCR-10 @5:1607 --[modal-full: New]--> SCR-11 @5:1608
 ```
 
 Rules for the text flow:
-- `FROM --[action]--> TO`: both ends are a full screen code `SCR-NN <Screen>` (or `FBK-NN …`) that matches a frame on the page; never `back`, `previous` or free text.
-- `[action]` is the visible label or gesture that triggers it (`[Save]`, `[Tab Stats]`, `[Swipe left]`), so it maps 1:1 to a prototype reaction (`set_interactions` NAVIGATE on that element).
-- List every transition, including returns (Cancel, Close, back chevrons, tabs); group lines by FROM screen in flow order; pad columns with spaces for reading — agents ignore the spacing.
-- The text is the source of truth for the flow: update it whenever a screen or transition is added, and build the prototype from it.
+- Line = `FL-NN.Exx  FROM @id --[nav: action]--> TO @id`. First line lists the flows `FL-NN <Name>` (same numbers as the flow Sections); `Exx` numbers the edges inside a flow.
+- Ends are screen codes `SCR-NN` (or `FBK-NN`) + `@<id>` of that screen's `Default` frame (from `render_tree`); the entry edge uses `ENTRY:<trigger>` and names its target (`SCR-01 Welcome @id`). Never `back` or free text as an end.
+- `@id` makes a line actionable: `select_nodes`, `get_node`, `screenshot`, or `set_interactions` `destination`. Fill ids once the frames exist; if a frame is recreated, re-resolve by name `SCR-NN · …` (`find_nodes`) and replace it on every line.
+- `nav` is `push | pop | replace | modal | modal-full | dismiss`; `action` is the visible label or gesture (`Save`, `Tab Stats`, `Swipe left`, `back`), 1:1 with a prototype reaction. A condition may follow in the label (`iOS`, `denied (FBK-05)`).
+- List every transition, including returns and edges that cross into another flow; group by flow, then by FROM screen in order. The text is the source of truth: update it with every screen or transition change and build the prototype from it.
 
 Read it with `get_node{ids: [<flow/text id>]}` (full text up to 5000 characters; `find_nodes` shows only the first 80): split on newlines, and check the line count equals the layer height ÷ line height. Icon-only actions use their glyph or label (`[+]`, `[‹ Today]`). On `06 · Explore` the same Section works for an exploration; set `x`/`y` on the Section.
-
-Draw it from `assets/flow.render-tree.json` (`render_tree{tree}` on `05`, replace `<Product>` and the lines). Thumbnails and arrows need `execute_code` (`clone` → `rescale(0.4)` into the Section, then vectors with `strokeCap: "ARROW_LINES"` on the end vertex).
 
 ### 2.3 Inner layers
 | Type | Name | Example |
@@ -183,7 +222,7 @@ Adding a device or web breakpoint = adding one file, no code change:
 
 ## 5. Sections, status and versions
 
-- One **Section per screen** on `05 · Screens & Flows` (`SCR-NN · <Screen>`, §2.2). Mark "Ready for dev" per screen Section in Dev Mode — there is no Ready page.
+- One **Section per flow** on `05 · Screens & Flows` (`FL-NN · <Flow>`, §2.2.1). Mark "Ready for dev" per flow Section in Dev Mode once all its frames meet DoD — there is no Ready page.
 - Status labels on the canvas (component or sticky): `🟡 WIP`, `🔵 In review`, `🟢 Approved`, `🔴 Needs changes`.
 - **Versions:** save versions manually (Save to version history) at each milestone: before a major direction change, after each review gate, before publishing the library. Version name: `v1.2 – Add dark mode to Settings`.
 - **Branching** (if your plan has it): every major change to a library file goes through a branch + review before merging.
@@ -196,4 +235,4 @@ Before every presentation or handoff:
 3. No orphaned styles/variables (defined but unused) — or note the reason for keeping them.
 4. Detach instances only when unavoidable and record why; detached instances are design debt.
 5. Heavy images: compress before inserting; illustrations use real images or placeholders with the correct aspect ratio.
-6. Tidy canvas: screens laid out in an aligned grid with even spacing (e.g. 200px between screens, 400px between Sections).
+6. Tidy canvas: frames on the §2.2.1 grid (80 between frames, rows 400 apart, Sections 400 apart, one shared x and width for all flow Sections).

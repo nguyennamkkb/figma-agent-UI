@@ -43,7 +43,7 @@ describe('images', () => {
       ],
     });
     expect(out.variants[0].tree.fill).toEqual({ imageBase64: PNG.toString('base64'), scaleMode: 'FILL' });
-    expect(out.variants[1].tree.fill[0]).toEqual({ imageBase64: PNG.toString('base64') });
+    expect((out.variants[1].tree.fill as unknown[])[0]).toEqual({ imageBase64: PNG.toString('base64') });
     expect(out.variants[1].tree.children[0]).toEqual({ type: 'image', imageBase64: PNG.toString('base64'), width: 10 });
   });
 });
