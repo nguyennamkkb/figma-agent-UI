@@ -1,7 +1,7 @@
 # AGENTS.md
 
 ## Commands
-- `npm install` then `npm run build` (builds `code.js` + `dist/server.mjs`). Targeted: `npm run build:plugin`, `npm run build:server`; `npm run watch` rebuilds `code.js` only.
+- `npm install` then `npm run build` (builds `code.js` + `dist/server.mjs`). Targeted: `npm run build:plugin`, `npm run build:server`; `npm run watch` rebuilds `code.js` only. Figma loads the plugin from `~/.figma-agent/plugin` (installer copy), not the repo: `npm run sync:plugin` builds and copies `manifest.json`/`code.js`/`ui.html` there (`FIGMA_AGENT_PLUGIN_DIR` overrides), then reopen the plugin.
 - Verify: `npm run typecheck` (two projects: `tsconfig.json` plugin + `tsconfig.server.json`), `npm run lint`, `npm test` (`vitest run`). Always `npm run build` before `npm test` — e2e/smoke tests run against `dist/` and `code.js`.
 - Single test: `npx vitest run tests/<name>.test.ts` (e.g. `tokens`, `bridge`, `hub`, `mcp.e2e`, `plugin.smoke`).
 

@@ -5,7 +5,8 @@ import { expandSides, parseLetterSpacing, parseLineHeight, weightToStyle } from 
 import { loadFont, loadNodeFonts, resolveFont } from './fonts';
 import { resolveEffects, resolveFill } from './paints';
 import type { Resources } from './resources';
-import { findNode, isAutoLayout } from './util';
+import { attachEndpoint, defaultMagnet, endpointId } from './connectors';
+import { isAutoLayout } from './util';
 
 export interface ApplyCtx {
   res: Resources;
@@ -37,7 +38,7 @@ export async function applyProps(node: SceneNode, input: AnyProps, ctx: ApplyCtx
   if (node.type === 'TEXT') await applyText(node, p, ctx, isNew);
   if (p.text !== undefined) await applyFigjamText(node, p.text, ctx);
   if (node.type === 'INSTANCE') await applyInstance(node, p, ctx);
-  if ((p.from !== undefined || p.to !== undefined) && node.type === 'CONNECTOR') await rewireConnector(node, p);
+  if (node.type === 'CONNECTOR' && [p.from, p.to, p.fromMagnet, p.toMagnet].some((v) => v !== undefined)) await rewireConnector(node, p);
   if (node.type === 'SLIDE') await applySlide(node, p);
 
   const fill = node.type === 'TEXT' || node.type === 'STICKY' ? (p.color ?? p.fill) : p.fill;
@@ -196,16 +197,15 @@ async function applySlide(node: SlideNode, p: AnyProps): Promise<void> {
 }
 
 async function rewireConnector(node: ConnectorNode, p: AnyProps): Promise<void> {
-  const magnet = node.connectorLineType === 'STRAIGHT' ? 'CENTER' : 'AUTO';
-  if (p.from !== undefined) node.connectorStart = await endpointFor(p.from, 'from', magnet);
-  if (p.to !== undefined) node.connectorEnd = await endpointFor(p.to, 'to', magnet);
-}
-
-export async function endpointFor(ref: string, side: 'from' | 'to', magnet: 'AUTO' | 'CENTER' = 'AUTO'): Promise<ConnectorEndpoint> {
-  const target = await findNode(ref);
-  if (!target) throw new Error(`Connector "${side}" target not found: ${ref}.`);
-  if (target.type === 'DOCUMENT' || target.type === 'PAGE') throw new Error(`Connector "${side}" cannot attach to a ${target.type}.`);
-  return { endpointNodeId: target.id, magnet };
+  const magnet = defaultMagnet(node);
+  for (const [side, ref, m] of [['from', p.from, p.fromMagnet], ['to', p.to, p.toMagnet]] as const) {
+    const target = ref ?? (m !== undefined ? endpointId(node, side) : undefined);
+    if (target === undefined) {
+      if (m !== undefined) throw new Error(`Connector "${side}" end is not attached to a node: pass ${side} with ${side}Magnet.`);
+      continue;
+    }
+    await attachEndpoint(node, side, target, m ?? magnet);
+  }
 }
 
 function assertFigjamFill(p: AnyProps): void {

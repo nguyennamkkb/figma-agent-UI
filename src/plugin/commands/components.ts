@@ -1,6 +1,7 @@
 import { planComponentSet } from '../../shared/components';
 import type { CreateComponentSetInput } from '../../shared/schemas';
 import type { ApplyCtx } from '../apply';
+import { discardScratch } from '../connectors';
 import { iconWarnings } from '../icons';
 import { solid } from '../paints';
 import { Resources } from '../resources';
@@ -23,13 +24,15 @@ export async function createComponentSet(p: CreateComponentSetInput) {
   try {
     for (let i = 0; i < p.variants.length; i++) {
       const tree = { ...p.variants[i].tree, component: true, name: plan.names[i] || p.name };
-      const state: BuildState = { root: null, count: 0, created: [], deferred: [] };
+      const state: BuildState = { root: null, count: 0, created: [], deferred: [], scratch: [] };
       try {
         made.push((await build(tree, parent, undefined, ctx, [], {}, state)) as ComponentNode);
+        discardScratch(state.scratch);
         if (state.deferred.length > 0) {
           throw new Error('Connectors cannot live inside component variants; create the set first, then add connectors with render_tree.');
         }
       } catch (e) {
+        discardScratch(state.scratch);
         for (const n of state.created) {
           try {
             if (!n.removed) n.remove();

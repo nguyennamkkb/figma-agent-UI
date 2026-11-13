@@ -18,7 +18,7 @@ Result: `rootId`, `created`, `bounds`, `ids` keyed by name path (`"Login/Form/Em
 
 ## 2. Node vocabulary
 
-Types: `frame`, `text`, `rect`, `ellipse`, `svg`, `image`, `instance`, `section`.
+Types: `frame`, `text`, `rect`, `ellipse`, `svg`, `image`, `instance`, `section`, `connector`.
 
 ```jsonc
 {
@@ -52,6 +52,14 @@ Types: `frame`, `text`, `rect`, `ellipse`, `svg`, `image`, `instance`, `section`
 Other keys: `widthMode`/`heightMode` (`FIXED|HUG|FILL`), `min/maxWidth`, `min/maxHeight`, `absolute` + `x`/`y`, `opacity`, `visible`, `locked`, `rotation`, `clip` (both `true` and `false` round-trip), `wrap` + `counterGap`, `component: true` (+ `description`); on text `fontFamily`, `fontStyle`, `textAlign`, `verticalAlign`, `textCase`, `decoration`, `maxLines`, `textStyle`. Grids accept `count: "auto"` (= Figma Infinity). `get_node` returns every key above, so its output replays into `update_nodes`. **Any number may be `{ "var": "space/4" }`** and any colour `{ "var": "color/text/primary" }` — use them whenever the file has tokens.
 
 `section`: `{type: "section", name, children: [frames], gap 200, padding 80, fill}` — screens of one flow, auto-placed left to right.
+
+`connector` (flow arrows between screens, Design and FigJam; optional — only when the user asks for wired screens): `{type: "connector", name, from, to, fromMagnet, toMagnet, lineType, caps, text, opacity, stroke}`. `from`/`to` are node ids or same-call ids-map keys; magnets `AUTO|TOP|BOTTOM|LEFT|RIGHT|CENTER` (default AUTO, CENTER for STRAIGHT). Start on the tapped element (button, tile, icon), end on the target screen frame; `text` labels a branch. In Design files Figma plugins cannot create connectors from scratch: the first call copies any existing connector of the file into a `figma-agent/connector-seed` section (leave it; it is reused) and new connectors are cloned from it, inheriting its stroke, caps and opacity. Connectors still attached at both ends are preferred; one with a frozen elbow route (dragged by hand, or pasted without the shapes it joined) is skipped because copies keep that route. If none is usable the call fails — ask the user to copy a connector together with both shapes it joins (or a whole `figma-agent/connector-seed` section from another file) into this file. The inherited stroke may be invisible on the canvas (e.g. white on a white section): pass `stroke: {color}` and `opacity: 1` when it is. An endpoint inside an instance attaches to the outermost instance. One call per connector, `parentId` = the flow section:
+
+```jsonc
+{ "parentId": "<section id>", "select": false,
+  "tree": { "type": "connector", "name": "Home → Detail", "from": "<button id>", "fromMagnet": "RIGHT",
+            "to": "<screen id>", "toMagnet": "LEFT", "text": "tap card" } }
+```
 
 ### Icon slot (icon button, list leading icon, tab icon)
 
@@ -121,4 +129,4 @@ The build loop in figma-ui-flow locks the layout first, then fills it:
 { "updates": [ { "id": "12:34", "props": { "text": "New", "fill": { "var": "color/primary" } } } ] }
 ```
 
-`props` accepts every render_tree key that makes sense on an existing node, plus on instances `variant`, `properties` (by name; `#id` suffix optional), `texts` (by text layer name) and `component` (swap). Text inside an instance: id `I1006:42;1006:41`. Failures come back per item in `failed`; the rest landed.
+`props` accepts every render_tree key that makes sense on an existing node, plus on instances `variant`, `properties` (by name; `#id` suffix optional), `texts` (by text layer name) and `component` (swap); on connectors `from`/`to` and `fromMagnet`/`toMagnet` re-attach an end (a magnet alone keeps the current target). Text inside an instance: id `I1006:42;1006:41`. Failures come back per item in `failed`; the rest landed.

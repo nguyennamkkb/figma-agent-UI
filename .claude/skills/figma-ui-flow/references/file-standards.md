@@ -87,7 +87,7 @@ Every top-level item on a page is a Section (or the single `Cover`/`Foundations`
 ### 2.2.1 Flow overview (`Flow · <Product>`)
 One Section at the top of `05 · Screens & Flows`, above the screen Sections. It holds two views of the same flow:
 
-1. **Thumbnails + arrows** for people: a row of scaled copies `flow/SCR-NN · <Screen>` (scale 0.4, label above each) in main-flow order, joined by `flow/arrow N→M` vectors. Arrows are static drawings: they don't follow moved thumbnails.
+1. **Thumbnails + arrows** for people: a row of scaled copies `flow/SCR-NN · <Screen>` (scale 0.4, label above each) in main-flow order, joined by `flow/arrow N→M` vectors. Arrows are static drawings: they don't follow moved thumbnails. Live `connector` lines between screens (render_tree `type: "connector"`) are optional and only on the user's request; never add them on your own initiative.
 2. **Text flow** for people and agents: one text layer `flow/text`, monospace, **one transition per line**:
 
 ```text
