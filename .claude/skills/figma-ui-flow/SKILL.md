@@ -21,6 +21,7 @@ Let `SKILL_DIR` be the directory containing this file.
 | Session only has the official Figma MCP (`use_figma`…) | `references/remote-figma-mcp.md` |
 | Page structure, layer/frame naming, how `05 · Screens & Flows` is laid out (one Section per flow, text flow, notes), Auto Layout, grids, ad slot sizes (native full, inline native) | `references/file-standards.md` |
 | Variables, tokens, styles, components, variants, libraries | `references/design-system.md` |
+| CTA hierarchy and classes, anatomy, states, glossy/mirror effects, purchase CTA, CTA QA | `references/cta-playbook.md` |
 | Moodboards, direction exploration, critique, Motion, shaders, AI | `references/creative-process.md` |
 | Why this screen and why this way: brief priorities, screen contract, monetization rules, 4 handoff questions | `references/decision-playbook.md` |
 | QA, accessibility, Dev Mode, developer handoff (iOS/Android/Web) | `references/handoff-qa.md` |
@@ -115,7 +116,7 @@ Read `references/design-system.md` sections 1–4.
 
 ### Stage 3 — Components
 
-Read `references/design-system.md` sections 5–8.
+Read `references/design-system.md` sections 5–8. When the component is a button or CTA, also read `references/cta-playbook.md` — class before look, effects per class, no per-instance overrides.
 
 1. Build order: atoms (icon, text, divider) → basic elements (button, input, chip, avatar) → composites (card, list row, nav bar, tab bar, sheet).
 2. Each component: clear anatomy, correct Auto Layout, 100% token binding, component properties instead of redundant variants, all states, a description and documentation link.
@@ -161,7 +162,7 @@ Read `references/creative-process.md` sections 7–8.
 
 Read `references/handoff-qa.md` sections 1–3, use `assets/qa-report.template.md`.
 
-1. Run the 6-group QA checklist: structure, tokens, layout, states, accessibility, content.
+1. Run the 6-group QA checklist: structure, tokens, layout, states, accessibility, content. For every action button run the CTA checklist (`references/cta-playbook.md` §8): one primary per viewport, contrast, target size, disabled reason, loading stability.
 2. Log issues by severity: **Blocker** (must be fixed before handoff), **Should fix**, **Nice to have**.
 3. Agent: check whatever can be checked automatically (default names, values not bound to tokens, frames without Auto Layout, contrast, text overflow) with the read-only audit/stress tools; check the rest via screenshots. State clearly which warnings are false positives.
 4. **Gate:** present the QA report; move on to handoff only after the Blocker items are fixed.
