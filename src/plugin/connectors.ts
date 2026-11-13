@@ -82,7 +82,7 @@ async function ensureSeed(): Promise<SectionNode> {
     seed.remove();
   }
   throw new Error(
-    'Every connector in this file carries a frozen elbow route (hand-dragged, or pasted without the shapes it joined), which copies inherit and plugins cannot reset. Copy a connector together with both shapes it connects from another file (or a \"' + CONNECTOR_SEED_NAME + '\" section) into this file, then retry.',
+    'Every connector in this file carries a frozen elbow route (hand-dragged, or pasted without the shapes it joined), which copies inherit and plugins cannot reset. Copy a connector together with both shapes it connects from another file (or a "' + CONNECTOR_SEED_NAME + '" section) into this file, then retry.',
   );
 }
 

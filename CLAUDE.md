@@ -23,7 +23,7 @@ Keep logic that doesn't need the `figma` global in `src/shared/` (pure, unit-tes
 - `src/server/setup-lib.ts` holds pure, tested helpers (paths per platform, MCP config edits for Claude Code / OpenCode / Codex TOML, arg parsing); `src/server/setup.ts` does the I/O and output.
 - Bundled skills are listed twice and must stay in sync: `BUNDLED_SKILLS` in `setup-lib.ts` and `files` in `package.json`. A renamed or merged skill goes into `RETIRED_SKILLS` so `install`/`uninstall` remove the old copy from `~/.claude/skills`, `~/.config/opencode/skills`, `~/.agents/skills`.
 - Verify installer changes in a throwaway home: `HOME=$(mktemp -d) node bin/figma-agent-ui.mjs install --no-mcp` (plus `doctor`, `uninstall`), and `npm pack --dry-run` to check shipped files.
-- README installs the latest `main` (no tag; `--prefer-online` defeats the npx cache); the installer writes the same untagged spec into the MCP configs. A release = bump `package.json`, commit, merge to `main`, push, push a `vX.Y.Z` tag for users who pin.
+- README installs the latest `main` (no tag; `--prefer-online` defeats the npx cache); the installer writes the same untagged spec into the MCP configs. A release = bump `package.json`, commit, merge to `main`, push, push a `vX.Y.Z` tag for users who pin. Every push is a release: bump the version first, even for docs/skills/tests-only changes.
 
 ## Skills (`.claude/skills/`)
 

@@ -7,6 +7,7 @@ import {
   shortPath,
   skillTargets,
   staleNpxCopies,
+  type NpxCacheEntry,
   tokenCopyHint,
   codexConfigPath,
   hasCodexServer,
@@ -160,7 +161,7 @@ describe('setup: paths and args', () => {
 describe('staleNpxCopies', () => {
   const ours = (tag: string) => ({ 'figma-agent-ui': `github:nguyennamkkb/figma-agent-UI${tag}` });
   it('picks old figma-agent copies and keeps the running one and other packages', () => {
-    const entries = [
+    const entries: NpxCacheEntry[] = [
       { dir: '/c/a', dependencies: ours('#v1.5.0') },
       { dir: '/c/b', dependencies: ours('') },
       { dir: '/c/c', dependencies: { prettier: '3' } },
