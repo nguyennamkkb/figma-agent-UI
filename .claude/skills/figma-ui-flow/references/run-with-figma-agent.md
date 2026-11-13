@@ -67,7 +67,7 @@ Every write tool accepts `page` (id or name). When running multiple agents in pa
 
 ### 3.0 Copying screens from another file (exact)
 
-Use when the user wants a screen "y hệt" the original, or to bring source screens into the clone before restyling. Both files must be open with the plugin connected.
+Use when the user wants a screen "y hệt" the original, or to bring source screens into the clone before restyling. Both files must be open with the plugin connected. Full playbook (fields, what is copied, troubleshooting): `figma-agent-tools/references/copy-between-files.md`.
 
 1. `copy_nodes{file: <source>, ids, name, targetFile: <target>}`: one snapshot per screen or per Section. Read `skipped` and `missingInTarget`.
 2. `paste_nodes{file: <target>, page: "06 · Explore (WIP)", snapshot: name, x, y}` next to earlier copies; `exact: true` and an empty `mismatches` mean every layer kept its size. `screenshot` the copy and the source side by side.

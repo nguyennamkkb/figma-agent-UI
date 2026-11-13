@@ -1,5 +1,6 @@
 import type { FillInput, PaintInput } from '../shared/schemas';
 import { gradientTransform, parseColor } from '../shared/values';
+import { resolveVariableColor } from '../shared/varcolor';
 import type { Resources } from './resources';
 
 export type ResolvedFill = { style: PaintStyle } | { paints: Paint[] };
@@ -15,6 +16,15 @@ export async function resolveFill(input: FillInput, res: Resources): Promise<Res
   return { paints: paints.reverse() };
 }
 
+export async function variableSolid(variable: Variable): Promise<SolidPaint> {
+  const c = await resolveVariableColor(variable, {
+    variable: (id) => figma.variables.getVariableByIdAsync(id),
+    defaultMode: async (id) => (await figma.variables.getVariableCollectionByIdAsync(id))?.defaultModeId ?? null,
+  });
+  if (!c) return solid('#000000');
+  return { type: 'SOLID', color: { r: c.r, g: c.g, b: c.b }, opacity: 1 };
+}
+
 export function solid(color: string): SolidPaint {
   const c = parseColor(color);
   return { type: 'SOLID', color: { r: c.r, g: c.g, b: c.b }, opacity: c.a };
@@ -24,7 +34,10 @@ async function toPaint(p: PaintInput, res: Resources): Promise<Paint> {
   if (typeof p === 'string') return solid(p);
   if ('var' in p) {
     const variable = await res.variable(p.var);
-    return figma.variables.setBoundVariableForPaint(solid('#000000'), 'color', variable);
+    if (variable.resolvedType !== 'COLOR') {
+      throw new Error(`Variable "${variable.name}" is ${variable.resolvedType}, not COLOR: it cannot be a fill or stroke.`);
+    }
+    return figma.variables.setBoundVariableForPaint(await variableSolid(variable), 'color', variable);
   }
   if ('gradient' in p) {
     const type = `GRADIENT_${p.gradient}` as GradientPaint['type'];

@@ -43,6 +43,7 @@ interface ReadState {
   outlined: number;
   skipped: string[];
   jobs: (() => Promise<void>)[];
+  retries: (() => Promise<void>)[];
   dropped: WeakSet<SnapNode>;
   shallow: Set<string>;
   childIds: Map<string, string[]>;
@@ -176,8 +177,14 @@ async function readNode(node: SceneNode, parent: BaseNode, parentAuto: boolean, 
       try {
         snap.svg = await node.exportAsync({ format: 'SVG_STRING', svgOutlineText: true });
       } catch {
-        state.dropped.add(snap);
-        state.skipped.push(`${node.name} (${node.id})`);
+        state.retries.push(async () => {
+          try {
+            snap.svg = await node.exportAsync({ format: 'SVG_STRING', svgOutlineText: true });
+          } catch {
+            state.dropped.add(snap);
+            state.skipped.push(`${node.name} (${node.id})`);
+          }
+        });
       }
     });
     return snap;
@@ -202,7 +209,7 @@ async function readNode(node: SceneNode, parent: BaseNode, parentAuto: boolean, 
       .map((s) => ({
         start: s.start,
         end: s.end,
-        font: { ...s.fontName },
+        font: { family: s.fontName.family, style: s.fontName.style },
         size: s.fontSize,
         fills: cleanPaints(s.fills),
         lineHeight: { ...s.lineHeight } as Json,
@@ -309,6 +316,7 @@ export async function snapshotRead(p: SnapshotReadParams) {
     outlined: 0,
     skipped: [],
     jobs: [],
+    retries: [],
     dropped: new WeakSet(),
     shallow: new Set(p.mode === 'shell' ? p.ids : []),
     childIds: new Map(),
@@ -339,6 +347,7 @@ export async function snapshotRead(p: SnapshotReadParams) {
     roots.push(snap);
   }
   await runPool(state.jobs, 6);
+  await runPool(state.retries, 1);
   roots.forEach((r) => prune(r, state.dropped));
   return {
     roots: roots.filter((r) => !state.dropped.has(r)),
@@ -370,7 +379,8 @@ export async function snapshotImages(p: SnapshotImagesParams) {
 const imageHashes = new Map<string, string>();
 const fontCache = new Map<string, FontName | null>();
 
-async function tryFont(font: FontName): Promise<FontName | null> {
+async function tryFont(input: FontName): Promise<FontName | null> {
+  const font = { family: input.family, style: input.style };
   const key = `${font.family}|${font.style}`;
   if (fontCache.has(key)) return fontCache.get(key)!;
   try {
@@ -522,15 +532,22 @@ async function buildText(o: SnapNode, state: WriteState): Promise<SceneNode> {
     n.setPluginData(ORIGINAL_FONT_KEY, JSON.stringify(missing));
     state.pendingFallback = { node: n, fonts: missing };
   }
-  t.segments.forEach((s, i) => {
-    n.setRangeFontName(s.start, s.end, fonts[i]);
+  for (const [i, s] of t.segments.entries()) {
+    try {
+      n.setRangeFontName(s.start, s.end, fonts[i]);
+    } catch {
+      const alt = await fallbackFor(s.font as FontName);
+      n.setRangeFontName(s.start, s.end, alt);
+      state.missingFonts.add(`${s.font.family}|${s.font.style}`);
+      n.setPluginData(ORIGINAL_FONT_KEY, JSON.stringify([`${s.font.family}|${s.font.style}`]));
+    }
     n.setRangeFontSize(s.start, s.end, s.size);
     n.setRangeFills(s.start, s.end, paintsFor(s.fills, state));
     n.setRangeLineHeight(s.start, s.end, s.lineHeight as unknown as LineHeight);
     n.setRangeLetterSpacing(s.start, s.end, s.letterSpacing as unknown as LetterSpacing);
     n.setRangeTextCase(s.start, s.end, s.textCase as TextCase);
     n.setRangeTextDecoration(s.start, s.end, s.decoration as TextDecoration);
-  });
+  }
   n.textAlignHorizontal = t.alignH as TextNode['textAlignHorizontal'];
   n.textAlignVertical = t.alignV as TextNode['textAlignVertical'];
   if (t.truncation === 'ENDING') {

@@ -13,6 +13,7 @@ This skill is about **mechanics**: which tool, which parameters, what comes back
 | Full `render_tree` / `update_nodes` vocabulary, building in passes | `references/render-tree-dsl.md` |
 | `execute_code` recipes (variables, binding, auto layout, text, components) | `references/plugin-api-recipes.md` |
 | An error message, a stuck plugin, version mismatch, plan limits | `references/troubleshooting.md` |
+| Copy screens from one Figma file into another, exactly (`copy_nodes` → `paste_nodes`) | `references/copy-between-files.md` |
 
 ## 1. Connect and check the version
 
@@ -35,6 +36,7 @@ This skill is about **mechanics**: which tool, which parameters, what comes back
 | Find before create | `search_design_system{query}` |
 | Build | `render_tree` (new tree; `parentId`+`index` to build inside an existing frame), `create_component_set` |
 | Edit | `update_nodes` (batch), `move_nodes`, `clone_node`, `delete_nodes` |
+| Copy across files | `copy_nodes{file: source, ids, name, targetFile}` → `paste_nodes{file: target, snapshot, x, y \| replaceId}` |
 | Pages | `manage_pages{template|create|rename|delete|order, dryRun}`, `set_current_page` |
 | Tokens & styles | `import_tokens` (DTCG, linted), `create_variables`, `create_styles`, `render_foundations` |
 | Prototype | `set_interactions` |
