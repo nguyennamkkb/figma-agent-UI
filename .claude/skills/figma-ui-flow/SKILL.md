@@ -19,7 +19,7 @@ Let `SKILL_DIR` be the directory containing this file.
 | **Building any screen** — the three-pass outside-in loop, modes, check budget, Definition of Done | `references/build-loop.md` |
 | Session has `figma-agent` tools (`figma_status`, `render_tree`…): stage/pass → tool | `references/run-with-figma-agent.md` + the `figma-agent-tools` skill |
 | Session only has the official Figma MCP (`use_figma`…) | `references/remote-figma-mcp.md` |
-| Page structure, layer/frame naming, Auto Layout, grids | `references/file-standards.md` |
+| Page structure, layer/frame naming, how `05 · Screens & Flows` is laid out (one Section per flow, text flow, notes), Auto Layout, grids | `references/file-standards.md` |
 | Variables, tokens, styles, components, variants, libraries | `references/design-system.md` |
 | Moodboards, direction exploration, critique, Motion, shaders, AI | `references/creative-process.md` |
 | Why this screen and why this way: brief priorities, screen contract, monetization rules, 4 handoff questions | `references/decision-playbook.md` |
@@ -27,6 +27,7 @@ Let `SKILL_DIR` be the directory containing this file.
 | Skill assessment, learning path, shortcuts | `references/skill-ladder.md` |
 | Check a token JSON file (names, aliases, contrast) | `scripts/check_tokens.py` |
 | Brief template / QA report template | `assets/brief.template.md`, `assets/qa-report.template.md` |
+| Flow Section (title bar + frame) / reviewer note / text flow | `assets/flow-section.render-tree.json`, `assets/note.render-tree.json`, `assets/flow.render-tree.json` |
 | Two-level token JSON template with Light/Dark (theme = Both; for a single theme keep only that mode's key) | `assets/tokens.example.json` |
 
 Do not read everything at once. Each stage below states which file it needs.
@@ -67,7 +68,7 @@ Rules:
 5. **Semantics first, values second.** Tokens are named by role (`color/text/primary`), not by value (`blue-500`) — except at the primitive level.
 6. **Explore wide before going deep.** Every creative problem gets at least 2–3 genuinely different directions before one is polished.
 7. **Every state is drawn.** Default, pressed, disabled, loading, empty, error, long content, large text — in the themes chosen in the brief (see *Theme scope*), and only those.
-8. **Keep draft and approved areas separate.** Explore and stress-test on `06 · Explore (WIP)`; only approved screens live on `05 · Screens & Flows`, marked Ready for dev per screen Section; rejected work moves to an `Archive · …` Section in `06`.
+8. **Keep draft and approved areas separate.** Explore and stress-test on `06 · Explore (WIP)`; only approved screens live on `05 · Screens & Flows`, marked Ready for dev per flow Section; rejected work moves to an `Archive · …` Section in `06`.
 9. **Non-destructive.** The agent does not delete or overwrite the user's work; edit on a copy or branch, and confirm before changing anything out of scope.
 10. **Check numbers every write, eyes every pass.** After every write, read back sizes (`get_node`): fixed sizes kept, children fit, FILL/HUG as planned. At the end of each pass, screenshot the screen and compare it with the intent; screenshot an individual block only when it is visually unusual. Never report "done" without looking.
 11. **One screen at a time, outside-in, in three passes.** Pass 1 Layout (frame + regions + sized placeholder blocks, locked while empty) → Pass 2 Fill (components first, then content by cluster) → Pass 3 Lock (audit + stress → DoD). Pick the mode first: Sketch, From template, or New build. Start the next screen only once the current one meets the Definition of Done. Details: `references/build-loop.md`.
@@ -99,7 +100,7 @@ Not every task runs all 8. Determine the entry point in Stage 0, then run from t
 Read `references/file-standards.md` and `assets/brief.template.md`.
 
 1. Lock a minimal brief: product, users, **platform (iOS / Android / Both / Web)**, **theme (Light only / Dark only / Both — see *Theme scope*)**, business goal (priority now, aha moment, monetization, one metric + guardrail — `decision-playbook.md`), constraints (existing brand, deadline, accessibility), success criteria. Ask about anything missing — at most 3–4 questions, batched in one message; the platform and theme questions are always among them unless the user already said it. **Both platforms:** one shared token set and component library; design the primary platform first and redraw only screens whose patterns differ in an `Adaptive · Android` (or `Adaptive · iOS`) Section — see `style-direction/references/platform-mapping.md`.
-2. Set up the file skeleton with the 7 standard pages — `🏠 Cover`, `01 · Foundations`, `02 · Components`, `03 · Templates`, `04 · Assets`, `05 · Screens & Flows`, `06 · Explore (WIP)` — build the cover from `assets/cover.render-tree.json` (parts to replace: `file-standards.md` §1.3) and put the brief as a `Brief · <Product>` frame next to it. Name every Section and screen per `file-standards.md` §2.2 (`SCR-NN · <Screen> · <State>`).
+2. Set up the file skeleton with the 7 standard pages — `🏠 Cover`, `01 · Foundations`, `02 · Components`, `03 · Templates`, `04 · Assets`, `05 · Screens & Flows`, `06 · Explore (WIP)` — build the cover from `assets/cover.render-tree.json` (parts to replace: `file-standards.md` §1.3) and put the brief as a `Brief · <Product>` frame next to it. Name every Section and screen per `file-standards.md` §2.2 (`FL-NN · <Flow>`, `SCR-NN · <Screen> · <State>`).
 3. **Gate:** present a one-page brief + the file skeleton. Wait for the user's confirmation before continuing.
 
 ### Stage 2 — Foundations
@@ -141,7 +142,12 @@ Read `references/build-loop.md` — **mandatory** for every screen.
 4. **Pass 2 Fill:** components first for anything repeated ≥ 3 times (Stage 3), then fill placeholders **by cluster** (several blocks per write) and add real text, icons, images in batches. Numeric check after each write; one screenshot at the end of the pass, extra ones only for unusual blocks.
 5. **Pass 3 Lock:** audit + stress + one final screenshot, fix until it meets the **Definition of Done** (skipped in Sketch).
 6. Screen meets DoD → report in one line → only then move to the next screen, in From-template mode. State variants (empty, loading, error, long text, large text) are From-template screens of the one that met DoD. *(Both only)* the second theme is a `variableModes` switch on a copy, made after all screens meet DoD in the primary theme.
-7. One Section per screen on `05 · Screens & Flows`, arranged left → right in flow order; names per `file-standards.md` §2.2: Section `SCR-NN · <Screen>`, frames `SCR-NN · <Screen> · <State>[ · <Theme>]`, event feedback `FBK-NN · <Screen> · <Event>`. Keep a `Flow · <Product>` overview Section with `flow/SCR-NN · …` thumbnails, arrows and a text flow — one `FROM --[action]--> TO` transition per line, from `assets/flow.render-tree.json` (`file-standards.md` §2.2.1). Connector lines between the real screens are optional: draw them only when the user asks — the text flow is the source of truth, and wiring is slow to build and verify.
+7. Lay out `05 · Screens & Flows` per `file-standards.md` §2.2.1–2.2.2:
+   - `Flow · <Product>` text flow first (`assets/flow.render-tree.json`): one `FL-NN.Exx  FROM @id --[nav: action]--> TO @id` transition per line, the source of truth for flows and the prototype.
+   - Then **one Section per user flow**, `FL-NN · <Flow>` in journey order (entry → core features → settings), from `assets/flow-section.render-tree.json`: numbered title bar, dark frame, all Sections stacked with one x and width. Frames shared by many flows (dialogs, settings) go in a catalog Section.
+   - Inside a Section: the happy path on the main row left → right, states and feedback (`FBK-NN`) right after their screen, branches (alternatives, errors, upsells) on rows below starting under the frame they leave from; 80 between frames, rows 400 apart. Frames `SCR-NN · <Screen> · <State>[ · <Theme>]`; each frame lives once.
+   - What a frame cannot show (animation, conditions, ad slots) goes in a yellow `Note · <Topic>` beside it (`assets/note.render-tree.json`).
+   - Connector lines are optional: draw them only when the user asks — wiring is slow to build and verify, and the text flow already carries the logic. When asked, draw one per text-flow line (§2.2.1: magnets by position, labels only on branches, white text).
 
 ### Stage 6 — Prototype and motion
 
@@ -164,7 +170,7 @@ Read `references/handoff-qa.md` sections 1–3, use `assets/qa-report.template.m
 
 Read `references/handoff-qa.md` sections 4–6.
 
-1. Mark Ready for dev per screen Section (`SCR-NN · …`), write annotations for behavior that isn't visible (logic, edge cases, animation, accessibility).
+1. Mark Ready for dev per flow Section (`FL-NN · …`), write annotations for behavior that isn't visible (logic, edge cases, animation, accessibility).
 2. Map tokens to code (Swift/Kotlin/CSS) using the table in `handoff-qa.md`. If Code Connect is available, connect components to the real code.
 3. Write the library version changelog; publish the library with a description of the changes.
 

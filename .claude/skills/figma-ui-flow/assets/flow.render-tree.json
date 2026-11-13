@@ -1,9 +1,95 @@
 {
   "type": "section",
   "name": "Flow · <Product>",
-  "padding": 80,
-  "gap": 40,
+  "fill": "#242424",
   "children": [
+    {
+      "type": "frame",
+      "name": "Title",
+      "x": 0,
+      "y": 0,
+      "width": 4000,
+      "widthMode": "FIXED",
+      "heightMode": "HUG",
+      "layout": "HORIZONTAL",
+      "align": "CENTER",
+      "children": [
+        {
+          "type": "frame",
+          "name": "Number",
+          "width": 120,
+          "height": 104,
+          "widthMode": "FIXED",
+          "heightMode": "FIXED",
+          "layout": "HORIZONTAL",
+          "justify": "CENTER",
+          "align": "CENTER",
+          "fill": "#FFFFFF",
+          "radius": [
+            12,
+            0,
+            0,
+            12
+          ],
+          "children": [
+            {
+              "type": "text",
+              "name": "number",
+              "text": "00",
+              "fontFamily": "Inter",
+              "fontSize": 36,
+              "fontWeight": 700,
+              "lineHeight": 42,
+              "color": "#121212"
+            }
+          ]
+        },
+        {
+          "type": "frame",
+          "name": "Name",
+          "widthMode": "FILL",
+          "heightMode": "FILL",
+          "layout": "HORIZONTAL",
+          "align": "CENTER",
+          "padding": [
+            8,
+            40,
+            8,
+            40
+          ],
+          "fill": {
+            "gradient": "LINEAR",
+            "angle": 90,
+            "stops": [
+              {
+                "color": "#000000",
+                "position": 0
+              },
+              {
+                "color": "#000000",
+                "position": 0.5
+              },
+              {
+                "color": "#00000000",
+                "position": 1
+              }
+            ]
+          },
+          "children": [
+            {
+              "type": "text",
+              "name": "title",
+              "text": "Flow map",
+              "fontFamily": "Inter",
+              "fontSize": 40,
+              "fontWeight": 600,
+              "lineHeight": 42,
+              "color": "#FFFFFF"
+            }
+          ]
+        }
+      ]
+    },
     {
       "type": "frame",
       "name": "flow/text-block",
@@ -13,7 +99,15 @@
       "radius": 16,
       "fill": "#FFFFFF",
       "children": [
-        { "type": "text", "name": "flow/text-title", "text": "Flow (text) · one edge per line: FL-NN.Exx  FROM @id --[nav: action]--> TO @id", "fontFamily": "Roboto Mono", "fontSize": 20, "fontWeight": 600, "color": "#0F172A" },
+        {
+          "type": "text",
+          "name": "flow/text-title",
+          "text": "Flow (text) · one edge per line: FL-NN.Exx  FROM @id --[nav: action]--> TO @id",
+          "fontFamily": "Roboto Mono",
+          "fontSize": 20,
+          "fontWeight": 600,
+          "color": "#0F172A"
+        },
         {
           "type": "text",
           "name": "flow/text",
@@ -23,7 +117,9 @@
           "color": "#0F172A",
           "text": "FL-01 <Flow> · FL-02 <Flow>\n\nFL-01.E01  ENTRY:first-launch --[replace]--> SCR-01 <Screen> @<id>\nFL-01.E02  SCR-01 @<id> --[push: <Action>]--> SCR-02 @<id>\nFL-01.E03  SCR-02 @<id> --[pop: back]--> SCR-01 @<id>"
         }
-      ]
+      ],
+      "x": 200,
+      "y": 304
     }
   ]
 }

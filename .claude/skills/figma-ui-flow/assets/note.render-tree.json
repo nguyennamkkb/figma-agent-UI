@@ -1,0 +1,16 @@
+{
+  "type": "frame",
+  "name": "Note · <Topic>",
+  "width": 360,
+  "widthMode": "FIXED",
+  "heightMode": "HUG",
+  "layout": "VERTICAL",
+  "gap": 8,
+  "padding": [16, 20, 16, 20],
+  "radius": 16,
+  "fill": "#FFE477",
+  "children": [
+    { "type": "text", "name": "title", "text": "<Topic>", "fontFamily": "Inter", "fontSize": 16, "fontWeight": 700, "lineHeight": 22, "color": "#121212", "widthMode": "FILL" },
+    { "type": "text", "name": "body", "text": "<What the frame cannot show: animation, condition, ad slot, data rule>", "fontFamily": "Inter", "fontSize": 14, "lineHeight": 20, "color": "#121212", "widthMode": "FILL" }
+  ]
+}
