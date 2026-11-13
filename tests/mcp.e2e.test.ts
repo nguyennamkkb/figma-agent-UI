@@ -11,6 +11,7 @@ const PORT = 3999;
 // 1×1 PNG: the server decodes screenshots with sharp, so it must be a real image.
 const TOKEN = 'e2e-token';
 const received: { command: string; params: Record<string, unknown> }[] = [];
+const SNAP_DIR = mkdtempSync(join(tmpdir(), 'snapshots-'));
 
 let client: Client;
 let plugin: WebSocket;
@@ -28,13 +29,19 @@ beforeAll(async () => {
         FIGMA_AGENT_PORT_RANGE: '1',
         FIGMA_AGENT_TOKEN: TOKEN,
         FIGMA_AGENT_PORT_FILE: join(tmpdir(), `figma-agent-port-${process.pid}`),
+        FIGMA_AGENT_SNAPSHOT_DIR: SNAP_DIR,
       } as Record<string, string>,
       stderr: 'ignore',
     }),
   );
 
   const { tools } = await client.listTools();
-  const commands = tools.map((t) => t.name).filter((n) => n !== 'figma_status' && n !== 'figma_doctor');
+  const commands = [
+    ...tools.map((t) => t.name).filter((n) => n !== 'figma_status' && n !== 'figma_doctor'),
+    'snapshot_read',
+    'snapshot_images',
+    'snapshot_write',
+  ];
 
   plugin = new WebSocket(`ws://localhost:${PORT}/?token=${TOKEN}`);
   plugin.on('message', (data) => {
@@ -69,6 +76,68 @@ beforeAll(async () => {
           ],
         },
       });
+    } else if (msg.command === 'list_fonts') {
+      reply({ ok: true, result: { total: 1, families: [{ family: 'Inter', styles: ['Regular'] }] } });
+    } else if (msg.command === 'snapshot_read') {
+      const text = {
+        t: 'TEXT',
+        name: 'Title',
+        x: 0,
+        y: 0,
+        w: 200,
+        h: 30,
+        text: {
+          chars: 'JOIN',
+          alignH: 'CENTER',
+          alignV: 'TOP',
+          autoResize: 'HEIGHT',
+          segments: [{ start: 0, end: 4, font: { family: 'BEAT TECH', style: 'Regular' }, size: 30, fills: [], lineHeight: {}, letterSpacing: {}, textCase: 'ORIGINAL', decoration: 'NONE' }],
+          outline: { svg: '<svg/>', ox: 0, oy: 0 },
+        },
+      };
+      const tag = { t: 'FRAME', name: 'Tag', x: 0, y: 40, w: 82, h: 22, fills: [{ type: 'IMAGE', imageHash: 'h2' }] };
+      const mode = msg.params.mode as string;
+      const id = (msg.params.ids as string[])[0];
+      const base = { skipped: [], ms: 1 };
+      if (mode === 'shell')
+        reply({
+          ok: true,
+          result: {
+            ...base,
+            roots: [{ t: 'FRAME', name: 'IAP', x: 10, y: 20, w: 360, h: 800, fills: [{ type: 'IMAGE', imageHash: 'h1' }], kids: [] }],
+            childIds: [['1:1', '1:2']],
+            imageRefs: [{ key: 'h1', kind: 'hash', hash: 'h1' }],
+            fonts: [],
+            outlined: 0,
+          },
+        });
+      else
+        reply({
+          ok: true,
+          result: {
+            ...base,
+            roots: [id === '1:1' ? text : tag],
+            imageRefs: id === '1:2' ? [{ key: 'h2', kind: 'hash', hash: 'h2' }] : [],
+            fonts: id === '1:1' ? ['BEAT TECH|Regular'] : [],
+            outlined: id === '1:1' ? 1 : 0,
+          },
+        });
+    } else if (msg.command === 'snapshot_images') {
+      const refs = msg.params.refs as { key: string }[];
+      reply({ ok: true, result: { images: Object.fromEntries(refs.map((r) => [r.key, `bytes-${r.key}`])) } });
+    } else if (msg.command === 'snapshot_write') {
+      const p = msg.params as { op: string; node: { name: string } };
+      if (p.op === 'root') reply({ ok: true, result: { id: '5:1', missingFonts: [] } });
+      else if (p.op === 'child')
+        reply({
+          ok: true,
+          result: {
+            id: '5:2',
+            mismatches: p.node.name === 'Tag' ? [{ path: 'Tag', want: [82, 22], got: [82, 24] }] : [],
+            missingFonts: p.node.name === 'Title' ? ['BEAT TECH|Regular'] : [],
+          },
+        });
+      else reply({ ok: true, result: { id: '5:1', rootMismatch: false, rootSize: [360, 800], replaced: { oldId: '4:53', name: 'SCR-08' } } });
     } else if (msg.command === 'delete_nodes') {
       reply({ ok: false, error: 'Node 9:9 not found', safeToRetryWithoutCanvasRead: false });
     } else {
@@ -112,6 +181,7 @@ describe('MCP server', () => {
         'audit_design',
         'bind_variables',
         'clone_node',
+        'copy_nodes',
         'create_component_set',
         'create_styles',
         'create_variables',
@@ -130,6 +200,7 @@ describe('MCP server', () => {
         'list_fonts',
         'manage_pages',
         'move_nodes',
+        'paste_nodes',
         'rename_by_rule',
         'render_foundations',
         'render_tree',
@@ -264,6 +335,42 @@ describe('MCP server', () => {
       expect.arrayContaining(['server', 'port', 'token', 'plugin', 'version', 'capability', 'manifest']),
     );
     expect(Array.isArray(body.nextSteps)).toBe(true);
+  });
+});
+
+describe('copy_nodes / paste_nodes', () => {
+  it('copies into a snapshot file with images fetched in batches and fonts checked against the target', async () => {
+    const r = await client.callTool({ name: 'copy_nodes', arguments: { ids: ['43206:6167'], name: 'IAP gốc', targetFile: 'E2E' } });
+    expect(r.isError).toBeFalsy();
+    const out = JSON.parse((r.content as { text: string }[])[0].text);
+    expect(out.path).toBe(join(SNAP_DIR, 'IAP-goc.json'));
+    expect(out).toMatchObject({ images: 2, missingImages: [], missingInTarget: ['BEAT TECH|Regular'], outlinedTexts: 1 });
+    const reads = received.filter((x) => x.command === 'snapshot_read').map((x) => x.params as { mode: string; ids: string[]; availableFonts: string[] });
+    expect(reads.map((r) => `${r.mode}:${r.ids[0]}`)).toEqual(['shell:43206:6167', 'child:1:1', 'child:1:2']);
+    expect(reads[0].availableFonts).toBeUndefined();
+    const saved = JSON.parse(readFileSync(out.path, 'utf8'));
+    expect(saved).toMatchObject({ version: 1, name: 'IAP gốc', images: { h1: 'bytes-h1', h2: 'bytes-h2' }, roots: [{ name: 'IAP', kids: [{ name: 'Title' }, { name: 'Tag' }] }] });
+  });
+
+  it('pastes root shell, each child with only its images, then finalizes with replaceId', async () => {
+    const before = received.length;
+    const r = await client.callTool({ name: 'paste_nodes', arguments: { snapshot: 'IAP gốc', replaceId: '4:53' } });
+    expect(r.isError).toBeFalsy();
+    const writes = received.slice(before).filter((x) => x.command === 'snapshot_write').map((x) => x.params as Record<string, unknown>);
+    expect(writes.map((w) => w.op)).toEqual(['root', 'child', 'child', 'finalize']);
+    expect(writes[0]).toMatchObject({ replaceId: '4:53', images: { h1: 'bytes-h1' }, node: { kids: [] } });
+    expect(writes[1].images).toEqual({});
+    expect(writes[2].images).toEqual({ h2: 'bytes-h2' });
+    expect(writes[3]).toMatchObject({ rootId: '5:1', replaceId: '4:53' });
+    const out = JSON.parse((r.content as { text: string }[])[0].text);
+    expect(out).toMatchObject({ exact: false, missingFonts: ['BEAT TECH|Regular'], mismatches: [{ path: 'IAP/Tag' }] });
+  });
+
+  it('refuses a missing snapshot before reaching Figma', async () => {
+    const before = received.length;
+    const r = await client.callTool({ name: 'paste_nodes', arguments: { snapshot: 'nope' } });
+    expect(r.isError).toBe(true);
+    expect(received.length).toBe(before);
   });
 });
 

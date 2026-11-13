@@ -11,6 +11,20 @@ import { DEFAULT_PORT, DEFAULT_PORT_RANGE, PROTOCOL_VERSION } from '../shared/pr
 import * as S from '../shared/schemas';
 import { exportTokens, planTokenImport, type DtcgTree, type ExportCollection, type ExportTextStyle } from '../shared/tokens';
 import { slug } from '../shared/rename';
+import {
+  SNAPSHOT_VERSION,
+  batches,
+  countNodes,
+  imageKeysOf,
+  missingFonts,
+  pickImages,
+  shellOf,
+  snapshotFileName,
+  type ImageRef,
+  type SizeMismatch,
+  type SnapNode,
+  type Snapshot,
+} from '../shared/snapshot';
 import sharp from 'sharp';
 import { Bridge, PluginError } from './bridge';
 import { inlineImages } from './images';
@@ -643,6 +657,183 @@ tool('export_assets', {
     return [text({ written })];
   },
 });
+
+const SNAPSHOT_COMMANDS = ['snapshot_read', 'snapshot_images', 'snapshot_write'];
+for (const c of SNAPSHOT_COMMANDS) PLUGIN_COMMANDS.add(c);
+
+function snapshotDir(): string {
+  return process.env.FIGMA_AGENT_SNAPSHOT_DIR ?? join(homedir(), '.figma-agent', 'snapshots');
+}
+
+function snapshotPath(ref: string): string {
+  if (isAbsolute(ref)) return ref;
+  return join(snapshotDir(), snapshotFileName(ref.replace(/\.json$/, '')));
+}
+
+type FontList = { families: { family: string; styles: string[] }[] };
+
+server.registerTool(
+  'copy_nodes',
+  {
+    description: `Copy frames/sections/layers from one Figma file into a reusable snapshot on disk (~/.figma-agent/snapshots/<name>.json), then paste_nodes rebuilds them in another file — an exact copy: auto layout, sizing, padding, fills/gradients/images, strokes, effects, radius, mixed-style text, vectors (as SVG), video frames (as image). Instances are detached. The source file is only read.
+Pass targetFile to learn which fonts the target lacks; text stays editable (paste falls back to Inter at the same weight and lists the layers to fix), or set outlineMissingFonts to keep the exact look as vectors. Images are fetched in small batches, so large screens do not time out.`,
+    inputSchema: S.CopyNodesInput.extend({ ...fileParam, page: pageParam }),
+    annotations: { readOnlyHint: true, openWorldHint: false },
+  },
+  async (args) => {
+    try {
+      const { file, page, ids, name, targetFile, exclude, outlineMissingFonts } = args;
+      const scope = page ? { page } : {};
+      let available: FontList['families'] | null = null;
+      if (targetFile) {
+        const fonts = await bridge.request<FontList>('list_fonts', { limit: 5000 }, { file: targetFile, timeoutMs: 60000 });
+        available = fonts.families;
+      }
+      const t0 = Date.now();
+      type ReadResult = { roots: SnapNode[]; childIds?: string[][]; imageRefs: ImageRef[]; fonts: string[]; outlined: number; skipped: string[]; ms: number };
+      const availableFonts = available && outlineMissingFonts ? available.flatMap((f) => f.styles.map((st) => `${f.family}|${st}`)) : undefined;
+      const refs = new Map<string, ImageRef>();
+      const fonts = new Set<string>();
+      const skipped: string[] = [];
+      let outlined = 0;
+      let pluginMs = 0;
+      let calls = 0;
+      const absorb = (r: ReadResult) => {
+        r.imageRefs.forEach((ref) => refs.set(ref.key, ref));
+        r.fonts.forEach((f) => fonts.add(f));
+        skipped.push(...r.skipped);
+        outlined += r.outlined;
+        pluginMs += r.ms;
+        calls++;
+      };
+      const roots: SnapNode[] = [];
+      for (const id of ids) {
+        const shell = await bridge.request<ReadResult>('snapshot_read', { ids: [id], exclude, availableFonts, mode: 'shell', ...scope }, { file, timeoutMs: 120000 });
+        absorb(shell);
+        const root = shell.roots[0];
+        for (const childId of shell.childIds?.[0] ?? []) {
+          const part = await bridge.request<ReadResult>('snapshot_read', { ids: [childId], exclude, availableFonts, mode: 'child', ...scope }, { file, timeoutMs: 300000 });
+          absorb(part);
+          root.kids = [...(root.kids ?? []), ...part.roots];
+        }
+        roots.push(root);
+      }
+      const read = { roots, imageRefs: [...refs.values()], fonts: [...fonts].sort(), outlined, skipped, ms: pluginMs };
+      const t1 = Date.now();
+      const images: Record<string, string> = {};
+      for (const batch of batches(read.imageRefs, 3)) {
+        const r = await bridge.request<{ images: Record<string, string> }>('snapshot_images', { refs: batch, ...scope }, { file, timeoutMs: 180000 });
+        Object.assign(images, r.images);
+      }
+      const snapshot: Snapshot = {
+        version: SNAPSHOT_VERSION,
+        name,
+        createdAt: new Date().toISOString(),
+        source: { file: file ?? null, ids },
+        roots: read.roots,
+        images,
+        fonts: read.fonts,
+        outlined: read.outlined,
+      };
+      const path = snapshotPath(name);
+      mkdirSync(dirname(path), { recursive: true });
+      const body = JSON.stringify(snapshot);
+      writeFileSync(path, body);
+      return {
+        content: [
+          text({
+            path,
+            roots: read.roots.map((r) => ({ name: r.name, size: [Math.round(r.w), Math.round(r.h)], nodes: countNodes(r) })),
+            images: Object.keys(images).length,
+            missingImages: read.imageRefs.filter((r) => !images[r.key]).map((r) => r.key),
+            sizeKB: Math.round(body.length / 1024),
+            fonts: read.fonts,
+            missingInTarget: available ? missingFonts(read.fonts, available) : 'unknown: pass targetFile',
+            outlinedTexts: read.outlined,
+            skipped: read.skipped,
+            timing: { readMs: t1 - t0, pluginReadMs: read.ms, readCalls: calls, imagesMs: Date.now() - t1 },
+          }),
+        ],
+      };
+    } catch (e) {
+      return failure(e);
+    }
+  },
+);
+
+server.registerTool(
+  'paste_nodes',
+  {
+    description: `Rebuild a copy_nodes snapshot in this file, one top-level child per plugin call (no timeouts on big screens). Places it on page (or in parentId) at x/y, or with replaceId takes the old node's parent, index, x/y and name and deletes it after success. On failure the partial copy is removed.
+Returns the new ids, size mismatches against the source (layer path, want vs got; empty = exact), missing fonts and fontFallbacks: text layers set in Inter at the same weight (original font kept in plugin data figma-agent/original-font) to fix once the font is installed. Text in a missing font can make widths differ slightly. Screenshot the result next to the source to confirm.`,
+    inputSchema: S.PasteNodesInput.extend({ ...fileParam, page: pageParam }),
+    annotations: { readOnlyHint: false, openWorldHint: false },
+  },
+  async (args) => {
+    try {
+      const { file, page, snapshot: ref, parentId, x, y, replaceId } = args;
+      const path = snapshotPath(ref);
+      if (!existsSync(path)) throw new Error(`Snapshot not found: ${path}. Run copy_nodes first.`);
+      const snap = JSON.parse(readFileSync(path, 'utf8')) as Snapshot;
+      if (snap.version !== SNAPSHOT_VERSION) throw new Error(`Snapshot version ${snap.version} is not supported (expected ${SNAPSHOT_VERSION}).`);
+      if (replaceId && snap.roots.length !== 1) throw new Error('replaceId needs a snapshot with exactly one root.');
+      const scope = page ? { page } : {};
+      const first = snap.roots[0];
+      const results: { id: string; name: string; replaced: unknown }[] = [];
+      const mismatches: SizeMismatch[] = [];
+      const missing = new Set<string>();
+      const fallbacks: { id: string; name: string; fonts: string[] }[] = [];
+      for (const root of snap.roots) {
+        const shell = shellOf(root);
+        const at = x !== undefined && y !== undefined ? { x: x + (root.x - first.x), y: y + (root.y - first.y) } : {};
+        const made = await bridge.request<{ id: string; missingFonts: string[]; fallbacks?: { id: string; name: string; fonts: string[] }[] }>(
+          'snapshot_write',
+          { op: 'root', node: shell, images: pickImages(imageKeysOf(shell), snap.images), parentId, replaceId, ...at, ...scope },
+          { file, timeoutMs: 120000 },
+        );
+        made.missingFonts.forEach((f) => missing.add(f));
+        fallbacks.push(...(made.fallbacks ?? []));
+        try {
+          for (const kid of root.kids ?? []) {
+            const r = await bridge.request<{ id: string; mismatches: SizeMismatch[]; missingFonts: string[]; fallbacks?: { id: string; name: string; fonts: string[] }[] }>(
+              'snapshot_write',
+              { op: 'child', node: kid, images: pickImages(imageKeysOf(kid), snap.images), parentId: made.id, ...scope },
+              { file, timeoutMs: 300000 },
+            );
+            mismatches.push(...r.mismatches.map((m) => ({ ...m, path: `${root.name}/${m.path}` })));
+            r.missingFonts.forEach((f) => missing.add(f));
+            fallbacks.push(...(r.fallbacks ?? []));
+          }
+          const fin = await bridge.request<{ id: string; rootMismatch: boolean; rootSize: [number, number]; replaced: unknown }>(
+            'snapshot_write',
+            { op: 'finalize', node: shell, rootId: made.id, replaceId, ...scope },
+            { file, timeoutMs: 60000 },
+          );
+          if (fin.rootMismatch) mismatches.unshift({ path: root.name, want: [root.w, root.h], got: fin.rootSize });
+          results.push({ id: made.id, name: root.name, replaced: fin.replaced });
+        } catch (e) {
+          await bridge.request('delete_nodes', { ids: [made.id] }, { file, timeoutMs: 30000 }).catch(() => undefined);
+          throw e;
+        }
+      }
+      return {
+        content: [
+          text({
+            roots: results,
+            exact: mismatches.length === 0,
+            mismatches: mismatches.slice(0, 40),
+            missingFonts: [...missing],
+            fontFallbacks: fallbacks.slice(0, 60),
+            fontFallbackCount: fallbacks.length,
+            source: snap.source,
+          }),
+        ],
+      };
+    } catch (e) {
+      return failure(e);
+    }
+  },
+);
 
 function writePortFile(actualPort: number) {
   const target = process.env.FIGMA_AGENT_PORT_FILE ?? join(homedir(), '.figma-agent', 'port');

@@ -65,6 +65,17 @@ The bridge between the workflow (this skill) and the tools (the `figma-agent-too
 
 Every write tool accepts `page` (id or name). When running multiple agents in parallel, always pass `page` instead of using `set_current_page`.
 
+### 3.0 Copying screens from another file (exact)
+
+Use when the user wants a screen "y hệt" the original, or to bring source screens into the clone before restyling. Both files must be open with the plugin connected.
+
+1. `copy_nodes{file: <source>, ids, name, targetFile: <target>}`: one snapshot per screen or per Section. Read `skipped` and `missingInTarget`.
+2. `paste_nodes{file: <target>, page: "06 · Explore (WIP)", snapshot: name, x, y}` next to earlier copies; `exact: true` and an empty `mismatches` mean every layer kept its size. `screenshot` the copy and the source side by side.
+3. `fontFallbacks` lists text set in Inter because the target lacks the font: install the font later and swap it (the original is in plugin data `figma-agent/original-font`), or copy again with `outlineMissingFonts: true` when the exact look matters more than editing.
+4. Into a flow: `paste_nodes{replaceId: <old frame>}` keeps the slot and name, then rewrite the text-flow `@id`s and redraw connectors (`file-standards.md` §2.2.1 "Replacing a flow's screens").
+
+Never hand-write a cross-file copy with `execute_code`: snapshots on disk avoid the 20k output limit and plugin `clientStorage`, and the tools fix the known traps (hidden padding, masks, outlined-text strokes, video fills).
+
 ### 3.1 Building a flow with subagents (masters → states)
 
 A flow of 15–25 frames goes fastest as: **main session prepares → capable agents build masters in parallel → cheap agents clone states → main session reviews and wires.**

@@ -25,6 +25,7 @@ import {
   setCurrentPage,
 } from './commands/read';
 import { renderTree } from './commands/render';
+import { snapshotImages, snapshotRead, snapshotWrite } from './commands/snapshot';
 import { cloneNode, deleteNodes, moveNodes, selectNodes, updateNodes } from './commands/write';
 import { errorMessage, RolledBackError } from './util';
 
@@ -65,6 +66,9 @@ const commands: Record<string, Command> = {
   annotate: { mutates: true, run: annotate },
   set_dev_status: { mutates: true, run: setDevStatus },
   export_assets: { mutates: false, run: exportAssets },
+  snapshot_read: { mutates: false, run: snapshotRead },
+  snapshot_images: { mutates: false, run: snapshotImages },
+  snapshot_write: { mutates: true, run: snapshotWrite },
 };
 
 figma.showUI(__html__, { width: 300, height: 300, themeColors: true });

@@ -105,6 +105,23 @@ describe('plugin bundle', () => {
     }
   });
 
+  it('ships the copy_nodes / paste_nodes snapshot commands', async () => {
+    const { posted, send } = loadPlugin();
+    await send({ type: 'ready' });
+    const info = (posted[0] as { info?: { commands?: string[] } }).info;
+    expect(info?.commands).toEqual(expect.arrayContaining(['snapshot_read', 'snapshot_images', 'snapshot_write']));
+    await send({ type: 'request', id: 's1', command: 'snapshot_read', params: { ids: ['9:9'] } });
+    await send({ type: 'request', id: 's2', command: 'snapshot_images', params: { refs: [] } });
+    await send({ type: 'request', id: 's3', command: 'snapshot_write', params: { op: 'child', node: { t: 'FRAME', name: 'x', x: 0, y: 0, w: 1, h: 1 }, images: {}, parentId: '9:9' } });
+    const read = posted.find((m) => m.id === 's1');
+    expect(read).toMatchObject({ ok: false, safeToRetryWithoutCanvasRead: true });
+    expect(read?.error).toMatch(/9:9/);
+    expect(posted.find((m) => m.id === 's2')).toMatchObject({ ok: true, result: { images: {} } });
+    const write = posted.find((m) => m.id === 's3');
+    expect(write?.ok).toBe(false);
+    expect(write?.error ?? '').not.toMatch(/Unknown command/);
+  });
+
   it('advertises the supported commands in client info', async () => {
     const { posted, send } = loadPlugin();
     await send({ type: 'ready' });
