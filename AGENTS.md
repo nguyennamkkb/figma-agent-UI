@@ -23,6 +23,7 @@
 
 ## Gotchas
 - Stdout belongs to MCP: server must log to stderr only.
+- Every push bumps `version` in `package.json` (patch at least), in the pushed commit, and ships as a release (see CLAUDE.md): never push two different states under one version.
 - Version stamp: bump `version` in `package.json` on plugin changes; build stamps version+commit into both bundles. `figma_status` warns on mismatch → fix is rebuild + close/reopen plugin in Figma. After editing `manifest.json` (e.g. `devAllowedDomains` ports), re-import the plugin in Figma.
 - Hub mode is default: first server binds `3055`, later servers join as agents. `FIGMA_AGENT_HUB=0` restores one-port-per-server. Env: `FIGMA_AGENT_TOKEN` / `FIGMA_AGENT_PORT` (def 3055) / `FIGMA_AGENT_PORT_RANGE` (def 21) / `FIGMA_AGENT_PORT_FILE` / `FIGMA_AGENT_MANIFEST` / `FIGMA_AGENT_MAX_OUTPUT` (def 20000). Token file `~/.figma-agent/token` (mode 600); tests must override `FIGMA_AGENT_PORT_FILE`.
 - Tool wrapper auto-adds `file` + `page` params — don't add them to `S.*Input` in `src/shared/schemas.ts`. `export_assets`/`export_tokens{path}`/`import_tokens{path}` require absolute paths; server writes files itself.

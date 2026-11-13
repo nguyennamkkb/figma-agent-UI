@@ -10,5 +10,5 @@
     "typeRoots": ["./node_modules/@types", "./node_modules/@figma"],
     "types": ["plugin-typings"]
   },
-  "include": ["src/plugin", "src/shared", "tests/sanitize.test.ts", "tests/serialize.test.ts"]
+  "include": ["src/plugin", "src/shared", "tests/sanitize.test.ts", "tests/serialize.test.ts", "tests/figjam.test.ts", "tests/slides.test.ts", "tests/library.test.ts"]
 }
