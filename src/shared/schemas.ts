@@ -628,6 +628,25 @@ export const ExportAssetsInput = z.object({
   outDir: z.string().describe('Absolute directory to write the files into'),
 });
 
+export const CopyNodesInput = z.object({
+  ids: z.array(NodeId).min(1).describe('Frames, sections or layers to copy from this (source) file'),
+  name: z.string().min(1).describe('Snapshot name, reused by paste_nodes (saved as ~/.figma-agent/snapshots/<name>.json)'),
+  targetFile: z.string().optional().describe('File you will paste into: its fonts are checked and the summary lists fonts it lacks'),
+  outlineMissingFonts: z
+    .boolean()
+    .default(false)
+    .describe('Also save text in fonts the targetFile lacks as outlined vectors (exact look, not editable). Default false: text stays editable and paste_nodes falls back to Inter with the same weight, listing the layers to fix'),
+  exclude: z.array(NodeId).optional().describe('Layers to leave out (e.g. badges baked over images); the source file is never modified'),
+});
+
+export const PasteNodesInput = z.object({
+  snapshot: z.string().min(1).describe('Snapshot name from copy_nodes, or an absolute path to its .json'),
+  parentId: NodeId.optional().describe('Container to paste into (frame or section); default: the page'),
+  x: z.number().optional().describe('Position of the first root; other roots keep their relative offsets'),
+  y: z.number().optional(),
+  replaceId: NodeId.optional().describe('Put the copy where this node is (same parent, index, x/y and name) and delete it once the paste succeeded; single-root snapshots only'),
+});
+
 export type GetNodeInput = z.infer<typeof GetNodeInput>;
 export type GetSelectionInput = z.infer<typeof GetSelectionInput>;
 export type FindNodesInput = z.infer<typeof FindNodesInput>;
@@ -659,3 +678,5 @@ export type RenameByRuleInput = z.infer<typeof RenameByRuleInput>;
 export type AnnotateInput = z.infer<typeof AnnotateInput>;
 export type SetDevStatusInput = z.infer<typeof SetDevStatusInput>;
 export type ExportAssetsInput = z.infer<typeof ExportAssetsInput>;
+export type CopyNodesInput = z.infer<typeof CopyNodesInput>;
+export type PasteNodesInput = z.infer<typeof PasteNodesInput>;

@@ -139,3 +139,20 @@ Ghi chú để không vấp lại:
 - Lộ 3 bug đã sửa: connector resolve endpoint quá sớm trong `applyProps` (chuyển sang pass 2), `find_nodes` crash trên TABLE_CELL không tên (guard + tìm cả sublayer text), rollback để lọt connector trôi (track mọi node đã tạo, áp dụng cả component variant).
 - Ghi nhận: màu fill sticky bị FigJam ép về palette (vd `#FFE066` hiện nâu) — hành vi của editor, không phải bug; cell TABLE_CELL serialize `visible: false` nhưng đọc matrix qua `cellAt` vẫn đủ.
 - Board trả sạch sau test (topLevelCount 0).
+
+## K. copy_nodes / paste_nodes (v1.6.0)
+
+Chuẩn bị: `npm run sync:plugin`, mở lại plugin ở **cả 2 file** (nguồn và đích), `figma_status` thấy 2 file cùng build.
+
+- [ ] `copy_nodes{file: nguồn, ids: [1 màn], name, targetFile: đích}` xong trong vài giây; `timing.readCalls` = 1 + số con trực tiếp; file nguồn không đổi (không ẩn/bật layer).
+- [ ] `paste_nodes{file: đích, page: "06 · Explore (WIP)", snapshot, x, y}` → `exact: true`; screenshot cạnh bản gốc giống nhau (ảnh, gradient, blur, chữ nhiều style, icon SVG, nhóm có mask).
+- [ ] Màn có font đích thiếu → chữ vẫn là TEXT dùng Inter cùng độ đậm, `fontFallbacks` liệt kê; với `outlineMissingFonts: true` → vector, không có vạch viền trên khung bao.
+- [ ] Frame cố định chiều cao có padding lớn bị che (vd tag 22 px, padding 290) → dán ra đúng 22 px.
+- [ ] `paste_nodes{replaceId}` → bản mới đúng vị trí, index, tên của node cũ; node cũ bị xoá; lỗi giữa chừng → bản dở bị xoá, node cũ còn nguyên.
+- [ ] Màn lớn (≈ 550 layer) không timeout.
+
+### Kết quả chạy thực tế §K (2026-11-13, file gốc → file clone)
+
+- IAP (85 layer, 4 ảnh, video hero): chép 0,9 s, dán 1,2–1,6 s, `exact: true`; tiêu đề BEAT TECH (thiếu ở đích) ra đúng khi outline.
+- Result/ Save (66 layer, 6 ảnh): chép 4,2 s, dán 4,7 s, `exact: true`, 1 vector rỗng bị bỏ qua (`skipped`).
+- Lộ và đã sửa: group có mask không export từng phần (export cả nhóm thành SVG), stroke của chữ outline bị áp lại lên khung bao (vạch sáng trên/dưới), export SVG tuần tự + đọc cả cây trong 1 lệnh làm màn 546 layer quá 300 s (chuyển sang song song + từng nhánh con), mặc định chữ thiếu font nay giữ là TEXT.
