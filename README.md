@@ -141,7 +141,7 @@ Mọi tool nhận `page` (id/tên) để chạy trên page đó rồi trả page
 | `asset-generator` | viết prompt ảnh theo tỉ lệ và bộ ảnh nhất quán cho app, và sinh asset nền trong suốt bằng `gemini-image-mcp` (gộp từ `app-asset-generator` + `generating-oneshot-image-prompts`) |
 | `design-md-writer` | viết `DESIGN.md` mô tả design system cho agent |
 | `style-direction` | chọn phong cách cho app iOS/Android: từ tên phong cách, ảnh tham chiếu hoặc brief; đo DNA có mức tin cậy (`scripts/extract_palette.py`), 3 hướng Safe/Balanced/Bold, xuất Style brief + `tokens.json` (thay `ios-style-screen-creator`) |
-| `phosphor-icons` | tìm và tải icon Phosphor (1.500+ icon × 6 weight, MIT) theo tên/từ khoá bằng `scripts/phosphor.py`: SVG ra file hoặc markup để dán vào Figma, không cần trình duyệt hay API key |
+| `icon-libraries` | tìm và tải icon mã nguồn mở Phosphor (1.512 × 6 weight) và Tabler (5.491, outline + filled), MIT, theo tên/từ khoá bằng `scripts/icons.py`: SVG ra file hoặc markup để dán vào Figma, không cần trình duyệt hay API key (thay `phosphor-icons`) |
 
 Ví dụ DSL: `examples/fintech-wallet.json` (dán vào ô *Test render_tree locally* trong plugin để thử không cần agent).
 

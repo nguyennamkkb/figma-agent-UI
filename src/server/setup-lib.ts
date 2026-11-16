@@ -9,9 +9,10 @@ export const BUNDLED_SKILLS = [
   'asset-generator',
   'design-md-writer',
   'style-direction',
-  'phosphor-icons',
+  'icon-libraries',
 ] as const;
 export const RETIRED_SKILLS = [
+  'phosphor-icons',
   'app-asset-generator',
   'generating-oneshot-image-prompts',
   'ios-style-screen-creator',
