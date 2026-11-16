@@ -173,6 +173,7 @@ async function readNode(node: SceneNode, parent: BaseNode, parentAuto: boolean, 
     const box = relBox(node, parentAbs);
     const flow = parentAuto && base.positioning !== 'ABSOLUTE';
     const snap: SnapNode = { ...base, t: 'SVG', x: flow ? node.x : box.x, y: flow ? node.y : box.y, w: box.w, h: box.h, svg: '', ox: box.ox, oy: box.oy };
+    delete snap.opacity;
     state.jobs.push(async () => {
       try {
         snap.svg = await node.exportAsync({ format: 'SVG_STRING', svgOutlineText: true });
