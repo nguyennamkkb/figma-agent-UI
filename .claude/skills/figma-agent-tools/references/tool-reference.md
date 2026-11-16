@@ -92,4 +92,4 @@ Source of truth: tool descriptions in `src/server/index.ts` and input schemas in
 1. `bridge_status` → `workerCount ≥ 1`. Zero workers: ask the user to open/reload the studio tab (`pageUrl`); `image_generate` can also auto-open it.
 2. `image_generate{prompt, aspectRatio "1:1"|"4:3"|"3:4"|"16:9"|"9:16", savePath: "<project>/generated-images/<screen>-<role>.png"}`. Put **"no text, no letters, no UI"** in the prompt and name the palette with hex values from the design. Two workers → two images run in parallel; send independent prompts in one turn.
 3. `Read` the file to look at it before using it.
-4. Use the absolute path: `{type: "image", src: "/abs/path.png", scaleMode: "FILL"}` or `fill: {image: "/abs/path.png"}` / an array `[{image}, {gradient…}]` for a readability overlay. The file may be JPEG despite the `.png` name — Figma accepts it.
+4. Use the absolute path: `{type: "image", src: "/abs/path.png", scaleMode: "FILL"}` or `fill: {image: "/abs/path.png"}` / an array `[{gradient…}, {image}]` for a readability overlay (top first: the overlay comes before the image). The file may be JPEG despite the `.png` name — Figma accepts it.
