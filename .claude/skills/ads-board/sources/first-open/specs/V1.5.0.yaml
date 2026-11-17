@@ -14,7 +14,7 @@ screens:
   - { code: "303",  name: "303 - OB3",               type: onboarding,  ad: native, layout: Header-Media-CTA, content: ob4 }
   - { code: "304",  name: "304 - OB4",               type: native-full, ad: native-full, close: "None · CTA top" }
   - { code: "305",  name: "305 - OB5",               type: onboarding,  ad: native, layout: Header-Media-CTA, content: ob6, pager: 5 }
-  - { code: "307",  name: "307 - OB6",               type: onboarding,  ad: native, layout: Header-Media-CTA, content: ob5, footer: true }
+  - { code: "307",  name: "307 - OB6",               type: onboarding,  ad: native, layout: Header-Media-CTA, content: ob5, footer: true, pager: 5 }
   - { code: "306",  name: "306 - Onboarding Inter",  type: inter,       ad: inter }
 edges:
   - { from: "101 - Splash", to: "102 - After Splash", label: "7s" }
@@ -34,3 +34,4 @@ notes:
   - "302a và 303 tô tím trong sơ đồ (màn được cập nhật ở bản này)."
   - "304: CTA ở trên, media chiếm phần dưới (Native Full · CTA top); CTA hiện sau 3s nếu người dùng chưa bấm."
   - "307: nút Next nằm dưới khối quảng cáo."
+  - "Pager: 6 trang onboarding có pager nhưng component chỉ có 5 bước → 301=1, 302a=2, 302b=3, 303=4, 305=5, 307=5."

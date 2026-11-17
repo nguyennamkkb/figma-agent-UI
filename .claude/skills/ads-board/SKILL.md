@@ -58,7 +58,7 @@ Gate = show the user a short table and wait for "ok" before drawing.
 3. Each version section (`layout-grid.md`): row 1 ads flow → row 2 no-ads flow → arrows → notes → off-flow sub-section. Screenshot the section after each version.
 
 ### B. Build or rebuild one version
-1. Read `rules.md` and only that version's spec. Reuse the Kit; never touch other sections.
+1. Read `rules.md` and only that version's spec. Reuse the Kit; never touch other sections. Kit ids of `rules.md` not found on the page → rebuild the Kit first (`ads-kit.md` → "Rebuilding the Kit") and write the new ids to `rules.md`.
 2. Section exists → clear its children except `Title`, rebuild in place (keeps the section id and its position). Missing → create it at the next slot of the stack.
 
 ### C. Add a version (newer, older or in between)
