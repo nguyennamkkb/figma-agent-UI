@@ -19,7 +19,7 @@ edges:
 offFlow:
   - { name: "101 - Loading (wireframe)",   type: loading, ad: native, layout: Header-CTA }
   - { name: "308 - OB7 · Theme",           type: custom,  ad: native, layout: Header-CTA }
-  - { name: "308 - OB7 · Workspace Ready", type: custom,  ad: none }
+  - { name: "308 - OB7 · Workspace Ready", type: custom,  ad: native, layout: Header-CTA }
   - { name: "308 - OB7 · Gift",            type: custom,  ad: native, layout: Header-CTA, content: gift }
 notes:
   - "Sơ đồ thiếu cạnh 301 → 302a và 302d → 307: thứ tự lấy theo vị trí."

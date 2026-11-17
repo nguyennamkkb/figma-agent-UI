@@ -11,8 +11,10 @@ Each `type` maps to a **base screen** of the app (`rules.md` → "Base screens",
 | `onboarding` (ad bottom) | hero image (`content`) height = ad.y; fade above the ad; Content (title, subtitle, pager, Next) right above the ad; `Ad / Native <layout>` at the bottom | Cloned from the no-ads base screen (`rules.md`): hero full 360×800, fade y 360 h 440, Content y 600; title, subtitle, pager step and button label copied from row 1 |
 | `onboarding` with `footer: true` (or a `layout` starting with CTA) | Footer `Next` pinned at y 800 − 12 − 48; ad above the footer; hero to ad.y | Same twin rule as above |
 | `native-full` | Empty frame + `Ad / Native Full <close>` at 0,0; name gets ` - Native Full` | — (empty column) |
-| `loading` | Content centred (title, subtitle, progress or spinner); `Ad / Native Header-CTA` at y 556; Disabled CTA at the bottom | Ad removed; Content height = 724 − y so it re-centres |
-| `all-set` | Same as loading, Primary CTA | Same twin rule |
+| `loading` | Content centred (logo, title, subtitle, progress); `Ad / Native Header-CTA` pinned bottom (y = 800 − ad height); Content resized to end at the ad, glow moved with it (the base screen has no CTA) | The base `· No Ads` frame |
+| `all-set` | Same as loading (badge, title, subtitle; no CTA in the base screen) | Same twin rule |
+| `loading` / `all-set` with `ad: none` | The base `· No Ads` frame | Same frame, same name |
+| `custom` (off-flow only so far) | Base `SCR-07 · Onboarding · All Set · No Ads` stripped to title + subtitle, parts from the wireframe with app components (`builder.md` → "Off-flow sub-section"), copy from `rules.md` | — (off-flow has no row 2) |
 
 ## Shared screen rules
 - Status bar on every screen; bottom CTA at y 724 (52 tall, 24 from the bottom).

@@ -11,7 +11,8 @@ Source of truth for page **07 - Ads** of the Figma file "figma-agent-AI Cine Vid
 
 ## Board
 - Page `07 - Ads` (id 19:4118). Section prefix `07 · First Open`.
-- Section ids (stacked oldest → newest at x −3224): V1.5.0 25:12928 · V1.6.0 25:13755 · V1.7.0 19:4119 · V1.8.0 19:4816 · V1.9.0 19:5513 · V2.0.0 19:6219 · Ads Kit 19:7064.
+- Stack at x −3224, 400 apart: Ads Kit 25:16157 (y 0) → V1.5.0 25:16177 (2788) → V1.6.0 25:18778 (6292) → V1.7.0 25:17841 (9796) → V1.8.0 25:19568 (13300) → V1.9.0 25:20410 (16804, 4304 tall: off-flow 25:21074) → V2.0.0 25:21340 (21508). A new version goes at its place in time order; the later sections move down by `height + 400`.
+- 2026-11-17: page 07 emptied on purpose and rebuilt from scratch with the skill (Kit + all six versions).
 - Row labels "Có quảng cáo" / "Không quảng cáo"; copy of the screens in English as in the app, notes in Vietnamese.
 
 ## Base screens (the app's real screens)
@@ -37,8 +38,9 @@ On every clone: remove the old ad layer (`Ad / Native 272`), place the Ads Kit c
 | Ad / Banner | 19:7000 |
 | Ad / Native Full set (`Close`) | 19:7048 |
 | Ad / Interstitial (`Title#19:0`, `Unit#19:1`) | 19:7049 |
-| Ads Kit · assets | 19:6934 |
-| Ads Kit · backgrounds | 25:12916 |
+| Ads Kit · components (section) | 25:16157 |
+| Ads Kit · assets | 25:16158 |
+| Ads Kit · backgrounds | 25:16164 |
 | Token `Semantic/ad/cta` | VariableID:19:11250 (#E8953A) |
 | Top bar `Right=Check` (language screens) | 25:12794 |
 
@@ -55,6 +57,14 @@ On every clone: remove the old ad layer (`Ad / Native 272`), place the Ads Kit c
 | `gift` | `308_gift` | — | — | 308 Gift |
 
 Shared ad assets: `AST-402_ad_media_16x9`, `AST-403_ad_media_9x16`, `AST-404_ad_icon`. Fictional advertiser "Petal Island: Merge & Build", CTA "Install".
+
+## Custom screens (off-flow, V1.9.0)
+| Frame | Copy | Parts |
+|---|---|---|
+| `308 - OB7 · Theme` | Choose your theme / You can change it anytime in Settings. | Language item ×3: ☀️ Light (selected), 🌙 Dark, 📱 System; Native Header-CTA above a Primary `Next` |
+| `308 - OB7 · Workspace Ready` | Your studio is ready / Personalised from the choices you made. / caption "Preview of your workspace" | preview card 240×300 (`301_C1_bg_ob1`), Native Header-CTA above a Primary `Next` |
+| `308 - OB7 · Gift` | You’ve unlocked a special reward / A limited offer for new members. / "Unlocks in 5 s" / "Claim before it expires · 23:59:47" | `308_gift` 140×140, Text `Next` top-left (as the wireframe), Native Header-CTA at the bottom |
+| `101 - Loading (wireframe)` | copy of `SCR-07 · Onboarding · Setting Up` | Native Header-CTA at the bottom |
 
 ## Project decisions
 - Language screens: FL-01 already uses `Top bar` `Right=Check` (title "Choose language", back hidden). Check icon hidden on LFO1 (`lang-empty`), shown on LFO2 (`lang-picked`).

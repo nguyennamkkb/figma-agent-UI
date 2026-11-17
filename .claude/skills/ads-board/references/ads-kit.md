@@ -17,3 +17,13 @@ Built once per file; every version section only uses instances and clones from h
 - New Native layout → new variant in `Ad / Native` with the same child names; then add it to `spec-format.md`.
 - New ad format → new component + a row in `archetypes.md` + an `ad` value in `spec-format.md`.
 - System parts used by the screens (e.g. `Top bar Right=Check`, `Icon button Icon=check`) live in the app's design system, not in the Kit.
+
+## Rebuilding the Kit
+When the Kit ids of `rules.md` are not on the page (Kit deleted), rebuild it before any version section, at the top of the stack:
+1. Section `Ads Kit · components`. The Ad components often survive a deletion detached from the page (`getNodeByIdAsync` still returns them, `parent` null): append them back by id. Recreate a component only when its id returns null.
+2. `Ads Kit · backgrounds`: one 180×320 tile per row of the content-key table of `rules.md`, named as its asset layer. Image = the hero of the matching base screen (same image, no upload); a key with no base screen uses its file path from `rules.md` (upload with `render_tree` `image src`).
+3. `Ads Kit · assets`: the shared `AST-4xx_*` ad images from `generated-images/ads/`. Screen art such as `308_gift` goes in `Ads Kit · backgrounds` so the builder finds it by name.
+4. Write the new section, assets and backgrounds ids to `rules.md`.
+
+Image hashes are never stored in the source folder: the builder reads them from the `Ads Kit · backgrounds` tiles by asset name.
+
