@@ -496,6 +496,19 @@ Rules: colors are 0..1 RGB with opacity on the paint; fills/strokes arrays are i
 Helpers h: solid(hex) → SolidPaint, rgb(hex), hex(rgb), getNode(id), loadFont(fontName), loadNodeFonts(text), resolveFont(family, style), serialize(node, depth), summary(node), freeSpot() → {x,y} for new top-level nodes.`,
   input: S.ExecuteCodeInput,
   timeoutMs: (a) => a.timeoutMs,
+  prepare: async (a) => {
+    if (a.savePath && !isAbsolute(a.savePath)) throw new Error('savePath phải là đường dẫn tuyệt đối');
+    return { code: a.code, timeoutMs: a.timeoutMs };
+  },
+  format: (result, args) => {
+    if (!args.savePath) return [text(result)];
+    const value = (result as { result?: unknown }).result;
+    const body = JSON.stringify(value ?? null, null, 1);
+    mkdirSync(dirname(args.savePath), { recursive: true });
+    writeFileSync(args.savePath, body + '\n');
+    const shape = Array.isArray(value) ? { items: value.length } : value && typeof value === 'object' ? { keys: Object.keys(value).slice(0, 20) } : { type: typeof value };
+    return [text({ written: args.savePath, bytes: Buffer.byteLength(body), ...shape })];
+  },
 });
 
 tool('audit_design', {

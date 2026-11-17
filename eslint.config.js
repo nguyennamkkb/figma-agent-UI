@@ -34,6 +34,6 @@ module.exports = tseslint.config(
     },
   },
   {
-    ignores: ['code.js', 'dist', 'out', 'eslint.config.js', 'node_modules', 'vitest.config.ts', '.skill-eval/**', 'scripts/**'],
+    ignores: ['code.js', 'dist', 'out', 'eslint.config.js', 'node_modules', 'vitest.config.ts', '.skill-eval/**', 'scripts/**', '.claude/**'],
   },
 )

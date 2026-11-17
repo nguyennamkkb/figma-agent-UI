@@ -76,6 +76,8 @@ beforeAll(async () => {
           ],
         },
       });
+    } else if (msg.command === 'execute_code') {
+      reply({ ok: true, result: { result: { screens: [{ id: '1:2', name: 'Home' }], flows: [] } } });
     } else if (msg.command === 'list_fonts') {
       reply({ ok: true, result: { total: 1, families: [{ family: 'Inter', styles: ['Regular'] }] } });
     } else if (msg.command === 'snapshot_read') {
@@ -416,6 +418,21 @@ describe('figma-ui-flow tools with server-side work', () => {
     expect(r.isError).toBeFalsy();
     expect(existsSync(join(dir, 'icon-home.png'))).toBe(true);
     expect(existsSync(join(dir, 'icon-home@2x.png'))).toBe(true);
+  });
+
+  it('execute_code with savePath writes the value and replies with a summary', async () => {
+    const out = join(mkdtempSync(join(tmpdir(), 'exec-')), 'scan', 'inventory.json');
+    const r = await client.callTool({ name: 'execute_code', arguments: { code: 'return 1', savePath: out } });
+    expect(r.isError).toBeFalsy();
+    expect(JSON.parse(readFileSync(out, 'utf8'))).toEqual({ screens: [{ id: '1:2', name: 'Home' }], flows: [] });
+    const reply = JSON.parse((r.content as { text: string }[])[0].text);
+    expect(reply).toMatchObject({ written: out, keys: ['screens', 'flows'] });
+    expect(received.filter((x) => x.command === 'execute_code').at(-1)!.params).not.toHaveProperty('savePath');
+  });
+
+  it('execute_code rejects a relative savePath', async () => {
+    const r = await client.callTool({ name: 'execute_code', arguments: { code: 'return 1', savePath: 'scan.json' } });
+    expect(r.isError).toBe(true);
   });
 
   it('bind_variables and rename_by_rule default to dryRun', async () => {

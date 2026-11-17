@@ -87,6 +87,8 @@ Source of truth: tool descriptions in `src/server/index.ts` and input schemas in
 
 `execute_code{code, timeoutMs 30000}` — see SKILL.md §6 and `plugin-api-recipes.md`. Use it only when no tool above fits (constraints, boolean ops, vector edits, unusual bulk edits).
 
+`execute_code{…, savePath}` — absolute `.json` path: the server writes the returned value to that file with no size limit (`FIGMA_AGENT_MAX_OUTPUT` does not apply) and replies only `{written, bytes, keys|items}`. Use it for read-only scans whose output is data for a script (inventories, baselines), so the JSON never passes through the conversation; `Read` the file only when you need to look at it.
+
 ## 8. gemini-image-mcp (images for heroes, illustrations, backgrounds)
 
 1. `bridge_status` → `workerCount ≥ 1`. Zero workers: ask the user to open/reload the studio tab (`pageUrl`); `image_generate` can also auto-open it.
