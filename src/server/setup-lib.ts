@@ -10,6 +10,7 @@ export const BUNDLED_SKILLS = [
   'design-md-writer',
   'style-direction',
   'icon-libraries',
+  'ads-board',
 ] as const;
 export const RETIRED_SKILLS = [
   'phosphor-icons',

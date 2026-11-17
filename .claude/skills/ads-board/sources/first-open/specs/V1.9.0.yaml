@@ -1,0 +1,27 @@
+version: V1.9.0
+flow: First Open
+wireframe: ../wireframes/V1.9.0.png
+screens:
+  - { code: "101",  name: "101 - Splash",            type: splash,      ad: banner, content: splash }
+  - { code: "102",  name: "102 - Inter Splash",      type: inter,       ad: inter }
+  - { code: "201",  name: "201 - LFO1",              type: lang-empty,  ad: native, layout: Header-Media-CTA }
+  - { code: "202",  name: "202 - LFO2",              type: lang-picked, ad: native, layout: Header-Media-CTA }
+  - { code: "301",  name: "301 - OB1",               type: onboarding,  ad: native, layout: Header-CTA-Media, content: ob1, footer: true }
+  - { code: "302a", name: "302a_NoAds - OB2a",       type: onboarding,  ad: none,   content: ob2 }
+  - { code: "302b", name: "302b_NoAds - OB2b",       type: onboarding,  ad: none,   content: ob3 }
+  - { code: "302c", name: "302c - OB2c",             type: native-full, ad: native-full, close: Top-left }
+  - { code: "302d", name: "302d_NoAds - OB2d",       type: onboarding,  ad: none,   content: ob4 }
+  - { code: "307",  name: "307 - OB6",               type: onboarding,  ad: native, layout: CTA-Media, content: ob5 }
+  - { code: "306",  name: "306 - Onboarding Inter",  type: inter,       ad: inter }
+edges:
+  - { from: "101 - Splash", to: "102 - Inter Splash", label: "7s" }
+  - { from: "201 - LFO1", to: "202 - LFO2", label: "Tap" }
+offFlow:
+  - { name: "101 - Loading (wireframe)",   type: loading, ad: native, layout: Header-CTA }
+  - { name: "308 - OB7 · Theme",           type: custom,  ad: native, layout: Header-CTA }
+  - { name: "308 - OB7 · Workspace Ready", type: custom,  ad: none }
+  - { name: "308 - OB7 · Gift",            type: custom,  ad: native, layout: Header-CTA, content: gift }
+notes:
+  - "Sơ đồ thiếu cạnh 301 → 302a và 302d → 307: thứ tự lấy theo vị trí."
+  - "Tài liệu ghi \"302d_NoAds- OB2d\" (thiếu dấu cách), trên board dùng \"302d_NoAds - OB2d\"."
+  - "101 loading và 308 ×3 chỉ có wireframe, không nằm trong luồng → section Wireframe ngoài luồng."

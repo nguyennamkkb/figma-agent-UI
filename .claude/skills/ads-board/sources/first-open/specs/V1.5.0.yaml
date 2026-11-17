@@ -1,0 +1,36 @@
+version: V1.5.0
+flow: First Open
+wireframe: ../wireframes/V1.5.0.png
+screens:
+  - { code: "101",  name: "101 - Splash",            type: splash,      ad: banner, content: splash }
+  - { code: "102",  name: "102 - After Splash",      type: inter,       ad: app-open }
+  - { code: "201",  name: "201 - LFO1",              type: lang-empty,  ad: native, layout: Header-Media-CTA }
+  - { code: "202",  name: "202 - LFO2",              type: lang-picked, ad: native, layout: Header-Media-CTA }
+  - { code: "203",  name: "203 - Inter LFO",         type: inter,       ad: inter }
+  - { code: "301",  name: "301 - OB1",               type: onboarding,  ad: native, layout: Header-CTA-Media, content: ob1, footer: true }
+  - { code: "302a", name: "302a",                    type: onboarding,  ad: none,   content: ob2 }
+  - { code: "302b", name: "302b",                    type: onboarding,  ad: none,   content: ob3 }
+  - { code: "302c", name: "302c - OB2",              type: native-full, ad: native-full, close: Top-left }
+  - { code: "303",  name: "303 - OB3",               type: onboarding,  ad: native, layout: Header-Media-CTA, content: ob4 }
+  - { code: "304",  name: "304 - OB4",               type: native-full, ad: native-full, close: "None · CTA top" }
+  - { code: "305",  name: "305 - OB5",               type: onboarding,  ad: native, layout: Header-Media-CTA, content: ob6, pager: 5 }
+  - { code: "307",  name: "307 - OB6",               type: onboarding,  ad: native, layout: Header-Media-CTA, content: ob5, footer: true }
+  - { code: "306",  name: "306 - Onboarding Inter",  type: inter,       ad: inter }
+edges:
+  - { from: "101 - Splash", to: "102 - After Splash", label: "7s" }
+  - { from: "201 - LFO1", to: "202 - LFO2", label: "Tap" }
+  - { from: "301 - OB1", to: "302a", label: "RC On" }
+  - { from: "302b", to: "302c - OB2", label: "Next" }
+  - { from: "302c - OB2", to: "303 - OB3", label: "Exit" }
+  - { from: "303 - OB3", to: "304 - OB4", label: "Swipe" }
+  - { from: "304 - OB4", to: "305 - OB5", label: "Swipe" }
+  - { from: "305 - OB5", to: "307 - OB6", label: "Swipe" }
+branches:
+  - { from: "301 - OB1", to: "302b", label: "RC Off", skips: ["302a"] }
+offFlow: []
+notes:
+  - "102 - After Splash hiện App Open hoặc Inter tuỳ remote config (ưu tiên App Open)."
+  - "Sau 301 có remote config: On → 302a → 302b, Off → bỏ 302a, vào thẳng 302b."
+  - "302a và 303 tô tím trong sơ đồ (màn được cập nhật ở bản này)."
+  - "304: CTA ở trên, media chiếm phần dưới (Native Full · CTA top); CTA hiện sau 3s nếu người dùng chưa bấm."
+  - "307: nút Next nằm dưới khối quảng cáo."

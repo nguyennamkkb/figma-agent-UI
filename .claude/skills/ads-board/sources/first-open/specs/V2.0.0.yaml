@@ -1,0 +1,29 @@
+version: V2.0.0
+flow: First Open
+wireframe: ../wireframes/V2.0.0.png
+screens:
+  - { code: "A1",  name: "A1 - Splash",                 type: splash,      ad: banner, content: splash }
+  - { code: "A2",  name: "A2 - Inter Splash",           type: inter,       ad: inter }
+  - { code: "B1",  name: "B1 - LFO1",                   type: lang-empty,  ad: native, layout: Header-Media-CTA }
+  - { code: "B2",  name: "B2 - LFO2",                   type: lang-picked, ad: native, layout: Header-Media-CTA }
+  - { code: "A2",  name: "A2 - Inter Splash · Show bù", type: inter,       ad: inter }
+  - { code: "C1",  name: "C1 - OB1",                    type: onboarding,  ad: native, layout: Header-CTA-Media, content: ob1, footer: true }
+  - { code: "C2A", name: "C2A",                         type: onboarding,  ad: none,   content: ob2 }
+  - { code: "C2B", name: "C2B - OB2",                   type: native-full, ad: native-full, close: Top-left }
+  - { code: "C3",  name: "C3 - OB3",                    type: onboarding,  ad: native, layout: Header-Media-CTA, content: ob3 }
+  - { code: "C4",  name: "C4 - OB4",                    type: native-full, ad: native-full, close: "None · CTA top" }
+  - { code: "C5",  name: "C5 - OB5",                    type: onboarding,  ad: native, layout: Header-Media-CTA, content: ob4 }
+  - { code: "C6",  name: "C6 - OB6",                    type: onboarding,  ad: native, layout: CTA-Media-Header, content: ob5, footer: true }
+  - { code: "C7",  name: "C7 - Onboarding Inter",       type: inter,       ad: inter }
+edges:
+  - { from: "A1 - Splash", to: "A2 - Inter Splash", label: "7s" }
+  - { from: "B1 - LFO1", to: "B2 - LFO2", label: "Tap" }
+  - { from: "C2A", to: "C2B - OB2", label: "Next" }
+  - { from: "C2B - OB2", to: "C3 - OB3", label: "Exit" }
+  - { from: "C3 - OB3", to: "C4 - OB4", label: "Swipe" }
+  - { from: "C4 - OB4", to: "C5 - OB5", label: "Swipe" }
+  - { from: "C5 - OB5", to: "C6 - OB6", label: "Swipe" }
+offFlow: []
+notes:
+  - "A2 xuất hiện 2 lần: lần 2 là show bù (inter a1 đã load xong sau màn A2)."
+  - "Sơ đồ thiếu cạnh C1 → C2A: thứ tự lấy theo vị trí."
