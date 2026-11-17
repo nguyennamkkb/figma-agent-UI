@@ -21,7 +21,7 @@ Read from page `05 · Screens & Flows`, section **FL-01 · Splash, Onboarding, I
 |---|---|---|
 | `splash` | `SCR-01 · Splash · Default` | same frame (no banner) |
 | `lang-empty` | `SCR-02 · Language · Default` | `SCR-02 · Language · No Ads` |
-| `lang-picked` | `SCR-02 · Language · Selected` | `SCR-02 · Language · No Ads` + first language selected |
+| `lang-picked` | `SCR-02 · Language · Selected` | `SCR-02 · Language · Selected` without its ad (list down to the bottom) |
 | `onboarding` | `SCR-03 · Onboarding · Page 1` (ad bottom, Next in Content) | `SCR-03 · Onboarding · Page 1 · No Ads` |
 | `onboarding` + `footer` | `SCR-03 · Onboarding · Page 1`, Next moved to a `Footer · Next` under the ad | `SCR-03 · Onboarding · Page 1 · No Ads` |
 | `loading` | `SCR-07 · Onboarding · Setting Up` | `SCR-07 · Onboarding · Setting Up · No Ads` |
@@ -57,7 +57,7 @@ On every clone: remove the old ad layer (`Ad / Native 272`), place the Ads Kit c
 Shared ad assets: `AST-402_ad_media_16x9`, `AST-403_ad_media_9x16`, `AST-404_ad_icon`. Fictional advertiser "Petal Island: Merge & Build", CTA "Install".
 
 ## Project decisions
-- Language screens: the FL-01 `Header` is replaced by `Top bar` `Right=Check` (25:12794), back hidden, title "Choose language" only (no hint line); check icon hidden on LFO1, shown on LFO2. (Better: apply this to FL-01 itself, then drop this line.)
+- Language screens: FL-01 already uses `Top bar` `Right=Check` (title "Choose language", back hidden). Check icon hidden on LFO1 (`lang-empty`), shown on LFO2 (`lang-picked`).
 - Interstitial: grey placeholder, title "Inter Ads" ("Inter Ads · Show bù" for the fallback show).
 - Ad CTA colour = `ad/cta`, a slightly darker tone of the app's orange button.
 - People in imagery: young East Asian women.

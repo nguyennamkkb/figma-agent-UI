@@ -1,86 +1,80 @@
-# builder — plugin helpers
+# builder — build one version section from the base screens
 
-Paste the block at the top of an `execute_code` body, fill `CFG` with the ids from the project's `rules.md` (Ads Kit components, the base-screen section and frame names from "Base screens", `Top bar Right=Check`, background image hashes), then call `buildSection(section, spec)` once per version section. It builds row 1 and the aligned row 2 twins and returns their ids. Arrows are not created here: `execute_code` cannot clone connectors. For each consecutive pair in `row1` and `row2` call `render_tree` `{type: "connector", from, to, fromMagnet: "RIGHT", toMagnet: "LEFT"}` with `parentId` = section id, then set labels from `spec.edges` with `execute_code` (`c.text.characters`).
+Tested on `/ads-board 1.6.0` (V1.6.0 rebuilt from page 05 · FL-01, identical to the previous board). One `execute_code` call per version section.
+
+1. Fill the constants from `sources/<flow>/rules.md`: `BASE_SECTION` (flow section of the base screens), `B` (base frame names), `KIT` (Ads Kit component ids), `PAGER_ID`, `CONTENT` (content key → image hash, title, subtitle), `PAGER_STEP`, and `SECTION` (the version section; create it first at its slot of the stack with the `Title` and the two `Row label` texts).
+2. Paste the spec's `screens` as `SPEC`.
+3. Run. It clears the section except `Title` and `Row label …`, builds row 1 and the aligned row 2, and returns both id lists.
+4. Arrows: `execute_code` cannot clone connectors. For each consecutive pair in `r1` and in `r2`, call `render_tree` `{type: "connector", from, to, fromMagnet: "RIGHT", toMagnet: "LEFT"}` with `parentId` = section id; `branches` from BOTTOM to BOTTOM. Then set labels from `spec.edges` with `execute_code` (copy `text.fontName`, `fontSize`, `fills` from an existing labelled connector) and add the yellow notes at y 2404 (`layout-grid.md`).
+5. Screenshot the section and the screens with a footer.
 
 ```js
-
-const CFG = {
-  kit: { native: 'ID_Ad/Native set', full: 'ID_Ad/Native Full set', banner: 'ID_Ad/Banner', inter: 'ID_Ad/Interstitial' },
-  baseSection: 'ID of the flow section holding the base screens (rules.md)',
-  base: { splash: 'SCR-01 · Splash · Default', lang: 'SCR-02 · Language · Default', onboarding: 'SCR-03 · Onboarding · Page 1', onboardingNoAds: 'SCR-03 · Onboarding · Page 1 · No Ads', loading: 'SCR-07 · Onboarding · Setting Up', allSet: 'SCR-07 · Onboarding · All Set' },
-  topBarCheck: 'ID_Top bar Right=Check',
-  bg: { splash: 'HASH', ob1: 'HASH', ob2: 'HASH', ob3: 'HASH', ob4: 'HASH', ob5: 'HASH' },
-  grid: { col0: 200, step: 440, row1: 304, row2: 1504 },
-};
 const G = id => figma.getNodeByIdAsync(id);
-const KIT = { native: await G(CFG.kit.native), full: await G(CFG.kit.full), banner: await G(CFG.kit.banner), inter: await G(CFG.kit.inter) };
-const variant = (set, v) => set.children.find(c => c.name === v);
-const child = (f, name) => f.findOne(n => n.name === name);
-async function setText(node, chars) { await h.loadNodeFonts(node); node.characters = chars; }
+const SECTION = 'VERSION SECTION ID';
+const BASE_SECTION = '4:25';
+const B = { splash: 'SCR-01 · Splash · Default', langD: 'SCR-02 · Language · Default', langS: 'SCR-02 · Language · Selected', langN: 'SCR-02 · Language · No Ads', ob: 'SCR-03 · Onboarding · Page 1', obN: 'SCR-03 · Onboarding · Page 1 · No Ads' };
+const KIT = { native: '19:6999', full: '19:7048', banner: '19:7000', inter: '19:7049' };
+const PAGER_ID = '7:1026';
+const CONTENT = { splash: ['HASH'], ob1: ['HASH', 'Title', 'Subtitle'] };
+const PAGER_STEP = { ob1: 1 };
+const SPEC = { screens: [] };
 
-function adLayerName(s) { return 'Ad · ' + { banner: 'Banner', native: 'Native', 'native-full': 'Native Full', inter: 'Inter' }[s.ad] + (s.layout ? ' · ' + s.layout : s.close ? ' · ' + s.close : ''); }
-function adInstance(s) {
-  const comp = s.ad === 'banner' ? KIT.banner : s.ad === 'inter' ? KIT.inter
-    : s.ad === 'native-full' ? variant(KIT.full, 'Close=' + s.close) : variant(KIT.native, 'Layout=' + s.layout);
-  const i = comp.createInstance(); i.name = adLayerName(s); return i;
+const BASE_SEC = await G(BASE_SECTION);
+const base = n => BASE_SEC.findOne(f => f.type === 'FRAME' && f.name === n);
+const NAT = await G(KIT.native), FULL = await G(KIT.full), BANNER = await G(KIT.banner), INTER = await G(KIT.inter), PAGER = await G(PAGER_ID);
+const SEC = await G(SECTION);
+for (const c of [...SEC.children]) { if (c.removed) continue; if (c.name === 'Title' || c.name.startsWith('Row label')) continue; c.remove(); }
+const COL = i => 200 + i * 440;
+function cl(key, name) { const f = base(B[key]).clone(); SEC.appendChild(f); f.name = name; const old = f.findChild(n => n.name === 'Ad / Native 272'); if (old) old.remove(); return f; }
+function empty(name) { const f = figma.createFrame(); SEC.appendChild(f); f.name = name; f.resize(360, 800); f.clipsContent = true; f.fills = base(B.splash).fills; return f; }
+function adInst(s) {
+  let i;
+  if (s.ad === 'banner') { i = BANNER.createInstance(); i.name = 'Ad · Banner'; }
+  else if (s.ad === 'inter' || s.ad === 'app-open') { i = INTER.createInstance(); i.name = s.ad === 'inter' ? 'Ad · Inter' : 'Ad · App Open'; }
+  else if (s.ad === 'native-full') { i = FULL.children.find(c => c.name === 'Close=' + s.close).createInstance(); i.name = 'Ad · Native Full · ' + s.close; }
+  else { i = NAT.children.find(c => c.name === 'Layout=' + s.layout).createInstance(); i.name = 'Ad · Native · ' + s.layout; }
+  return i;
 }
-function place(sec, f, col, row) { sec.appendChild(f); f.x = CFG.grid.col0 + col * CFG.grid.step; f.y = row === 2 ? CFG.grid.row2 : CFG.grid.row1; return f; }
-function screenName(s) { return s.ad === 'native-full' ? s.name + ' - Native Full' : s.name; }
-async function fromMaster(key, name) { const sec = await G(CFG.baseSection); const m = sec.findOne(n => n.type === 'FRAME' && n.name === CFG.base[key]); const f = m.clone(); f.name = name; const old = f.findChild(n => n.name === 'Ad / Native 272'); if (old) old.remove(); return f; }
-function emptyScreen(name) { const f = figma.createFrame(); f.name = name; f.resize(360, 800); f.clipsContent = true; f.fills = [h.solid('#0B0B0F')]; return f; }
+async function txt(f, k) { const c = f.findChild(n => n.name === 'Content'); const [, t, s] = CONTENT[k]; for (const [n, v] of [['title', t], ['subtitle', s]]) { const x = c.findOne(m => m.name === n); await h.loadNodeFonts(x); x.characters = v; } }
+function hero(f, k, hgt) { const r = f.findChild(n => n.name === 'hero'); if (hgt) r.resize(360, hgt); r.fills = [{ type: 'IMAGE', imageHash: CONTENT[k][0], scaleMode: 'FILL' }]; }
+function pager(f, k) { const p = f.findOne(n => n.type === 'INSTANCE' && n.name === 'Pager'); if (p) p.swapComponent(PAGER.children.find(c => c.name === 'Step=' + PAGER_STEP[k])); }
+async function obNoAds(name, s) { const f = cl('obN', name); hero(f, s.content); await txt(f, s.content); pager(f, s.content); return f; }
 
-const BUILD = {
-  async splash(s) { const f = await fromMaster('splash', screenName(s)); if (s.ad === 'banner') { for (const k of ['Content', 'fade']) child(f, k).y -= 64; const a = adInstance(s); f.appendChild(a); a.x = 0; a.y = 736; } return f; },
-  async inter(s) { const f = emptyScreen(screenName(s)); const a = adInstance(s); f.appendChild(a); a.x = 0; a.y = 0; a.setProperties({ 'Title#19:0': /show bù/i.test(s.name) ? 'Inter Ads · Show bù' : 'Inter Ads', 'Unit#19:1': s.name }); return f; },
-  async 'native-full'(s) { const f = emptyScreen(screenName(s)); const a = adInstance(s); f.appendChild(a); a.x = 0; a.y = 0; return f; },
-  async lang(s, picked) {
-    const f = await fromMaster('lang', screenName(s));
-    const tb = f.findChild(n => n.name === 'Top bar'); tb.findChild(n => n.name === 'done').visible = picked;
-    if (s.ad === 'native') { const a = adInstance(s); f.appendChild(a); a.x = 0; a.y = 800 - a.height; const c = child(f, 'Content'); c.resize(360, a.y - c.y); const lf = child(f, 'list-fade'); if (lf) lf.y = a.y - lf.height; }
-    return f;
-  },
-  async onboarding(s) {
-    if (s.ad !== 'native') { const f = await fromMaster('onboardingNoAds', screenName(s)); child(f, 'hero').fills = [{ type: 'IMAGE', imageHash: CFG.bg[s.content], scaleMode: 'FILL' }]; return f; }
-    const f = await fromMaster('onboarding', screenName(s)); const a = adInstance(s); f.appendChild(a); a.x = 0; a.y = 800 - a.height;
-    const hero = child(f, 'hero'); hero.resize(360, a.y); hero.fills = [{ type: 'IMAGE', imageHash: CFG.bg[s.content], scaleMode: 'FILL' }];
-    const fade = child(f, 'fade'); fade.y = a.y - fade.height; const c = child(f, 'Content'); c.y = a.y - c.height; return f;
-  },
-  async loading(s) { const f = await fromMaster('loading', screenName(s)); if (s.ad === 'native') { const a = adInstance(s); f.appendChild(a); a.x = 0; a.y = 556; } return f; },
-  async 'all-set'(s) { const f = await fromMaster('allSet', screenName(s)); if (s.ad === 'native') { const a = adInstance(s); f.appendChild(a); a.x = 0; a.y = 556; } return f; },
-};
-async function buildScreen(s) {
-  if (s.type === 'lang-empty') return BUILD.lang(s, false);
-  if (s.type === 'lang-picked') return BUILD.lang(s, true);
-  return BUILD[s.type](s);
-}
-
-async function noAdsTwin(row1, s) {
-  if (s.ad === 'inter' || s.ad === 'native-full') return null;
-  const f = row1.clone();
-  if (s.ad === 'none') return f;
-  f.name = s.name + ' · No Ads';
-  const ad = f.findChild(n => n.name.startsWith('Ad · ')); if (ad) ad.remove();
-  if (s.ad === 'banner') { for (const k of ['Content', 'fade']) child(f, k).y += 64; return f; }
-  if (s.type.startsWith('lang')) { const c = child(f, 'Content'); c.resize(360, 800 - c.y); const lf = child(f, 'list-fade'); if (lf) lf.y = 800 - lf.height; return f; }
-  if (s.type === 'loading' || s.type === 'all-set') { const c = child(f, 'Content'); c.resize(360, 724 - c.y); return f; }
-  f.remove();
-  const t = await fromMaster('onboardingNoAds', s.name + ' · No Ads');
-  t.findChild(n => n.name === 'hero').fills = row1.findChild(n => n.name === 'hero').fills;
-  const src = child(row1, 'Content'), dst = child(t, 'Content');
-  await setText(child(dst, 'title'), child(src, 'title').characters);
-  await setText(child(dst, 'subtitle'), child(src, 'subtitle').characters);
-  const sp = row1.findOne(n => n.type === 'INSTANCE' && n.name === 'Pager'), dp = t.findOne(n => n.type === 'INSTANCE' && n.name === 'Pager');
-  if (sp && dp) dp.swapComponent(await sp.getMainComponentAsync());
-  return t;
-}
-
-async function buildSection(sec, spec) {
-  const row1 = [], row2 = [];
-  for (let i = 0; i < spec.screens.length; i++) {
-    const s = spec.screens[i];
-    const f = place(sec, await buildScreen(s), i, 1); row1.push(f.id);
-    const t = await noAdsTwin(f, s); if (t) { place(sec, t, i, 2); row2.push(t.id); }
+const r1 = [], r2 = [];
+for (let i = 0; i < SPEC.screens.length; i++) {
+  const s = SPEC.screens[i]; let f, t = null;
+  if (s.type === 'splash') {
+    f = cl('splash', s.name);
+    if (s.ad === 'banner') { for (const k of ['Content', 'fade']) f.findChild(n => n.name === k).y -= 64; const a = adInst(s); f.appendChild(a); a.x = 0; a.y = 736; }
+    t = f.clone(); SEC.appendChild(t); t.name = s.name + ' · No Ads';
+    const ta = t.findChild(n => n.name.startsWith('Ad · ')); if (ta) { ta.remove(); for (const k of ['Content', 'fade']) t.findChild(n => n.name === k).y += 64; }
+  } else if (s.type === 'inter' || s.type === 'native-full') {
+    f = empty(s.type === 'native-full' ? s.name + ' - Native Full' : s.name);
+    const a = adInst(s); f.appendChild(a); a.x = 0; a.y = 0;
+    if (s.ad === 'inter' || s.ad === 'app-open') a.setProperties({ 'Title#19:0': s.ad === 'app-open' ? 'App Open / Inter Ads' : 'Inter Ads', 'Unit#19:1': s.name });
+  } else if (s.type.startsWith('lang')) {
+    const picked = s.type === 'lang-picked';
+    f = cl(picked ? 'langS' : 'langD', s.name);
+    const a = adInst(s); f.appendChild(a); a.x = 0; a.y = 800 - a.height;
+    const c = f.findChild(n => n.name === 'Content'); c.resize(360, a.y - c.y);
+    const lf = f.findChild(n => n.name === 'list-fade'); lf.y = a.y - lf.height;
+    if (picked) { t = cl('langS', s.name + ' · No Ads'); const tc = t.findChild(n => n.name === 'Content'); tc.resize(360, 800 - tc.y); const tl = t.findChild(n => n.name === 'list-fade'); tl.y = 800 - tl.height; }
+    else t = cl('langN', s.name + ' · No Ads');
+  } else if (s.type === 'onboarding') {
+    if (s.ad === 'none') { f = await obNoAds(s.name, s); t = f.clone(); SEC.appendChild(t); }
+    else {
+      f = cl('ob', s.name); await txt(f, s.content);
+      const a = adInst(s); f.appendChild(a); const c = f.findChild(n => n.name === 'Content');
+      if (s.footer) { const foot = c.findChild(n => n.name === 'footer'); f.appendChild(foot); foot.name = 'Footer · Next'; foot.x = c.x; foot.y = 800 - 12 - foot.height; a.x = 0; a.y = foot.y - 8 - a.height; }
+      else { a.x = 0; a.y = 800 - a.height; }
+      hero(f, s.content, a.y); const fd = f.findChild(n => n.name === 'fade'); fd.y = a.y - fd.height; c.y = a.y - c.height; pager(f, s.content);
+      t = await obNoAds(s.name + ' · No Ads', s);
+    }
   }
-  return { row1, row2 };
+  f.x = COL(i); f.y = 304; r1.push([f.id, f.name]);
+  if (t) { t.x = COL(i); t.y = 1504; r2.push([t.id, t.name]); }
 }
+return { r1, r2 };
 ```
+
+Types not covered yet (`loading`, `all-set`, `custom`): clone their base screen from `rules.md`, remove `Ad / Native 272`, place `Ad / Native Header-CTA` at y 556 (twin: base `· No Ads` frame). Add them here once a version uses them.
