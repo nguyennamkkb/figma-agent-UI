@@ -1,0 +1,23 @@
+version: V1.7.0
+flow: First Open
+wireframe: ../wireframes/V1.7.0.png
+screens:
+  - { code: "101",  name: "101 - Splash",            type: splash,      ad: banner, content: splash }
+  - { code: "102",  name: "102 - Inter Splash",      type: inter,       ad: inter }
+  - { code: "201",  name: "201 - LFO1",              type: lang-empty,  ad: native, layout: Header-Media-CTA }
+  - { code: "202",  name: "202 - LFO2",              type: lang-picked, ad: native, layout: Header-Media-CTA }
+  - { code: "301",  name: "301 - OB1",               type: onboarding,  ad: native, layout: Header-CTA-Media, content: ob1 }
+  - { code: "302a", name: "302a_NoAds - OB2a",       type: onboarding,  ad: none,   content: ob2 }
+  - { code: "302b", name: "302b_NoAds - OB2b",       type: onboarding,  ad: none,   content: ob3 }
+  - { code: "302c", name: "302c - OB2c",             type: native-full, ad: native-full, close: Top-left }
+  - { code: "302d", name: "302d_NoAds - OB2d",       type: onboarding,  ad: none,   content: ob4 }
+  - { code: "307",  name: "307 - OB6",               type: onboarding,  ad: native, layout: Header-Media-CTA, content: ob5 }
+  - { code: "306",  name: "306 - Onboarding Inter",  type: inter,       ad: inter }
+  - { code: "308",  name: "308 - OB7 · Setting Up",  type: loading,     ad: native, layout: Header-CTA }
+  - { code: "308",  name: "308 - OB7 · All Set",     type: all-set,     ad: native, layout: Header-CTA }
+edges:
+  - { from: "101 - Splash", to: "102 - Inter Splash", label: "7s" }
+  - { from: "201 - LFO1", to: "202 - LFO2", label: "Tap" }
+  - { from: "308 - OB7 · Setting Up", to: "308 - OB7 · All Set", label: "Loaded" }
+offFlow: []
+notes: []

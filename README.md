@@ -142,6 +142,7 @@ Mọi tool nhận `page` (id/tên) để chạy trên page đó rồi trả page
 | `design-md-writer` | viết `DESIGN.md` mô tả design system cho agent |
 | `style-direction` | chọn phong cách cho app iOS/Android: từ tên phong cách, ảnh tham chiếu hoặc brief; đo DNA có mức tin cậy (`scripts/extract_palette.py`), 3 hướng Safe/Balanced/Bold, xuất Style brief + `tokens.json` (thay `ios-style-screen-creator`) |
 | `icon-libraries` | tìm và tải icon mã nguồn mở Phosphor (1.512 × 6 weight) và Tabler (5.491, outline + filled), MIT, theo tên/từ khoá bằng `scripts/icons.py`: SVG ra file hoặc markup để dán vào Figma, không cần trình duyệt hay API key (thay `phosphor-icons`) |
+| `ads-board` | dựng trang Ads trên Figma theo từng phiên bản luồng: mỗi bản 1 section, hàng có quảng cáo + hàng không quảng cáo thẳng cột, Ads Kit dùng chung; nguồn nằm trong skill `sources/<flow>/` (`rules.md`, spec YAML, ảnh wireframe; kèm sẵn First Open V1.7–V2.0), `scripts/spec_diff.py` so 2 phiên bản |
 
 Ví dụ DSL: `examples/fintech-wallet.json` (dán vào ô *Test render_tree locally* trong plugin để thử không cần agent).
 
