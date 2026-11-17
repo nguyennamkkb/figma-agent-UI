@@ -1,12 +1,13 @@
 # builder — plugin helpers
 
-Paste the block at the top of an `execute_code` body, fill `CFG` with the ids from the project's `rules.md` (Ads Kit components, screen masters, `Top bar Right=Check`, background image hashes), then call `buildSection(section, spec)` once per version section. It builds row 1 and the aligned row 2 twins and returns their ids. Arrows are not created here: `execute_code` cannot clone connectors. For each consecutive pair in `row1` and `row2` call `render_tree` `{type: "connector", from, to, fromMagnet: "RIGHT", toMagnet: "LEFT"}` with `parentId` = section id, then set labels from `spec.edges` with `execute_code` (`c.text.characters`).
+Paste the block at the top of an `execute_code` body, fill `CFG` with the ids from the project's `rules.md` (Ads Kit components, the base-screen section and frame names from "Base screens", `Top bar Right=Check`, background image hashes), then call `buildSection(section, spec)` once per version section. It builds row 1 and the aligned row 2 twins and returns their ids. Arrows are not created here: `execute_code` cannot clone connectors. For each consecutive pair in `row1` and `row2` call `render_tree` `{type: "connector", from, to, fromMagnet: "RIGHT", toMagnet: "LEFT"}` with `parentId` = section id, then set labels from `spec.edges` with `execute_code` (`c.text.characters`).
 
 ```js
 
 const CFG = {
   kit: { native: 'ID_Ad/Native set', full: 'ID_Ad/Native Full set', banner: 'ID_Ad/Banner', inter: 'ID_Ad/Interstitial' },
-  masters: { splash: 'ID', lang: 'ID', onboarding: 'ID', onboardingNoAds: 'ID', loading: 'ID', allSet: 'ID' },
+  baseSection: 'ID of the flow section holding the base screens (rules.md)',
+  base: { splash: 'SCR-01 · Splash · Default', lang: 'SCR-02 · Language · Default', onboarding: 'SCR-03 · Onboarding · Page 1', onboardingNoAds: 'SCR-03 · Onboarding · Page 1 · No Ads', loading: 'SCR-07 · Onboarding · Setting Up', allSet: 'SCR-07 · Onboarding · All Set' },
   topBarCheck: 'ID_Top bar Right=Check',
   bg: { splash: 'HASH', ob1: 'HASH', ob2: 'HASH', ob3: 'HASH', ob4: 'HASH', ob5: 'HASH' },
   grid: { col0: 200, step: 440, row1: 304, row2: 1504 },
@@ -25,7 +26,7 @@ function adInstance(s) {
 }
 function place(sec, f, col, row) { sec.appendChild(f); f.x = CFG.grid.col0 + col * CFG.grid.step; f.y = row === 2 ? CFG.grid.row2 : CFG.grid.row1; return f; }
 function screenName(s) { return s.ad === 'native-full' ? s.name + ' - Native Full' : s.name; }
-async function fromMaster(key, name) { const m = await G(CFG.masters[key]); const f = m.clone(); f.name = name; return f; }
+async function fromMaster(key, name) { const sec = await G(CFG.baseSection); const m = sec.findOne(n => n.type === 'FRAME' && n.name === CFG.base[key]); const f = m.clone(); f.name = name; const old = f.findChild(n => n.name === 'Ad / Native 272'); if (old) old.remove(); return f; }
 function emptyScreen(name) { const f = figma.createFrame(); f.name = name; f.resize(360, 800); f.clipsContent = true; f.fills = [h.solid('#0B0B0F')]; return f; }
 
 const BUILD = {

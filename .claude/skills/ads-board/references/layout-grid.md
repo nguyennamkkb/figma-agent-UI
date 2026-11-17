@@ -1,8 +1,8 @@
 # Layout grid
 
 ## Page
-- Sections stacked vertically, x = 0, gap 400: `Legend`, `Ads Kit · components`, `Version matrix`, then versions oldest → newest. A new version goes under the last one; nothing else moves.
-- Version section: width = `200 + columns × 440 + 160` (min 6480), height 2504 (+1200 if an off-flow sub-section is needed).
+- Sections stacked vertically, gap 400: the Ads Kit (no masters, no Legend on the canvas), then versions oldest → newest. A newer version goes under the last one; an older or in-between one is inserted at its place and the later sections move down. The optional Version matrix (`/ads-board matrix`) goes between the kit and the versions.
+- Version section: width = `200 + columns × 440 + 160` (min 6480), height 2504; 3104 when it has notes (notes at y 2404); +1200 more for an off-flow sub-section.
 
 ## Version section
 ```
@@ -34,6 +34,7 @@ For column i, by the row-1 screen's `ad`:
 - Created with `render_tree` connector, one call each, `parentId` = version section, `RIGHT → LEFT` magnets.
 - Row 1: between consecutive screens; label from `edges` (`7s`, `Tap`, `Next`, `Swipe`, `Loaded`), set afterwards with `execute_code` (`c.text.characters`).
 - Row 2: between consecutive existing screens, skipping empty columns (the arrow crosses the gap); name prefix `No Ads ·`, no label.
+- `branches`: one extra arrow per branch from the `from` screen's BOTTOM to the `to` screen's BOTTOM (elbow under row 1), label = condition; the main row keeps the default path.
 - State changes of one screen (e.g. Loading → All Set) are consecutive columns, never a vertical arrow.
 
 ## Notes and off-flow

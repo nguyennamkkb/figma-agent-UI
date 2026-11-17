@@ -6,7 +6,7 @@ screens:
   - { code: "102",  name: "102 - Inter Splash",      type: inter,       ad: inter }
   - { code: "201",  name: "201 - LFO1",              type: lang-empty,  ad: native, layout: Header-Media-CTA }
   - { code: "202",  name: "202 - LFO2",              type: lang-picked, ad: native, layout: Header-Media-CTA }
-  - { code: "301",  name: "301 - OB1",               type: onboarding,  ad: native, layout: Header-CTA-Media, content: ob1 }
+  - { code: "301",  name: "301 - OB1",               type: onboarding,  ad: native, layout: Header-CTA-Media, content: ob1, footer: true }
   - { code: "302a", name: "302a_NoAds - OB2a",       type: onboarding,  ad: none,   content: ob2 }
   - { code: "302b", name: "302b_NoAds - OB2b",       type: onboarding,  ad: none,   content: ob3 }
   - { code: "302c", name: "302c - OB2c",             type: native-full, ad: native-full, close: Top-left }

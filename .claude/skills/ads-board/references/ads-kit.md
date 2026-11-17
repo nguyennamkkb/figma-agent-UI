@@ -10,7 +10,7 @@ Built once per file; every version section only uses instances and clones from h
 | `Ad / Banner` | 360×64: icon, Ad tag, title, CTA pill | |
 | `Ad / Native Full` (set, prop `Close`) | `Top-left`: media fills, info block at the bottom, close + Ad tag absolute. `None · CTA top`: info on top, media below, swipe hint | Nothing touches the frame edge: 16 side padding |
 | `Ad / Interstitial` | grey `#4A4A4A`, centred `title` (prop `Title`) + `unit` line (prop `Unit`, shows the screen name) | Placeholder only, no fake ad art |
-| `Ads Kit · screen masters` | one master frame per archetype (`archetypes.md`), ad and no-ads variant | Masters use the app's components (Top bar, Button, Pager) |
+| Base screens (not in the Kit) | the app's real screens of the flow, listed in `rules.md` → "Base screens" (e.g. page 05, FL-01) | The builder clones them **by frame name**, never a version section and never a separate master, so the board follows the app design and version sections can be deleted and rebuilt |
 | Token `Semantic/ad/cta` | CTA fill of every ad, a slightly darker tone of the app's primary button | Labels use `text/on-accent` |
 
 ## Adding to the Kit

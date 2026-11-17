@@ -12,7 +12,7 @@ import argparse, re, sys
 
 import yaml
 
-FIELDS = ('type', 'ad', 'layout', 'close', 'content')
+FIELDS = ('type', 'ad', 'layout', 'close', 'content', 'footer')
 
 
 def main():

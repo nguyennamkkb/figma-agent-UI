@@ -17,6 +17,8 @@ screens:                    # row 1 order = user path with ads
   - { code: "306",  name: "306 - Onboarding Inter", type: inter,       ad: inter }
 edges:                      # labels only; arrows always follow the screens order
   - { from: "101 - Splash", to: "102 - Inter Splash", label: "7s" }
+branches:                   # conditional paths (remote config, A/B): drawn as an extra arrow, label = condition
+  - { from: "301 - OB1", to: "302b", label: "RC Off", skips: ["302a"] }
 offFlow:                    # drawn in the image but not on the path → sub-section, never in row 1
   - { name: "308 - OB7 · Theme", type: custom, ad: native, layout: Header-CTA }
 notes:                      # inconsistencies and decisions, shown as a yellow note
@@ -29,10 +31,12 @@ notes:                      # inconsistencies and decisions, shown as a yellow n
 | `code` | screen code as written in the flow (`101`, `302a`, `C2B`); may repeat (two states of one screen, a fallback show) |
 | `name` | exact frame name; unique inside the version; `edges` refer to it |
 | `type` | `splash`, `inter`, `lang-empty`, `lang-picked`, `onboarding`, `native-full`, `loading`, `all-set`, `custom` (built by hand from the wireframe; extend `archetypes.md` before reusing it) |
-| `ad` | `none`, `banner`, `native`, `native-full`, `inter` |
+| `ad` | `none`, `banner`, `native`, `native-full`, `inter`, `app-open` (app open ad, shown with the Interstitial placeholder titled "App Open Ads"; "App Open / Inter Ads" when either can show) |
 | `layout` | Native variant: `Header-CTA-Media`, `Header-Media-CTA`, `CTA-Media`, `CTA-Media-Header`, `Header-CTA` |
 | `close` | Native Full variant: `Top-left`, `None · CTA top` |
 | `content` | content key defined in the project's `rules.md` (background image, art) |
+| `pager` | step shown on this page when it differs from the default order |
+| `footer` | `true` when the onboarding wireframe puts pager + Next below the ad block (otherwise they sit above it) |
 
 ## Writing a spec from an image
 Read `wireframes/<version>.png` (zoom into parts with an image crop when the text is small) and fill the spec:
