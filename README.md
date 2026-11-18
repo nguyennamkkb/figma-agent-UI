@@ -28,7 +28,7 @@ Lệnh này cài bản mới nhất của nhánh `main`. Muốn ghim một phiê
 
 Lệnh này chạy được trên macOS, Windows và Linux, và làm 3 việc:
 - copy plugin ra `~/.figma-agent/plugin/` (Windows: `%USERPROFILE%\.figma-agent\plugin\`)
-- cài 5 skill vào thư mục skill **global** của Claude Code (`~/.claude/skills/`), OpenCode (`~/.config/opencode/skills/`) và agent chung (`~/.agents/skills/`, Codex đọc thư mục này); skill cũ cùng tên bị thay bằng bản mới, và skill đã gộp/thay thế (`app-asset-generator`, `generating-oneshot-image-prompts`, `ios-style-screen-creator`) bị xoá
+- cài 9 skill vào thư mục skill **global** của Claude Code (`~/.claude/skills/`), OpenCode (`~/.config/opencode/skills/`) và agent chung (`~/.agents/skills/`, Codex đọc thư mục này); skill cũ cùng tên bị thay bằng bản mới, và skill đã gộp/thay thế (`app-asset-generator`, `generating-oneshot-image-prompts`, `ios-style-screen-creator`) bị xoá
 - thêm MCP server `figma-agent` vào Claude Code (user scope), OpenCode (`~/.config/opencode/opencode.json`) và Codex (`~/.codex/config.toml`, hoặc `$CODEX_HOME/config.toml`), mỗi file đều có backup `.bak`; trên Windows lệnh tự dùng `cmd /c npx`
 
 Lần chạy đầu mất vài chục giây vì phải tải và build.
@@ -132,7 +132,7 @@ Mọi tool nhận `page` (id/tên) để chạy trên page đó rồi trả page
 
 **Figma Slides:** agent đọc và dựng slide trong deck Slides. 7 tool chỉ dành cho Design bị từ chối (`set_interactions`, `annotate`, `set_dev_status`, `bind_variables`, `create_component_set`, `stress_test`, `render_foundations`); variables, styles và token (`create_variables`, `create_styles`, `import_tokens`, `export_tokens`, `get_design_system`, `search_design_system`) vẫn dùng được. Chi tiết: `specs/002-slides-integration/`.
 
-**Skill:** repo kèm 5 skill trong `.claude/skills/`, được `install` cài global:
+**Skill:** repo kèm 9 skill trong `.claude/skills/`, được `install` cài global:
 
 | Skill | Dùng cho |
 |---|---|
@@ -143,6 +143,8 @@ Mọi tool nhận `page` (id/tên) để chạy trên page đó rồi trả page
 | `style-direction` | chọn phong cách cho app iOS/Android: từ tên phong cách, ảnh tham chiếu hoặc brief; đo DNA có mức tin cậy (`scripts/extract_palette.py`), 3 hướng Safe/Balanced/Bold, xuất Style brief + `tokens.json` (thay `ios-style-screen-creator`) |
 | `icon-libraries` | tìm và tải icon mã nguồn mở Phosphor (1.512 × 6 weight) và Tabler (5.491, outline + filled), MIT, theo tên/từ khoá bằng `scripts/icons.py`: SVG ra file hoặc markup để dán vào Figma, không cần trình duyệt hay API key (thay `phosphor-icons`) |
 | `ads-board` | dựng trang Ads trên Figma theo từng phiên bản luồng: mỗi bản 1 section, hàng có quảng cáo + hàng không quảng cáo thẳng cột, Ads Kit dùng chung; nguồn nằm trong skill `sources/<flow>/` (`rules.md`, spec YAML, ảnh wireframe; kèm sẵn First Open V1.7–V2.0), `scripts/spec_diff.py` so 2 phiên bản |
+| `app-redesign` | làm lại giao diện app đã có mà giữ nguyên chức năng: `start <mục tiêu>` / `build [FL-NN]` / `audit [FL-NN]` trên bản sao đã xác nhận, quét baseline trước khi sửa, kiểm tra không thiếu màn, trạng thái, liên kết, quảng cáo, CTA, ảnh hero (`scripts/scan.js`, `analyze.py`, `parity.py`) |
+| `ui-visual` | tạo visual UI chuyên nghiệp (banner, popup có header minh hoạ, hero, thumbnail, coupon, topic card): `clone <ref> [L1–L4]` sao chép có kiểm soát mức thay đổi, `create <brief>`, `extract <ref>`; đo mẫu bằng `scripts/decode.js`, tính tỷ lệ cho slot mới bằng `ratios.py`, sinh từng mảnh bằng `gemini-image-mcp` + `asset-generator`, ghép lớp bằng `compose.js` (filter ảnh, blend, mask, glow, viền kính, phá khung), kiểm tra bằng 12 bài QA |
 
 Ví dụ DSL: `examples/fintech-wallet.json` (dán vào ô *Test render_tree locally* trong plugin để thử không cần agent).
 

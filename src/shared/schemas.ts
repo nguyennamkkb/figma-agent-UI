@@ -426,6 +426,10 @@ export const ExecuteCodeInput = z.object({
     .string()
     .describe('Body of an async function. Globals: figma, h (helpers). Use top-level await and `return`.'),
   timeoutMs: z.number().int().min(1000).max(300000).default(30000),
+  savePath: z
+    .string()
+    .optional()
+    .describe('Absolute .json path: the server writes the returned value there (no size limit) and replies with a short summary instead of the value'),
 });
 
 export const AuditInput = z.object({

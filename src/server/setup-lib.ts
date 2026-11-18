@@ -11,6 +11,8 @@ export const BUNDLED_SKILLS = [
   'style-direction',
   'icon-libraries',
   'ads-board',
+  'app-redesign',
+  'ui-visual',
 ] as const;
 export const RETIRED_SKILLS = [
   'phosphor-icons',
