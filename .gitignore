@@ -18,3 +18,5 @@ code.js
 /generated-images/
 .gstack/
 __pycache__/
+
+redesign/
