@@ -21,6 +21,44 @@ Minimum change: another identity + one background detail + the accent colours. L
 5. Side by side on Explore: `source | new` frames with the screen code as title; ask the user ◆.
 6. Approved → place it into the hero layer's fill (keep the node, change the image), add the entry to `image-map.json` with `approved: true` and the new hash (read it back with `get_node`).
 
+## Onboarding images — the fade-bottom template (mandatory)
+
+Model: `examples/onboarding-fade-reference.png` (720×1160, tall portrait). The fade is **generated inside the image**: never crop a finished image and add an alpha ramp afterwards (rejected 2026-11-18).
+
+What the model image does, and every onboarding image must do:
+
+| Band (of the height) | Content |
+|---|---|
+| 0–90 % | the scene at full detail down to 90 %: main subject in the upper two thirds, a foreground element pushing toward the camera (hand, card, object), a background in action with depth (debris, light, haze), lower parts (body, ground, props) still detailed |
+| 90–100 % | short fade: the scene dissolves smoothly into the screen background colour, reaching it at the very bottom edge |
+
+The fade band is **10 % of the height, no more** (user, 2026-11-18: a 35 % fade left the open zone too long). Smooth (no hard line, no band); the colour it fades to is the screen background (dark apps: near-black; Mist-type light apps: the `bg/canvas` hex).
+
+### Prompt template (fill the brackets, keep the order)
+
+```
+[Medium: hyperrealistic cinematic photo | glossy 3D render], tall vertical portrait 9:16.
+[Main subject] [doing the feature's action], with a clear [emotion], placed in the upper two thirds of the frame.
+Foreground: [element] pushing toward the camera with strong wide-angle perspective.
+Background: [scene in action that tells the feature], depth with [particles / light streaks / haze], [warm light] against [cool light].
+Palette: [hex values of the direction].
+Bottom fade: the scene stays fully detailed down to 90 percent of the image height; only the lowest 10 percent fades smoothly into a solid [background name] [#hex], reaching plain [#hex] exactly at the bottom edge, no hard edge, no band.
+```
+
+With a source image (redesign): start with "Recreate the reference image faithfully: same composition, same subject, same text, same quality. Change only: …", then the Palette and Bottom fade lines. The source decides the subject; the template decides the fade and the bottom zone.
+
+### One image for the Ads and the No Ads version
+
+Each onboarding page has **one** image used by both versions; never generate a separate Ads image.
+
+1. Source: the **full, uncropped** artwork of the page (export the separated Thumb/image layer, not the cropped hero of one version).
+2. Generate at 9:16 with the template above.
+3. Measure where the detail ends (last row with luminance std > 6; models land between 70 and 95 %, not exactly 90). Place the same hash in both versions, fill mode FILL, 360×640, `y = min(0, title.y − detailEnd × 640 − 8)`: the detail stops just above the title. Hide the old `Fade` layer.
+4. Wrap the hero in a group with an alpha mask (`Hero fade mask`, linear gradient opaque to 90 %, transparent at 100 %) so the image edge melts into the screen's own background (the screen background is not a flat colour, a bare image edge shows a seam).
+5. Check both versions by screenshot: no image detail behind the title or subtitle, no hard edge at the fade, no second status bar from a phone mockup.
+
+Lesson (AI Chatbot, 2026-11-18): full-height images ran behind the No Ads titles, separate Ads images doubled the set, and a crop with an alpha ramp added afterwards was rejected. The user gave the model image: the fade must be part of the generated picture.
+
 Cut-out assets (icons, stickers, mascots) follow asset-generator Part B. User photos, partner logos and screenshots of real products are not regenerated: list their hashes in `image-map.json` → `keep`.
 
 Lesson (AI Cine Video, 2026-11-16): onboarding images made from a new style prompt (dark cinematic gold/teal) were rejected as unattractive; regenerated with the original images as reference they were approved. "Chất liệu giống gốc" means: use the source image as reference.

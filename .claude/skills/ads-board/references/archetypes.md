@@ -19,4 +19,5 @@ Each `type` maps to a **base screen** of the app (`rules.md` → "Base screens",
 ## Shared screen rules
 - Status bar on every screen; bottom CTA at y 724 (52 tall, 24 from the bottom).
 - An ad never overlaps the bottom CTA or the footer; content above an ad never hides behind it (fade, not overlap).
+- Onboarding image: one image per `content` key for both rows, never a separate Ads image. It is generated with the fade-bottom template (scene detailed down to 90 %, only the lowest 10 % fades into the screen background), so the ad row and the no-ads row only change its position (app-redesign `references/imagery.md` → "Onboarding images — the fade-bottom template").
 - A new type: add its base screen to `rules.md` → "Base screens", a row here, and the value to `spec-format.md` before using it in a spec.
