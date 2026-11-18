@@ -21,6 +21,7 @@ Recipes (gradients, inner shadows, band geometry, sizes, states) live in `figma-
 4. Cost appears only on the last button before spending; Disabled shows no cost.
 5. Labels say what happens; a changed label goes into `copyMap` so parity still matches.
 6. Dialogs: max two actions, Secondary + Solid (or Destructive).
+7. Bands drawn by code: copy the paths, opacity and glow of the baseline Purchase button (read its band vectors), and set `strokes = []` — `figma.createVector()` adds a black 1 px stroke by default.
 
 ## 3. Mapping the baseline
 

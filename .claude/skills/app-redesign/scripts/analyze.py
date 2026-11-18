@@ -11,6 +11,8 @@ into <dir> (default: the inventory's folder):
     analysis.md      the same, as tables for the plan and for the user
 
 Junk sections/pages and meta frames (titles, notes) are listed but not analysed.
+Files without Sections: wide title frames (meta, >= 1000 px wide, with text) act as
+sections for the screens below them on the same page.
 Only the Python standard library is used.
 """
 
@@ -99,6 +101,28 @@ def archetype(s):
     return best
 
 
+def assign_banner_sections(inv):
+    banners = [
+        m for m in inv.get("screens", [])
+        if m["kind"] == "meta" and not m.get("junk") and m["w"] >= 1000 and m["h"] <= 400 and m.get("texts")
+    ]
+    known = {sec["id"] for sec in inv.get("sections", [])}
+    for b in banners:
+        if b["id"] not in known:
+            inv.setdefault("sections", []).append(
+                {"id": b["id"], "name": b["texts"][0], "page": b["page"], "parent": None, "junk": False, "x": b["x"], "y": b["y"], "w": b["w"], "h": b["h"], "banner": True}
+            )
+            known.add(b["id"])
+    for s in inv.get("screens", []):
+        if s.get("sectionId") or s["kind"] != "screen":
+            continue
+        above = [b for b in banners if b["page"] == s["page"] and b["y"] <= s["y"] and s["x"] >= b["x"] - 200]
+        if above:
+            b = max(above, key=lambda x: x["y"])
+            s["sectionId"], s["section"] = b["id"], b["texts"][0]
+    return inv
+
+
 def section_order(sections):
     order = {}
     for i, sec in enumerate(sorted(sections, key=lambda x: (x["page"], x["y"], x["x"]))):
@@ -170,6 +194,7 @@ def main():
     a = ap.parse_args()
     inv_path = Path(a.inventory)
     inv = json.loads(inv_path.read_text())
+    assign_banner_sections(inv)
     out_dir = Path(a.out) if a.out else inv_path.parent
     out_dir.mkdir(parents=True, exist_ok=True)
 

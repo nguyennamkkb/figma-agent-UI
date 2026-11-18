@@ -30,7 +30,7 @@ from pathlib import Path
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from analyze import archetype, features, jaccard, signature, words  # noqa: E402
+from analyze import archetype, assign_banner_sections, features, jaccard, signature, words  # noqa: E402
 
 STRICT_FEATURES = {"Loading", "Toast", "Dialog", "Downloading", "Saved", "Empty", "Sheet"}
 PAY_LABEL = re.compile(r"purchase|buy|subscribe|start (free )?trial|unlock|go premium|get pro|upgrade|pay\b", re.I)
@@ -89,6 +89,8 @@ def main():
     cur = load(a.current)
     if not base or not cur:
         sys.exit("baseline or current inventory not found")
+    assign_banner_sections(base)
+    assign_banner_sections(cur)
     smap = load(a.map) or {}
     imap = load(a.images) or {}
     copy_map = smap.get("copyMap", {})

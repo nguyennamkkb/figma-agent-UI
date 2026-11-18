@@ -48,7 +48,7 @@ Missing points that change the result (feel, audience, references): ask up to 3 
 2. Review the draft — the script groups by text similarity; you decide:
    - families (one screen + states): merge or split where the script is wrong; give each state a clear name (`Default`, `Filled`, `Loading`, `Toast · Empty photo`…);
    - archetypes (`archetypes.md`): fix misclassified ones; check the **mandatory states** of each archetype and list the ones the baseline itself lacks (do not invent them; propose them in the plan);
-   - flows: one section of the baseline = one flow `FL-NN`; reorder by the user journey (splash/onboarding first, settings last); a section mixing functions → propose a split;
+   - flows: one section of the baseline = one flow `FL-NN` (files without Sections: `analyze.py` uses the wide title frames — meta, ≥ 1000 px, with text — as sections for the screens below them on the same page); reorder by the user journey (splash/onboarding first, settings last); a section mixing functions → propose a split;
    - edges: connectors and prototype links; where none exist, read the order of frames and the CTA labels.
 3. Look at the baseline: one `screenshot` per flow section (scale small) and the main screens. Note the diagnosis (`archetypes.md` §3).
 4. Edit `screen-map.json` by hand (codes, proposed names, `flow`). Keep it the single source of truth for names.
