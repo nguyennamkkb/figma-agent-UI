@@ -29,10 +29,10 @@ Range −1…1. Grade every AI picture so the set reads as one.
 
 ## §3 Light
 
-- **Glow** [`glow`]: ellipse, colour = palette light tone, opacity 0.5, LINEAR_DODGE, blur = **0.67 × diameter**. Place behind the subject or under the title.
+- **Glow** [`glow`]: ellipse, colour = palette light tone, opacity 0.5, LINEAR_DODGE, blur = **0.67 × diameter**. Place behind the subject or under the title. Inside a shaped card (tab header, ticket) the frame clip is only a rounded rect: group the glow with an ALPHA-mask clone of the card shape, or the blur lights the transparent corners.
 - **Big haze** [`glow` with `height`]: ellipse ≈ 0.8 × frame width, opacity 0.48, LINEAR_DODGE, blur 0.3–0.4 × width. Two stacked (cyan + deep blue) = studio light.
 - **Beam** [`beam`]: rect w ≈ 0.22 × frame width, h ≈ 1 × frame height, gradient colour → transparent at 0.88, opacity 0.3–0.8, LINEAR_DODGE, blur ≈ 0.3 × w, rotate ±1–3° for a fan.
-- **Sparkle** [`sparkle`]: 4-point star, inner radius 0.22, radial white (0.06) → black (1), SCREEN; size 3–6% of frame width; 3–5 per visual, never symmetric.
+- **Sparkle** [`sparkle`]: 4-point star, inner radius 0.22, radial white (0.06) → black (1), SCREEN; size 3–6% of frame width; 3–5 per visual, never symmetric. SCREEN only shows over mid/dark colour: on a light theme or a white half, use a tinted solid star in NORMAL (palette lavender, or gold near a crown/coin).
 - **Streaks**: 1 px wide vertical lines 30–135 px, COLOR_DODGE, scattered = data / speed feel.
 - **Fade to page** [`fade`]: 9 eased alpha stops 0 → 1 from `start` (0.8 = only the last 20%), colour = page background.
 
