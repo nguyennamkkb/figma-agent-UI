@@ -157,6 +157,7 @@ Read `references/creative-process.md` sections 7–8.
 1. Prototype the main flow first, secondary branches later. Use interactive components for micro-interactions (toggle, tab, accordion) so you don't have to wire every screen.
 2. Use variables + conditional logic when the prototype needs state (cart, login, counter).
 3. Motion (Smart Animate / Figma Motion): every animation has a reason — guidance, feedback, or spatial continuity. Duration and easing come from motion tokens. Always provide a Reduce Motion alternative.
+4. If the deliverable is a Lottie/dotLottie asset, continue with the `lottie-motion` skill after the Figma motion is approved: spec, export, audit, runtime QA and handoff.
 
 ### Stage 7 — QA → *gate*
 

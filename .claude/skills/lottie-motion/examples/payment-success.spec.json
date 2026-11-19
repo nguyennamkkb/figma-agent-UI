@@ -1,0 +1,72 @@
+{
+  "name": "Payment success",
+  "width": 390,
+  "height": 700,
+  "fps": 60,
+  "duration_ms": 700,
+  "background": "#F0FDF4",
+  "layers": [
+    {
+      "name": "Background",
+      "type": "rect",
+      "x": 0,
+      "y": 0,
+      "width": 390,
+      "height": 700,
+      "fill": "#F0FDF4",
+      "opacity": [
+        { "at": 0, "value": 0, "easing": "ease_out" },
+        { "at": 150, "value": 1 }
+      ]
+    },
+    {
+      "name": "Icon",
+      "type": "ellipse",
+      "x": 147,
+      "y": 180,
+      "width": 96,
+      "height": 96,
+      "fill": "#22C55E",
+      "scale": [
+        { "at": 100, "value": 0.8, "easing": "ease_out" },
+        { "at": 350, "value": 1 }
+      ],
+      "opacity": [
+        { "at": 100, "value": 0, "easing": "ease_out" },
+        { "at": 350, "value": 1 }
+      ]
+    },
+    {
+      "name": "Title",
+      "type": "text",
+      "text": "Payment sent",
+      "font": "Inter",
+      "font_size": 28,
+      "x": 80,
+      "y": 300,
+      "fill": "#111827",
+      "translate_y": [
+        { "at": 250, "value": 24, "easing": "ease_out" },
+        { "at": 450, "value": 0 }
+      ],
+      "opacity": [
+        { "at": 250, "value": 0, "easing": "ease_out" },
+        { "at": 450, "value": 1 }
+      ]
+    },
+    {
+      "name": "Description",
+      "type": "text",
+      "text": "Your transfer is on the way.",
+      "font": "Inter",
+      "font_size": 16,
+      "x": 60,
+      "y": 344,
+      "fill": "#111827",
+      "opacity": [
+        { "at": 350, "value": 0, "easing": "ease_out" },
+        { "at": 550, "value": 1 }
+      ]
+    }
+  ]
+}

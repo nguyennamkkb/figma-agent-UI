@@ -1,0 +1,129 @@
+motion_id: MOT-012
+name: Payment success
+category: feedback
+platforms:
+  - ios
+  - android
+  - web
+format: lottie
+purpose: Confirm a successful transfer without stealing focus from the receipt.
+
+figma:
+  file: "<file name>"
+  page: "<page>"
+  frame: "<top-level frame>"
+  top_level_frame_required: true
+
+trigger:
+  type: screen_enter
+  target: success_screen
+  delay_ms: 0
+
+initial_state:
+  screen: visible
+  background_opacity: 0
+  icon_opacity: 0
+  title_opacity: 0
+  description_opacity: 0
+
+final_state:
+  background_opacity: 1
+  icon_opacity: 1
+  title_opacity: 1
+  description_opacity: 1
+
+animation:
+  duration_ms: 700
+  fps: 60
+  canvas:
+    width: 390
+    height: 700
+  loop: false
+  playback: once
+  easing: ease_out
+  tokens:
+    duration_fast: 150
+    duration_normal: 250
+    duration_slow: 400
+    easing_standard: ease_out
+  choreography:
+    - target: Background
+      property: opacity
+      from: 0
+      to: 1
+      start_ms: 0
+      end_ms: 150
+      easing: ease_out
+    - target: Icon
+      property: scale
+      from: 0.8
+      to: 1
+      start_ms: 100
+      end_ms: 350
+      easing: ease_out
+    - target: Icon
+      property: opacity
+      from: 0
+      to: 1
+      start_ms: 100
+      end_ms: 350
+      easing: ease_out
+    - target: Title
+      property: translate_y
+      from: 24
+      to: 0
+      start_ms: 250
+      end_ms: 450
+      easing: ease_out
+    - target: Title
+      property: opacity
+      from: 0
+      to: 1
+      start_ms: 250
+      end_ms: 450
+      easing: ease_out
+    - target: Description
+      property: opacity
+      from: 0
+      to: 1
+      start_ms: 350
+      end_ms: 550
+      easing: ease_out
+
+budgets:
+  max_size_kb: 500
+  max_layers: 100
+  max_keyframes: 500
+
+lottie:
+  source: figma_motion
+  raw_path: assets/payment-success.json
+  dotlottie_path: assets/payment-success.lottie
+  text_strategy: outline
+  images: none
+  unsupported_features: []
+
+interruption:
+  allow_interrupt: false
+  preserve_state: true
+  prevent_replay: true
+
+accessibility:
+  reduce_motion: replace with a single 150 ms cross-fade
+  essential_info_in_motion: false
+  screen_reader_announcement: Transfer sent
+
+implementation:
+  preferred: lottie
+  fallback: native
+  lottie_runtime: lottie-ios 4.x / lottie-android 6.x / lottie-web 5.x
+  notes: Keep the final frame equal to the static success screen.
+
+qa:
+  - audit_lottie
+  - compare_frames_0_25_50_75_100
+  - verify_loop_boundary
+  - verify_reduce_motion
+  - verify_ios
+  - verify_android
+  - verify_web
