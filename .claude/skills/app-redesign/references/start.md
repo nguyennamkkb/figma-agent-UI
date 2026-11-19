@@ -1,4 +1,4 @@
-# `/app-redesign start <redesign goal>`
+# `/app-redesign start <redesign goal> [L1|L2|L3|L4]`
 
 Goal: understand the app completely, then show the user where it can go. **No variables, styles or components of the file are created or changed in this command**; it adds the pages `06 · Explore (WIP)` (if missing) and `Archive · Before redesign`, and draws 3 screens on Explore.
 
@@ -23,7 +23,7 @@ Create `redesign/<app-slug>/project.md` (template in `data-format.md`) with the 
 
 ## 2. Read the redesign goal
 
-The text after `start` is free. Split it into five points and write them in `project.md` → *Redesign goal*:
+The text after `start` is free; a trailing `L1`–`L4` is the change level. Split the rest into five points and write them in `project.md` → *Redesign goal*:
 
 | Point | Examples |
 |---|---|
@@ -34,6 +34,8 @@ The text after `start` is free. Split it into five points and write them in `pro
 | Constraints | keep brand colour, dark only, keep illustrations, platform |
 
 Missing points that change the result (feel, audience, references): ask up to 3 short questions in one `AskUserQuestion`. "Tùy bạn" → decide from the app itself and mark it *assumption* in the plan.
+
+**Change level** (`levels.md` §2): explicit `L1`–`L4` wins; otherwise infer it from the goal, default **L2**, and mark it *assumption*. A goal that mixes areas ("đổi màu toàn app, làm lại Onboarding") gets a project level plus per-flow overrides. Write `Level:` in `project.md`; the level is confirmed at the gate in §6, not asked separately here.
 
 ## 3. Baseline scan
 
@@ -57,15 +59,15 @@ Missing points that change the result (feel, audience, references): ask up to 3 
 
 1. Measure the current style (colours, type, radius, density, imagery) from screenshots and `get_design_system`.
 2. With a reference image or named style: run **style-direction** to decode its DNA.
-3. Propose 2–3 directions scored against the goal: **A** follows the goal literally, **B** safer, **C** bolder. For each: palette (hex), type pair, radius/elevation, imagery treatment, CTA look, what it fixes from the diagnosis, risk.
+3. Propose 2–3 directions scored against the goal, **all inside the chosen level** (`levels.md` §3: at L1 they differ in palette and type only, at L2 in components and imagery on the same layouts, at L3 in layouts, at L4 in concept): **A** follows the goal literally, **B** safer, **C** bolder. A direction that needs a higher level is shown as a note ("needs L3"), not drawn. For each: palette (hex), type pair, radius/elevation, imagery treatment, CTA look, what it fixes from the diagnosis, risk.
 4. Write `redesign/<app>/plan.md` from `plan-template.md` (in the user's language).
 
 ## 6. Three main screens ◆
 
 1. Pick 3 screens that carry the app: usually **Home**, the **core creation/setup** screen, and the **Paywall** (else the most-used screen per archetype).
-2. On `06 · Explore (WIP)` create a Section `Direction A · <name>` and build the 3 screens with figma-ui-flow's build loop (Sketch mode): same content and functions as the baseline frames; local colours and text (no variables/styles/components created), auto layout, real copy.
-3. Images: generate the needed hero images **from the baseline image as reference** (`imagery.md`), one at a time.
+2. On `06 · Explore (WIP)` create a Section `Direction A · <name>` and build the 3 screens with figma-ui-flow's build loop (Sketch mode): same content and functions as the baseline frames; local colours and text (no variables/styles/components created), auto layout, real copy. **L1**: clone the 3 baseline frames into the section and recolour them (fills, text styles, radius, effects only). **L2**: rebuild on each baseline frame's skeleton (same blocks, same order). **L3/L4**: rebuild freely; at L4 put a short IA note (merged/split screens, moved entry points) beside the screens.
+3. Images: L1 keeps the baseline images. L2–L4: generate the needed hero images **from the baseline image as reference** (`imagery.md`, treatment of the level), one at a time.
 4. Directions B/C: one screen each (Home) or a moodboard frame, to compare.
-5. Screenshot the 3 screens, show them with the plan summary, ask the user to pick/adjust. Update `project.md` `Status: start/done — direction <X> approved` only after the user says so.
+5. Screenshot the 3 screens, show them with the plan summary **and the change level** (one line: what it keeps, what it changes, per-flow overrides), ask the user to confirm the level and pick/adjust a direction. A level change here redraws the main screens. Update `project.md` `Status: start/done — level <Ln>, direction <X> approved` only after the user says so.
 
 Next command: `/app-redesign build`.

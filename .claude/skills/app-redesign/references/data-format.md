@@ -9,7 +9,8 @@ All files live in `redesign/<app-slug>/` at the repo root (not in the skill).
 
 - Working file: "<Figma file name>" (confirmed <date>; the copy, not the original)
 - Screen pages: <page names scanned for the baseline>
-- Status: start/1 file confirmed | start/done — direction <X> approved | build | handed off
+- Level: L1 | L2 | L3 | L4 (references/levels.md; "assumption" until approved)
+- Status: start/1 file confirmed | start/done — level <Ln>, direction <X> approved | build | handed off
 - foundations: todo | done (components: Button <id>, …; collections: …)
 
 ## Redesign goal
@@ -24,9 +25,9 @@ All files live in `redesign/<app-slug>/` at the repo root (not in the skill).
 | Constraints | … | |
 
 ## Flows
-| Flow | Section (current) | Status | Notes |
-|---|---|---|---|
-| FL-01 · Splash, Onboarding, IAP | <id> | todo / review / done | |
+| Flow | Section (current) | Level | Status | Notes |
+|---|---|---|---|---|
+| FL-01 · Splash, Onboarding, IAP | <id> | = project / L1–L4 | todo / review / done | |
 
 ## Decisions
 - <date> — <decision> (user)
@@ -57,10 +58,13 @@ All files live in `redesign/<app-slug>/` at the repo root (not in the skill).
 ## screen-map.json (analyze.py draft, edited by hand and by build)
 
 ```
-{ "sections": { "<baseline section name>": "<current section name>" },
+{ "level": "L2",                       project level (copied from project.md; parity.py reads it)
+  "levels": { "FL-03": "L1" },           per-flow overrides
+  "sections": { "<baseline section name>": "<current section name>" },
   "screens": [ { "baselineId", "baselineName", "baselineSection", "flow": "FL-03",
                  "archetype", "code": "SCR-12", "proposedName": "SCR-12 · AI Video Setup · Empty",
                  "currentId": null | "<node id>", "status": "todo|built|shared|dropped", "note": "" } ],
+                 L1: currentId = baselineId (restyled in place). L4 merge: status "shared", note "merged into <code>".
   "extras": [ "<current node id>" | { "id", "why" } ],
   "copyMap": { "<baseline text>": "<new text>" } }
 ```
@@ -77,4 +81,4 @@ All files live in `redesign/<app-slug>/` at the repo root (not in the skill).
 
 ## analysis.json / parity.json
 
-Written by the scripts; read them, do not edit. `parity.json.results[].verdict` ∈ covered, shared, elsewhere, duplicate, dropped, missing; `issues[].code` per `audit.md` §2.
+Written by the scripts; read them, do not edit. `parity.json.results[].verdict` ∈ covered, shared, elsewhere, duplicate, dropped, missing; `results[].level` and `results[].order` (text order agreement, L1/L2 only); `issues[].code` per `audit.md` §2.

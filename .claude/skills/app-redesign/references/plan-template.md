@@ -10,6 +10,8 @@ Write it in the user's language. One file, 8 parts, approved at the end of `star
 ## 1. Mục tiêu và tóm tắt
 - Mục tiêu (nguyên văn): > …
 - 5 ý: cảm giác · người dùng · mục tiêu kinh doanh · tham chiếu · ràng buộc (ghi "giả định" nếu tự suy ra)
+- Mức thay đổi: L1 đổi màu · L2 làm mới (giữ bố cục) · L3 đổi bố cục · L4 làm mới toàn bộ — mức chọn, lý do, luồng nào khác mức chung
+  | Mức | Giữ nguyên | Được đổi | Ảnh hero |
 - Quy mô: <n> màn, <n> trạng thái, <n> luồng, <n> dạng màn, <n> liên kết; ước lượng <n> phiên build
 
 ## 2. Kiểm kê
@@ -20,7 +22,7 @@ Sơ đồ luồng chính (mermaid hoặc danh sách cạnh)
 (archetypes.md §3: rác, tên, màn ảnh phẳng, design system, CTA, copy, trạng thái thiếu, liên kết, quảng cáo)
 
 ## 4. Hướng giao diện
-| | A · bám mục tiêu | B · an toàn | C · táo bạo |
+| | A · bám mục tiêu | B · an toàn | C · táo bạo |   (cả 3 hướng nằm trong mức đã chọn)
 | Bảng màu (hex) | Chữ | Bo góc / đổ bóng | Ảnh | CTA | Sửa được gì | Rủi ro |
 Hướng đề xuất: … · 3 màn main: <tên> (page Explore, section …)
 Ảnh: bảng gốc → mới (giữ / đổi gì) cho các ảnh hero
@@ -30,7 +32,7 @@ Hướng đề xuất: … · 3 màn main: <tên> (page Explore, section …)
 - Bảng CTA: nút gốc (màn · nhãn) → loại (Purchase / Generate / Primary / Solid / Destructive / Secondary / Text)
 
 ## 6. Kế hoạch theo luồng
-| Thứ tự | Luồng | Màn mẫu | Trạng thái nhân bản | Màn dùng chung | Trạng thái đề xuất thêm | Rủi ro |
+| Thứ tự | Luồng | Mức | Màn mẫu | Trạng thái nhân bản | Màn dùng chung | Gộp/tách (L4) | Trạng thái đề xuất thêm | Rủi ro |
 
 ## 7. Nghiệm thu
 Kết quả `audit` mới nhất: covered / shared / missing; lỗi CTA; ảnh

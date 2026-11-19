@@ -3,7 +3,7 @@
 Usage:
     python3 parity.py <inventory.baseline.json> <inventory.current.json>
                       [--map screen-map.json] [--images image-map.json]
-                      [--flow FL-03] [--out <dir>]
+                      [--flow FL-03] [--level L1|L2|L3|L4] [--out <dir>]
 
 Both inventories come from scan.js (mode "scan") on the same working file: the baseline
 before any edit, the current one after. screen-map.json (from analyze.py, kept up to date
@@ -18,7 +18,11 @@ Verdict per baseline screen:
     duplicate  identical to another baseline screen
     dropped    removed on purpose (screen-map status "dropped" with a note)
     missing    nothing carries it: must be built
-Plus CTA rules (references/cta-rules.md) and image rules (references/imagery.md).
+Plus CTA rules (references/cta-rules.md), image rules (references/imagery.md) and the
+change-level rules (references/levels.md). The level of a baseline screen is --level when
+given, else screen-map "levels"[flow], else screen-map "level", else L2. L1/L2 screens get
+LVL-LAYOUT when their text order drifts from the baseline (or the height class changes),
+L1 screens get LVL-SIZE and IMG-L1, and IMG-SOURCE is not reported at L1.
 Only the Python standard library is used.
 """
 
@@ -36,6 +40,8 @@ STRICT_FEATURES = {"Loading", "Toast", "Dialog", "Downloading", "Saved", "Empty"
 PAY_LABEL = re.compile(r"purchase|buy|subscribe|start (free )?trial|unlock|go premium|get pro|upgrade|pay\b", re.I)
 DESTRUCTIVE_LABEL = re.compile(r"discard|delete|remove|log ?out|sign ?out|erase", re.I)
 STRONG_VARIANT = re.compile(r"primary|purchase|generate", re.I)
+LEVELS = ("L1", "L2", "L3", "L4")
+ORDER_MIN = {"L1": 0.85, "L2": 0.7}
 
 
 def load(p):
@@ -74,6 +80,32 @@ def score(b, c, copy_map):
     return sc
 
 
+def order_agreement(b, c, copy_map):
+    bt = apply_copy(b.get("texts", []), copy_map)
+    ct = c.get("texts", [])
+    common = set(bt) & set(ct)
+    if len(common) < 3:
+        return None
+    x = [t for t in bt if t in common]
+    y = [t for t in ct if t in common]
+    prev = [0] * (len(y) + 1)
+    for xi in x:
+        row = [0]
+        for j, yj in enumerate(y):
+            row.append(prev[j] + 1 if xi == yj else max(prev[j + 1], row[j]))
+        prev = row
+    return round(prev[-1] / len(common), 2)
+
+
+def height_class(s):
+    return "scroll" if s.get("w") and s.get("h", 0) / s["w"] > 2.6 else "fixed"
+
+
+def norm_level(v):
+    v = (v or "").upper()
+    return v if v in LEVELS else None
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("baseline")
@@ -81,6 +113,7 @@ def main():
     ap.add_argument("--map")
     ap.add_argument("--images")
     ap.add_argument("--flow")
+    ap.add_argument("--level", type=norm_level)
     ap.add_argument("--out")
     ap.add_argument("--threshold", type=float, default=0.3)
     a = ap.parse_args()
@@ -97,6 +130,11 @@ def main():
     pinned = {e["baselineId"]: e for e in smap.get("screens", [])}
     flow_of = {e["baselineId"]: e.get("flow") for e in smap.get("screens", [])}
     extras_ok = {e if isinstance(e, str) else e.get("id") for e in smap.get("extras", [])}
+    project_level = norm_level(smap.get("level")) or "L2"
+    flow_levels = {k: norm_level(v) for k, v in smap.get("levels", {}).items()}
+
+    def level_of(baseline_id):
+        return a.level or flow_levels.get(flow_of.get(baseline_id)) or project_level
 
     b_screens = usable(base)
     c_screens = usable(cur)
@@ -166,6 +204,27 @@ def main():
     extras = [c for c in c_screens if c["id"] not in matched_ids and c["id"] not in extras_ok and (not a.flow or c.get("section") in scope_secs)]
 
     issues = []
+    cur_level = {}
+    for r in results:
+        r["level"] = level_of(r["baseline"]["id"])
+        m = r.get("match")
+        if not m:
+            continue
+        cur_level.setdefault(m["id"], r["level"])
+        b = r["baseline"]
+        if r["level"] in ORDER_MIN:
+            r["order"] = order_agreement(b, m, copy_map)
+            if r["order"] is not None and r["order"] < ORDER_MIN[r["level"]]:
+                issues.append(("LVL-LAYOUT", "warn", m["name"], f'{r["level"]}: text order agreement {r["order"]} with baseline {b["name"]} (min {ORDER_MIN[r["level"]]}): blocks moved'))
+            if height_class(b) != height_class(m):
+                issues.append(("LVL-LAYOUT", "warn", m["name"], f'{r["level"]}: height class {height_class(b)} → {height_class(m)}'))
+        if r["level"] == "L1":
+            if (b.get("w"), b.get("h")) != (m.get("w"), m.get("h")):
+                issues.append(("LVL-SIZE", "warn", m["name"], f'L1: frame {b.get("w")}×{b.get("h")} → {m.get("w")}×{m.get("h")}'))
+            bh = {i["hash"] for i in b.get("images", []) if i.get("hero")}
+            mh = {i["hash"] for i in m.get("images", []) if i.get("hero")}
+            if mh - bh:
+                issues.append(("IMG-L1", "warn", m["name"], "L1 keeps images: a hero image differs from the baseline"))
     scope = [c for c in c_screens if not a.flow or c.get("section") in scope_secs]
     for c in scope:
         arch = archetype(c)
@@ -197,7 +256,7 @@ def main():
         for i in c.get("images", []):
             if not i.get("hero"):
                 continue
-            if i["hash"] in base_hero and i["hash"] not in keep_hashes:
+            if i["hash"] in base_hero and i["hash"] not in keep_hashes and cur_level.get(c["id"]) != "L1":
                 issues.append(("IMG-SOURCE", "warn", c["name"], f"hero still uses the baseline image {i['hash'][:10]}"))
             elif imap.get("images") and i["hash"] not in base_hero and i["hash"] not in approved and i["hash"] not in keep_hashes:
                 issues.append(("IMG-UNAPPROVED", "info", c["name"], f"hero image {i['hash'][:10]} is not an approved entry of image-map.json"))
@@ -213,6 +272,7 @@ def main():
 
     data = {
         "flow": a.flow,
+        "level": a.level or {"project": project_level, "flows": {k: v for k, v in flow_levels.items() if v}},
         "baseline": base.get("scannedAt"),
         "current": cur.get("scannedAt"),
         "counts": counts,
@@ -229,6 +289,8 @@ def main():
                 "of": r.get("of"),
                 "expectedSection": r.get("expectedSection"),
                 "flow": flow_of.get(r["baseline"]["id"]),
+                "level": r.get("level"),
+                "order": r.get("order"),
             }
             for r in results
         ],
@@ -237,15 +299,16 @@ def main():
     }
     (out_dir / "parity.json").write_text(json.dumps(data, ensure_ascii=False, indent=1) + "\n")
 
-    md = [f"# Parity report{' — ' + a.flow if a.flow else ''}", "", f"Baseline {base.get('scannedAt')} · current {cur.get('scannedAt')}", ""]
+    lv = a.level or project_level + (" (overrides: " + ", ".join(f"{k} {v}" for k, v in flow_levels.items() if v) + ")" if any(flow_levels.values()) else "")
+    md = [f"# Parity report{' — ' + a.flow if a.flow else ''}", "", f"Baseline {base.get('scannedAt')} · current {cur.get('scannedAt')} · level {lv}", ""]
     md += ["## Summary", "", "| Verdict | Count |", "|---|---|"]
     for k in ["covered", "shared", "elsewhere", "duplicate", "dropped", "missing"]:
         md.append(f"| {k} | {counts.get(k, 0)} |")
     md.append(f"| extra (current, unmatched) | {len(extras)} |")
     errors = [i for i in issues if i[1] == "error"]
     warns = [i for i in issues if i[1] == "warn"]
-    md.append(f"| CTA/image errors | {len(errors)} |")
-    md.append(f"| CTA/image warnings | {len(warns)} |")
+    md.append(f"| CTA/image/level errors | {len(errors)} |")
+    md.append(f"| CTA/image/level warnings | {len(warns)} |")
     by_sec = {}
     for r in results:
         sec = r["baseline"].get("section") or "(no section)"
@@ -268,7 +331,7 @@ def main():
     if chk:
         md += ["", "## Elsewhere — carried by another flow without a link (add a connector or confirm)", ""]
         md += [f"- {r['baseline']['name']} `{r['baseline']['id']}` → {r['match']['name']} ({r['match'].get('section')}); expected in {r.get('expectedSection')}" for r in chk]
-    md += ["", "## CTA and image issues", ""]
+    md += ["", "## CTA, image and level issues", ""]
     if issues:
         md += ["| Code | Level | Where | Detail |", "|---|---|---|---|"]
         for i in sorted(issues, key=lambda x: ({"error": 0, "warn": 1, "info": 2}[x[1]], x[0])):
