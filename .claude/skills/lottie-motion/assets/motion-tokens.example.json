@@ -1,0 +1,41 @@
+{
+  "duration_ms": {
+    "instant": 100,
+    "fast": 160,
+    "normal": 250,
+    "slow": 400,
+    "emphasis": 600
+  },
+  "duration_s": {
+    "instant": 0.1,
+    "fast": 0.16,
+    "normal": 0.25,
+    "slow": 0.4,
+    "emphasis": 0.6
+  },
+  "easing": {
+    "linear": [0, 0, 1, 1],
+    "standard": [0.2, 0, 0, 1],
+    "decelerate": [0, 0, 0.58, 1],
+    "accelerate": [0.42, 0, 1, 1],
+    "emphasized": [0.05, 0.7, 0.1, 1],
+    "spring_soft": [0.34, 1.56, 0.64, 1]
+  },
+  "distance_px": {
+    "small": 8,
+    "medium": 16,
+    "large": 32
+  },
+  "scale": {
+    "press": 0.96
+  },
+  "opacity": {
+    "hidden": 0,
+    "visible": 1
+  },
+  "units": {
+    "spec": "milliseconds",
+    "figma_timing_variable": "seconds",
+    "conversion": "figma_seconds = spec_ms / 1000"
+  }
+}

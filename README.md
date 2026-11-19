@@ -132,7 +132,7 @@ Mọi tool nhận `page` (id/tên) để chạy trên page đó rồi trả page
 
 **Figma Slides:** agent đọc và dựng slide trong deck Slides. 7 tool chỉ dành cho Design bị từ chối (`set_interactions`, `annotate`, `set_dev_status`, `bind_variables`, `create_component_set`, `stress_test`, `render_foundations`); variables, styles và token (`create_variables`, `create_styles`, `import_tokens`, `export_tokens`, `get_design_system`, `search_design_system`) vẫn dùng được. Chi tiết: `specs/002-slides-integration/`.
 
-**Skill:** repo kèm 9 skill trong `.claude/skills/`, được `install` cài global:
+**Skill:** repo kèm 10 skill trong `.claude/skills/`, được `install` cài global:
 
 | Skill | Dùng cho |
 |---|---|
@@ -145,6 +145,7 @@ Mọi tool nhận `page` (id/tên) để chạy trên page đó rồi trả page
 | `ads-board` | dựng trang Ads trên Figma theo từng phiên bản luồng: mỗi bản 1 section, hàng có quảng cáo + hàng không quảng cáo thẳng cột, Ads Kit dùng chung; nguồn nằm trong skill `sources/<flow>/` (`rules.md`, spec YAML, ảnh wireframe; kèm sẵn First Open V1.7–V2.0), `scripts/spec_diff.py` so 2 phiên bản |
 | `app-redesign` | làm lại giao diện app đã có mà giữ nguyên chức năng: `start <mục tiêu> [L1–L4]` / `build [FL-NN] [L1–L4]` / `audit [FL-NN]` trên bản sao đã xác nhận, 4 mức thay đổi (L1 đổi màu tại chỗ · L2 làm mới, giữ bố cục · L3 đổi bố cục · L4 làm mới toàn bộ), quét baseline trước khi sửa, kiểm tra không thiếu màn, trạng thái, liên kết, quảng cáo, CTA, ảnh hero (`scripts/scan.js`, `analyze.py`, `parity.py`) |
 | `ui-visual` | tạo visual UI chuyên nghiệp (banner, popup có header minh hoạ, hero, thumbnail, coupon, topic card): `clone <ref> [L1–L4]` sao chép có kiểm soát mức thay đổi, `create <brief>`, `extract <ref>`; đo mẫu bằng `scripts/decode.js`, tính tỷ lệ cho slot mới bằng `ratios.py`, sinh từng mảnh bằng `gemini-image-mcp` + `asset-generator`, ghép lớp bằng `compose.js` (filter ảnh, blend, mask, glow, viền kính, phá khung), kiểm tra bằng 12 bài QA |
+| `lottie-motion` | thiết kế và xuất Lottie/dotLottie chuẩn chuyên gia: `start <brief>` (motion spec + tokens + chọn đường xuất), `build [MOT-ID]` (Figma Motion hoặc Python generator + audit), `audit <file>` (cấu trúc, feature risk, budget, score), `handoff [MOT-ID]` (spec, asset, preview, runtime report, iOS/Android notes); kèm `scripts/spec_check.py`, `motion_to_lottie.py`, `lottie_audit.py`, `dotlottie_pack.py`, ma trận runtime iOS/Android/web và QA 4 lớp |
 
 Ví dụ DSL: `examples/fintech-wallet.json` (dán vào ô *Test render_tree locally* trong plugin để thử không cần agent).
 

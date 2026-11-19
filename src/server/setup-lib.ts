@@ -13,6 +13,7 @@ export const BUNDLED_SKILLS = [
   'ads-board',
   'app-redesign',
   'ui-visual',
+  'lottie-motion',
 ] as const;
 export const RETIRED_SKILLS = [
   'phosphor-icons',
