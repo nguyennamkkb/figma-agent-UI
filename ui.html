@@ -148,6 +148,11 @@
   .empty { padding: 0.8rem 0.6rem; color: var(--muted); }
 
   #footer { border-top: 1px solid var(--border); padding: 0.35rem 0.6rem; }
+  #credit {
+    flex: none; padding: 0.2rem 0.6rem 0.3rem; text-align: right;
+    color: var(--muted); opacity: 0.45; font-size: 0.7rem; letter-spacing: 0.04em;
+    user-select: none; pointer-events: none;
+  }
   #footer[hidden] { display: none; }
   #dev summary { cursor: pointer; color: var(--muted); }
   #dev[hidden] { display: none; }
@@ -301,6 +306,8 @@
       <div class="row"><button id="render" class="primary">Render</button></div>
     </details>
   </footer>
+
+  <div id="credit" aria-hidden="true">namnl</div>
 
 <script>
 /* @ports-start */const PORTS = [3055,3056,3057,3058,3059,3060,3061,3062,3063,3064,3065,3066,3067,3068,3069,3070,3071,3072,3073,3074,3075];/* @ports-end */

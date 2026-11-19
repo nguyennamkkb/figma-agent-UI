@@ -12,6 +12,19 @@ Onboarding, splash, paywall hero, home banners and template art carry the app's 
 
 Minimum change: another identity + one background detail + the accent colours. Less than that is a copy; more than that loses the emotion.
 
+## Change by level (`levels.md`)
+
+The table above is the **L2** treatment. The level of the flow decides how far an image moves; the reference is always the source image, and the onboarding fade template below applies whenever a new image is made.
+
+| Level | Treatment | Reference use | Gate |
+|---|---|---|---|
+| **L1** | keep the image (hash → `image-map.json` → `keep`); colour grading only if asked, as an image filter on the node | — | none |
+| **L2** | minimum change: keep composition, subject, emotion, light, ratio; change identity + one background detail + accent colours | `refImagePath` = source, "Recreate faithfully … change only" | ◆ source \| new |
+| **L3** | composition, camera and subject pose may change to fit the new layout; keep subject type, action, emotion, material and quality | `refImagePath` = source, prompt describes the new framing | ◆ source \| new |
+| **L4** | new art direction (medium, palette, mood of the approved direction); keep only what the image says (feature, emotion) | source as content reference + the first approved new image as style reference for the rest of the set | ◆ the first image of the set as a style test, then the set |
+
+At L3 and L4 the "Keep" column above shrinks to the image's message and emotion; never drop below the quality of the source (resolution, sharpness, no AI defects).
+
 ## Procedure (one image at a time)
 
 1. Source file: `redesign/<app>/images/source/` (exported during `start`; re-export at 2× with `export_assets` if the source is small).

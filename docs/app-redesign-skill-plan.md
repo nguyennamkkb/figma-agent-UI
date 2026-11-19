@@ -48,6 +48,19 @@ File gốc của người dùng ──(người dùng tự nhân bản)──►
 
 Hai thứ nằm giữa lớp Nội dung và lớp Giao diện có **quy tắc riêng bắt buộc**, xem mục 2.1 và 2.2.
 
+### 2.0 Mức thay đổi L1–L4 (thêm 2026-11-19)
+
+Lớp Giao diện được đổi nhiều hay ít là do **mức thay đổi**, chọn ở `start` và duyệt cùng hướng thiết kế. Cùng thang với `ui-visual`. Chi tiết: `.claude/skills/app-redesign/references/levels.md`.
+
+| Mức | Tên | Giữ nguyên | Được đổi | Ảnh hero | Cách dựng |
+|---|---|---|---|---|---|
+| **L1** | Đổi màu | bố cục, cấu trúc component, ảnh, chữ | màu, font, bo góc, hiệu ứng | giữ nguyên | sửa tại chỗ, không Archive |
+| **L2** | Làm mới (mặc định) | bố cục và thứ tự khối của từng màn | + component, icon, ảnh (đổi tối thiểu), chữ rõ hơn | tạo lại, đổi tối thiểu | dựng lại trên khung màn cũ |
+| **L3** | Đổi bố cục | màn, trạng thái, luồng | + thứ tự khối, thứ bậc, điều hướng trong màn | tạo lại, được đổi bố cục ảnh | dựng lại hoàn toàn |
+| **L4** | Làm mới toàn bộ | chỉ chức năng | + kiến trúc thông tin (gộp/tách màn), phong cách ảnh mới | phong cách mới, ảnh gốc làm tham chiếu nội dung | dựng lại, gộp/tách ghi `shared`/`dropped` có lý do |
+
+Mỗi luồng có thể chạy mức riêng (`build FL-03 L1`). `parity.py --level` kiểm tra lệch mức: `LVL-LAYOUT` (L1/L2 đổi thứ tự khối), `LVL-SIZE` và `IMG-L1` (L1 đổi khung hoặc ảnh); ở L1 không báo `IMG-SOURCE`.
+
 ### 2.1 Ảnh onboarding và ảnh chủ đạo: tạo mới từ ảnh gốc
 
 Ảnh onboarding (splash, OB1–OBn, hero paywall, banner Home, ảnh template) là nơi truyền cảm xúc của app. Đổi giao diện **không được làm mất cảm xúc và chất lượng** của ảnh gốc.
@@ -106,9 +119,9 @@ CTA được phân loại theo `figma-ui-flow/references/cta-playbook.md`; skill
 
 ## 3. Ba lệnh của skill
 
-Skill chỉ có **3 lệnh**: `/app-redesign start`, `/app-redesign build`, `/app-redesign audit`. Các việc nhỏ (quét, phân tích, viết phương án, chọn hướng, tạo ảnh, dựng token/component, vá lỗi, bàn giao, xem tiến độ) đều nằm bên trong 3 lệnh này. ◆ = chỗ lệnh dừng lại chờ bạn duyệt.
+Skill chỉ có **3 lệnh**: `/app-redesign start [L1–L4]`, `/app-redesign build [FL-NN] [L1–L4]`, `/app-redesign audit`. Các việc nhỏ (quét, phân tích, viết phương án, chọn hướng, tạo ảnh, dựng token/component, vá lỗi, bàn giao, xem tiến độ) đều nằm bên trong 3 lệnh này. ◆ = chỗ lệnh dừng lại chờ bạn duyệt.
 
-### 3.1 `/app-redesign start [mô tả mục tiêu redesign]` — khởi động, hiểu dự án, đề xuất hướng mới
+### 3.1 `/app-redesign start [mô tả mục tiêu redesign] [L1|L2|L3|L4]` — khởi động, hiểu dự án, đề xuất hướng mới
 
 Sau `start` bạn viết tự do **mục tiêu redesign**, bao nhiêu cũng được. Ví dụ:
 
@@ -149,9 +162,9 @@ Sau khi bạn chọn, skill hỏi thêm một câu: *"File này là bản copy, 
 
 **Kết thúc:** bạn duyệt 3 màn và `plan.md`. Có thể yêu cầu chỉnh rồi chạy lại `start` (lệnh chạy tiếp từ chỗ đang dừng, không quét lại nếu file chưa đổi).
 
-### 3.2 `/app-redesign build [FL-NN]` — làm lại từng luồng
+### 3.2 `/app-redesign build [FL-NN] [L1–L4]` — làm lại từng luồng
 
-Không ghi `FL-NN` thì làm luồng tiếp theo theo thứ tự trong `plan.md`.
+Không ghi `FL-NN` thì làm luồng tiếp theo theo thứ tự trong `plan.md`, ở mức ghi cho luồng đó. L1 bỏ bước ảnh và sửa màn tại chỗ; L2 dựng lại trên khung màn cũ; L3/L4 dựng lại hoàn toàn (mục 2.0).
 
 | Bước trong lệnh | Việc làm | Quy trình |
 |---|---|---|
@@ -378,3 +391,4 @@ Mỗi mốc: bump version, chờ người dùng yêu cầu mới commit/push.
 | 6 | Số lệnh | **3 lệnh: `start`, `build`, `audit`** | `start` dừng ở 3 màn main trên page Explore, chưa đụng variables/component; token + component dựng ở lần `build` đầu; vá lỗi và bàn giao nằm trong `audit` |
 | 7 | Đầu vào của `start` | **`start` + mô tả mục tiêu redesign** (văn bản tự do, có thể kèm ảnh/link tham chiếu) | Mục tiêu ghi vào `project.md` và `plan.md` mục 1; là tiêu chí chọn hướng; thiếu thì hỏi tối đa 3 câu |
 | 8 | Chọn file khi không nhắc tên | **Luôn hỏi**: chưa mở file nào → hướng dẫn mở plugin; 1 file → xác nhận; nhiều file → chọn trong danh sách; thêm câu xác nhận "là bản copy" | Bảng tình huống ở mục 3.1 |
+| 9 | Mức thay đổi (2026-11-19) | **L1–L4 như `ui-visual`, mặc định L2**; L1 sửa tại chỗ không Archive; `parity.py` thêm `LVL-LAYOUT` | `references/levels.md`; `start` suy ra mức từ mục tiêu và duyệt cùng hướng; mức riêng theo luồng trong `project.md` và `screen-map.json` |
