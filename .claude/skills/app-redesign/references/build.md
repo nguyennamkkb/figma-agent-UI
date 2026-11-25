@@ -1,6 +1,8 @@
-# `/app-redesign build [FL-NN] [L1|L2|L3|L4]`
+# `/app-redesign build [FL-NN|section link] [L1|L2|L3|L4]`
 
-Redesign one flow with the approved direction, at the flow's change level (`levels.md`): `project.md` → Flows → Level, else the project `Level`. A level after the flow code overrides it; write the new level in `project.md` before building. No argument → the first flow of `plan.md` whose status in `project.md` is not `done`. Requires `project.md` `Status: start/done` (otherwise run `start`).
+Redesign one flow with the approved direction, at the flow's change level (`levels.md`): `project.md` → Flows → Level, else the project `Level`. A level after the flow code overrides it; write the new level in `project.md` before building. No argument → the first flow of `plan.md` whose status in `project.md` is not `done`. Requires `project.md` `Status: start/done` (otherwise run `start`; with a section link, `section-link.md` §3).
+
+Before §0, every run: a section link → resolve it to `FL-NN` (`section-link.md` §1–2). Then, if any flow is already `review`/`done`/`trial` or this flow was built before, ask "same way or another" ◆ (`section-link.md` §4) — also when the flow was named by `FL-NN`. Another way → `section-link.md` §5 instead of the steps below.
 
 | Level | Sections of this file to run |
 |---|---|

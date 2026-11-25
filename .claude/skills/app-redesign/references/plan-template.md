@@ -32,7 +32,7 @@ Hướng đề xuất: … · 3 màn main: <tên> (page Explore, section …)
 - Bảng CTA: nút gốc (màn · nhãn) → loại (Purchase / Generate / Primary / Solid / Destructive / Secondary / Text)
 
 ## 6. Kế hoạch theo luồng
-| Thứ tự | Luồng | Mức | Màn mẫu | Trạng thái nhân bản | Màn dùng chung | Gộp/tách (L4) | Trạng thái đề xuất thêm | Rủi ro |
+| Thứ tự | Luồng | Mức | Cách làm (theo hướng chung / theo FL-NN / thử riêng) | Màn mẫu | Trạng thái nhân bản | Màn dùng chung | Gộp/tách (L4) | Trạng thái đề xuất thêm | Rủi ro |
 
 ## 7. Nghiệm thu
 Kết quả `audit` mới nhất: covered / shared / missing; lỗi CTA; ảnh

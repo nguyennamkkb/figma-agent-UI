@@ -8,6 +8,8 @@ All files live in `redesign/<app-slug>/` at the repo root (not in the skill).
 # <App name> — redesign
 
 - Working file: "<Figma file name>" (confirmed <date>; the copy, not the original)
+- Original: "<original file name>" (never connected; its links are looked up in the copy, section-link.md)
+- Scope: whole app | pilot FL-NN (start with a section link)
 - Screen pages: <page names scanned for the baseline>
 - Level: L1 | L2 | L3 | L4 (references/levels.md; "assumption" until approved)
 - Status: start/1 file confirmed | start/done — level <Ln>, direction <X> approved | build | handed off
@@ -25,9 +27,9 @@ All files live in `redesign/<app-slug>/` at the repo root (not in the skill).
 | Constraints | … | |
 
 ## Flows
-| Flow | Section (current) | Level | Status | Notes |
-|---|---|---|---|---|
-| FL-01 · Splash, Onboarding, IAP | <id> | = project / L1–L4 | todo / review / done | |
+| Flow | Section (current) | Level | Way | Status | Notes |
+|---|---|---|---|---|---|
+| FL-01 · Splash, Onboarding, IAP | <id> | = project / L1–L4 | = project / as FL-NN / trial <direction> / exception <direction> | todo / trial / review / done | |
 
 ## Decisions
 - <date> — <decision> (user)
