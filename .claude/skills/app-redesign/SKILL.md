@@ -1,6 +1,6 @@
 ---
 name: app-redesign
-description: Redesign the UI of an existing app in Figma without changing what it does — the user duplicates the original file, the agent works only in that confirmed copy, takes a baseline scan before any edit, understands every screen, state and flow, proposes a new direction from the user's redesign goal (3 main screens to approve), then rebuilds flow by flow at a chosen change level (L1 reskin, L2 refresh, L3 recompose, L4 new in style) and proves nothing was lost (screens, states, links, ads, CTA classes, hero images). Three commands only — `/app-redesign start <redesign goal> [L1|L2|L3|L4]`, `/app-redesign build [FL-NN]`, `/app-redesign audit [FL-NN]`. Use when the user wants to clone, reskin, restyle, modernise or "làm lại giao diện" an app/project while keeping its functions, says "redesign app này", "clone dự án", "thiết kế lại UI giữ chức năng", "làm lại từng luồng", "kiểm tra bản redesign có thiếu gì", or names one of the three commands. Screen building follows figma-ui-flow, styles style-direction, images asset-generator, ads ads-board, tool mechanics figma-agent-tools.
+description: Redesign the UI of an existing app in Figma without changing what it does — the user duplicates the original file, the agent works only in that confirmed copy, takes a baseline scan before any edit, understands every screen, state and flow, proposes a new direction from the user's redesign goal (3 main screens to approve), then rebuilds flow by flow at a chosen change level (L1 reskin, L2 refresh, L3 recompose, L4 new in style) and proves nothing was lost (screens, states, links, ads, CTA classes, hero images). Three commands only — `/app-redesign start <redesign goal> [L1|L2|L3|L4] [section link]`, `/app-redesign build [FL-NN|section link] [L1–L4]`, `/app-redesign audit [FL-NN|section link]`; a Figma section link runs that one flow alone (a pilot), and when other flows were already redesigned the agent asks whether to follow the same way or try another. Use when the user wants to clone, reskin, restyle, modernise or "làm lại giao diện" an app/project while keeping its functions, says "redesign app này", "clone dự án", "thiết kế lại UI giữ chức năng", "làm lại từng luồng", "kiểm tra bản redesign có thiếu gì", or names one of the three commands. Screen building follows figma-ui-flow, styles style-direction, images asset-generator, ads ads-board, tool mechanics figma-agent-tools.
 ---
 
 # app-redesign — new UI, same functions
@@ -36,7 +36,8 @@ Let `SKILL_DIR` be this folder. Answer the user in their language (Vietnamese wh
 4. **Stay inside the level.** A change above the flow's level (a reordered block at L2, a replaced image at L1) is reverted or the user raises the level for that flow.
 5. **Functions are not added or dropped silently.** A screen/state the redesign does not need is marked `dropped` in `screen-map.json` with the user's reason.
 6. **Approval gates (◆) stop the command.** Do not continue past a gate in the same turn.
-7. Scans are read-only `execute_code` runs with `savePath`: the JSON goes to disk, never through the conversation.
+7. **A section link = that flow alone.** Resolve it to `FL-NN` and say it back; before writing, if any flow was already redesigned, ask whether this flow follows the same way or another (`references/section-link.md`). Another way is a trial on Explore that never touches what the edited flows use.
+8. Scans are read-only `execute_code` runs with `savePath`: the JSON goes to disk, never through the conversation.
 
 ## 2. Project folder (in the repo, outside this skill)
 
@@ -59,19 +60,20 @@ redesign/<app-slug>/
 
 | Command | Does | Writes to Figma | Ends at |
 |---|---|---|---|
-| `/app-redesign start <redesign goal> [L1–L4]` | confirm the file → baseline scan → understand functions → pick the change level → research directions → `plan.md` → **3 main screens** on page `06 · Explore (WIP)` (local values; no variables, styles or components touched) | Explore + Archive pages only | ◆ user approves the level, a direction and the plan |
-| `/app-redesign build [FL-NN] [L1–L4]` | first run: foundations (variables, text styles, components, full `Button` set) · then one flow at its level: images ◆ (L2–L4) → L1 restyle in place / L2–L4 rebuild screens in place (old → Archive) → links → self-audit → report | yes | ◆ user approves the flow |
-| `/app-redesign audit [FL-NN]` | progress → rescan → parity vs baseline (screens, states, links, ads, CTA, images) → `audit_design` + `stress_test` → report → fix on yes → handoff when every flow passes | only after the user says yes | report / ◆ handoff |
+| `/app-redesign start <redesign goal> [L1–L4] [section link]` | confirm the file → baseline scan → understand functions → pick the change level → research directions → `plan.md` → **3 main screens** on page `06 · Explore (WIP)` (local values; no variables, styles or components touched) | Explore + Archive pages only | ◆ user approves the level, a direction and the plan |
+| `/app-redesign build [FL-NN\|section link] [L1–L4]` | first run: foundations (variables, text styles, components, full `Button` set) · then one flow at its level: images ◆ (L2–L4) → L1 restyle in place / L2–L4 rebuild screens in place (old → Archive) → links → self-audit → report | yes | ◆ user approves the flow |
+| `/app-redesign audit [FL-NN\|section link]` | progress → rescan → parity vs baseline (screens, states, links, ads, CTA, images) → `audit_design` + `stress_test` → report → fix on yes → handoff when every flow passes | only after the user says yes | report / ◆ handoff |
 
-No argument: `build` takes the next flow of `plan.md` at the level written for it, `audit` checks the whole file. A level after `build FL-NN` overrides that flow's level (recorded in `project.md`). Re-running `start` resumes where it stopped (no rescan if the baseline exists).
+No argument: `build` takes the next flow of `plan.md` at the level written for it, `audit` checks the whole file. A level after `build FL-NN` overrides that flow's level (recorded in `project.md`). Re-running `start` resumes where it stopped (no rescan if the baseline exists). A Figma section link in place of `FL-NN` (or in the `start` text) scopes the command to that flow: pilot start, one-flow build or audit (`references/section-link.md`).
 
-Vietnamese phrasings: "chỉ đổi màu" → level L1, "giữ bố cục" → L2, "sắp xếp lại" → L3, "làm như app mới" → L4; "bắt đầu redesign", "phân tích dự án", "đề xuất hướng mới" → `start`; "vẽ lại FL-03", "làm luồng tiếp" → `build`; "kiểm tra", "so với bản gốc", "còn thiếu gì", "đang tới đâu", "bàn giao" → `audit`.
+Vietnamese phrasings: "chỉ đổi màu" → level L1, "giữ bố cục" → L2, "sắp xếp lại" → L3, "làm như app mới" → L4; "bắt đầu redesign", "phân tích dự án", "đề xuất hướng mới" → `start`; "vẽ lại FL-03", "làm luồng tiếp" → `build`; "thử luồng này trước", "làm riêng section này" + link → section link (`references/section-link.md`); "kiểm tra", "so với bản gốc", "còn thiếu gì", "đang tới đâu", "bàn giao" → `audit`.
 
 ## 4. Where the details are
 
 | Need | Read |
 |---|---|
 | Change levels L1–L4: what each keeps and changes, picking the level from the goal, effect on every step | `references/levels.md` |
+| A section link: resolve it to a flow, pilot / one-flow scope, ask "same way or another" when flows were already edited, trial | `references/section-link.md` |
 | `start` step by step: file choice, goal parsing, level, baseline, analysis, directions, 3 main screens | `references/start.md` |
 | `build` step by step: foundations, per-flow loop, archive, links, screen-map upkeep | `references/build.md` |
 | `audit` step by step: rescan, verdicts, CTA/image codes, fixing, handoff | `references/audit.md` |

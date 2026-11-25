@@ -1,10 +1,10 @@
-# `/app-redesign audit [FL-NN]`
+# `/app-redesign audit [FL-NN|section link]`
 
-Read-only until the user says yes. No argument → whole file.
+Read-only until the user says yes. No argument → whole file. A section link → that flow (`section-link.md` §1–2). Trial sections on `06 · Explore (WIP)` are outside parity; list flows with status `trial` as open.
 
 ## 1. Progress
 
-From `project.md` + `screen-map.json`: level per flow, flows done / in review / todo, entries still `todo`, open questions. If the baseline does not exist yet, stop and point to `start`.
+From `project.md` + `screen-map.json`: level and way per flow, flows done / in review / trial / todo, entries still `todo`, open questions. If the baseline does not exist yet, stop and point to `start`.
 
 ## 2. Rescan and compare
 

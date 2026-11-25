@@ -1,8 +1,10 @@
-# `/app-redesign start <redesign goal> [L1|L2|L3|L4]`
+# `/app-redesign start <redesign goal> [L1|L2|L3|L4] [section link]`
 
 Goal: understand the app completely, then show the user where it can go. **No variables, styles or components of the file are created or changed in this command**; it adds the pages `06 · Explore (WIP)` (if missing) and `Archive · Before redesign`, and draws 3 screens on Explore.
 
 Resume rule: read `redesign/*/project.md` first. If a project for this file exists, continue from its `Status` line instead of starting over (no rescan when `inventory.baseline.json` exists).
+
+Section link in the text: after §1, resolve it (`section-link.md` §1–2). A link into the working file is the **scope**, not a reference: no project yet → pilot start on that flow (`section-link.md` §3); project exists → `section-link.md` §3–4, then `build` that flow.
 
 ## 1. Choose and confirm the working file ◆
 
@@ -30,7 +32,7 @@ The text after `start` is free; a trailing `L1`–`L4` is the change level. Spli
 | Feel / style | modern, clean, cinematic, playful, glassmorphism, premium |
 | Audience | Gen Z, parents, creators |
 | Business goal | raise subscriptions, retention, fewer drop-offs in onboarding |
-| References | image path, URL, app name, named style |
+| References | image path, URL of another file, app name, named style (a link into the working file is a scope, `section-link.md`) |
 | Constraints | keep brand colour, dark only, keep illustrations, platform |
 
 Missing points that change the result (feel, audience, references): ask up to 3 short questions in one `AskUserQuestion`. "Tùy bạn" → decide from the app itself and mark it *assumption* in the plan.
