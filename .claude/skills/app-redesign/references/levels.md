@@ -50,9 +50,10 @@ Example: Home with the same block order (greeting → composer → 2 creation ca
 | "hiện đại hơn", "làm mới", "đẹp hơn", "premium hơn", "phong cách <style>" while keeping the layout | L2 |
 | "sắp xếp lại", "dễ dùng hơn", "đổi bố cục", "Home rõ hơn", "giảm bước" | L3 |
 | "làm lại như app mới", "đổi cấu trúc", "gộp màn", "art direction mới", "phong cách 3D/khác hẳn" | L4 |
-| unclear, or a mix | **L2** (default), marked *assumption* |
+| "app anh em", "đẩy thêm 1 app", "phát hành app mới cùng chức năng", "khác bản gốc", "clone dự án" (sibling, `questions.md`) | L3 (L4 if the IA may change) |
+| unclear, or a mix | **L3** for a sibling, **L2** for a refresh (default), marked *assumption* |
 
-The level decides the scope of the whole project: always confirm it at the `start` gate ◆ (`start.md` §6), together with the direction. When the goal mixes levels by area ("đổi màu toàn app, làm lại Onboarding"), propose a project level plus per-flow overrides.
+The level decides the scope of the whole project: always confirm it with the 4 questions ◆ (`start.md` §5.5, `questions.md` §3), together with the direction. When the goal mixes levels by area ("đổi màu toàn app, làm lại Onboarding"), propose a project level plus per-flow overrides.
 
 ## 3. What the level changes in each command
 

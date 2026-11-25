@@ -24,7 +24,7 @@ No working file confirmed yet → `start.md` §1 first. A link in `start` text c
 ## 3. Scope = that flow alone
 
 - Only that flow is analysed in detail, built and audited (`audit FL-NN`). Other flows stay untouched and keep their status.
-- **No project yet** (`start <goal> [Ln] <link>`) — a **pilot start**: confirm the file, scan the baseline of every screen page as usual (read-only; the baseline must exist before any edit), but run the analysis, diagnosis, directions and the main screens on this flow only — the main screens come from its families (fewer than 3 if it has fewer). `plan.md` §6 holds only this flow; the other flows are listed in §2 as *chưa lên kế hoạch*. `project.md`: `Scope: pilot FL-NN`. After the pilot is approved, `start` without a link extends the plan to the remaining flows with the pilot's direction and level as the default.
+- **No project yet** (`start <goal> [Ln] <link>`) — a **pilot start**: confirm the file, scan the baseline of every screen page as usual (read-only; the baseline must exist before any edit), but run the analysis, self-questions, directions, the 4 questions (`questions.md` §4) and the main screens on this flow only — the main screens come from its families (fewer than 3 if it has fewer). `plan.md` §6 holds only this flow; the other flows are listed in §2 as *chưa lên kế hoạch*. `project.md`: `Scope: pilot FL-NN`. After the pilot is approved, `start` without a link extends the plan to the remaining flows with the pilot's direction and level as the default.
 - **Project exists** (`start`/`build` with a link) — do not rerun `start`. Direction not approved yet (`Status` before `start/done`) → run `start.md` §5–6 with this flow's screens as the main screens. Then §4, then `build.md` for this flow.
 
 ## 4. Earlier work → ask which way ◆
@@ -37,7 +37,7 @@ Before any write, read what was already changed: flows in `project.md` with stat
 | Other flows edited | Ask (below) |
 | This flow itself already `review`/`done` | Ask the same question as *redo*: same way (fix, polish) or another way. Before rebuilding, move the current frames to `Archive · Before redesign` with suffix ` · rev<n>`; rebuild from the baseline frames and source images, not from the current version |
 
-One `AskUserQuestion`, standing on its own — name what was done:
+One `AskUserQuestion`, standing on its own, at most 4 questions in all (`questions.md` §4: this one, then the level and the image style for this flow only when not given) — name what was done:
 
 > *"FL-02 · Onboarding đã làm theo hướng A · <tên hướng>, mức L3 (ảnh <cách xử lý>, component <các bộ chính>). FL-05 · <tên> làm theo cách đó hay khác?"*
 
@@ -53,7 +53,7 @@ Several edited flows that differ from each other → one option per distinct way
 
 A trial never changes what the edited flows use.
 
-1. Build on `06 · Explore (WIP)` in a Section `Trial · FL-NN · <direction>`: local values, local parts; shared variables, styles and components untouched; the flow's baseline frames stay in place (no Archive). The new direction gets its own short research (`start.md` §5, one direction unless the user asks for options) inside the flow's level.
+1. Build on `06 · Explore (WIP)` in a Section `Trial · FL-NN · <direction>`: local values, local parts; shared variables, styles and components untouched; the flow's baseline frames stay in place (no Archive). The new direction gets its own short research (`start.md` §5 and the distance table of `questions.md` §2, one direction unless the user asks for options) inside the flow's level; its direction and image style are confirmed in one question before drawing.
 2. Images ◆ with the level's treatment (`imagery.md`).
 3. The whole flow — every family and state — so it can be judged as a flow. Function check by hand: a table baseline screen/state → trial frame; nothing missing (parity runs after adoption, the Explore page is outside the scanned pages).
 4. Report ◆ with three choices:

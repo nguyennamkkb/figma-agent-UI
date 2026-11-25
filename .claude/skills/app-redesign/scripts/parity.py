@@ -20,7 +20,7 @@ Verdict per baseline screen:
     missing    nothing carries it: must be built
 Plus CTA rules (references/cta-rules.md), image rules (references/imagery.md) and the
 change-level rules (references/levels.md). The level of a baseline screen is --level when
-given, else screen-map "levels"[flow], else screen-map "level", else L2. L1/L2 screens get
+given, else screen-map "levels"[flow], else screen-map "level", else L3. L1/L2 screens get
 LVL-LAYOUT when their text order drifts from the baseline (or the height class changes),
 L1 screens get LVL-SIZE and IMG-L1, and IMG-SOURCE is not reported at L1. L3 masters get
 LVL-LIGHT when their screen-map "moves" miss the minimum bar (>= 3, >= 1 structural S move)
@@ -134,7 +134,7 @@ def main():
     pinned = {e["baselineId"]: e for e in smap.get("screens", [])}
     flow_of = {e["baselineId"]: e.get("flow") for e in smap.get("screens", [])}
     extras_ok = {e if isinstance(e, str) else e.get("id") for e in smap.get("extras", [])}
-    project_level = norm_level(smap.get("level")) or "L2"
+    project_level = norm_level(smap.get("level")) or "L3"
     flow_levels = {k: norm_level(v) for k, v in smap.get("levels", {}).items()}
 
     def level_of(baseline_id):

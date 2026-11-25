@@ -9,7 +9,7 @@ From `project.md` + `screen-map.json`: level and way per flow, flows done / in r
 ## 2. Rescan and compare
 
 1. `scan.js` mode `scan`, same `pages` as the baseline (add the pages the redesign created for flows, never Explore or Archive), `savePath: …/inventory.current.json`.
-2. `python3 SKILL_DIR/scripts/parity.py inventory.baseline.json inventory.current.json --map screen-map.json --images image-map.json [--flow FL-NN] [--level Ln]`. Without `--level` the script reads `level` / `levels` from `screen-map.json` (default L2); `--level` forces one level for every flow.
+2. `python3 SKILL_DIR/scripts/parity.py inventory.baseline.json inventory.current.json --map screen-map.json --images image-map.json [--flow FL-NN] [--level Ln]`. Without `--level` the script reads `level` / `levels` from `screen-map.json` (default L3); `--level` forces one level for every flow.
 3. Read `parity-report.md`. Verdicts per baseline screen:
 
 | Verdict | Meaning | Action |
