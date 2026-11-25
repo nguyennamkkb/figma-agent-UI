@@ -39,6 +39,7 @@ Matching: pinned `currentId` first; otherwise text similarity (after `copyMap`),
 | IMG-L1 | warn | L1 flow: a hero image differs from the baseline (L1 keeps images) |
 | LVL-LAYOUT | warn | L1/L2 flow: the screen's blocks moved — text order agreement with the baseline below 0.85 (L1) / 0.7 (L2), or its height class changed (fixed ↔ scrolling). Put the blocks back, or ask to raise the flow's level |
 | LVL-SIZE | warn | L1 flow: the frame size changed |
+| LVL-LIGHT | warn | L3 flow: a master is too close to the baseline — fewer than 3 recorded `moves` or no structural (S) move, or, with no moves recorded, text order agreement ≥ 0.97. Add moves (`levels.md` §1.1) or record the flow as L2 |
 
 Heuristics can be wrong: open the screen before reporting a warning as a defect.
 

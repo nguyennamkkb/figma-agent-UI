@@ -41,7 +41,7 @@ Then go to §3 (only if a swap broke a link) and §4.
 
 For each family of the flow (order of `screen-map.json`):
 
-1. **Master first**: build the family's main state with the figma-ui-flow loop (layout → fill → lock), from tokens and components, keeping every element the baseline frame carries (texts, inputs, ad slot, CTA class, status bar). Copy rewrites → `copyMap` in `screen-map.json`. **L2**: Pass 1 copies the baseline frame's skeleton — same blocks, same order, same height class (fixed or scrolling); only the parts inside the blocks are redesigned. **L3**: block order, hierarchy and in-screen navigation may change. **L4**: see step 6.
+1. **Master first**: build the family's main state with the figma-ui-flow loop (layout → fill → lock), from tokens and components, keeping every element the baseline frame carries (texts, inputs, ad slot, CTA class, status bar). Copy rewrites → `copyMap` in `screen-map.json`. **L2**: Pass 1 copies the baseline frame's skeleton — same blocks, same order, same height class (fixed or scrolling); only the parts inside the blocks are redesigned. **L3**: block order, grouping, hierarchy and in-screen navigation change; the master clears the minimum bar (`levels.md` §1.1: ≥ 3 moves, ≥ 1 structural, silhouette test) and its entry gets `moves`. **L4**: see step 6.
 2. **States by cloning the master** (`clone_node`), then change only what differs (toast, loading overlay, selected item, dialog).
 3. **Swap in place**: move the baseline frame to `Archive · Before redesign` (`move_nodes`, keep its name + suffix ` · before`), put the new frame at the baseline frame's position inside the flow section, name it with `proposedName`.
 4. Update `screen-map.json`: `currentId`, `status: "built"`.

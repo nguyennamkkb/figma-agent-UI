@@ -67,6 +67,7 @@ All files live in `redesign/<app-slug>/` at the repo root (not in the skill).
                  "archetype", "code": "SCR-12", "proposedName": "SCR-12 · AI Video Setup · Empty",
                  "currentId": null | "<node id>", "status": "todo|built|shared|dropped", "note": "" } ],
                  L1: currentId = baselineId (restyled in place). L4 merge: status "shared", note "merged into <code>".
+                 L3 master: "moves": ["S1","S2","P1"] (levels.md §1.1).
   "extras": [ "<current node id>" | { "id", "why" } ],
   "copyMap": { "<baseline text>": "<new text>" } }
 ```
