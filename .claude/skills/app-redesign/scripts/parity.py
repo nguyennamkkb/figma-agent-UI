@@ -22,7 +22,9 @@ Plus CTA rules (references/cta-rules.md), image rules (references/imagery.md) an
 change-level rules (references/levels.md). The level of a baseline screen is --level when
 given, else screen-map "levels"[flow], else screen-map "level", else L2. L1/L2 screens get
 LVL-LAYOUT when their text order drifts from the baseline (or the height class changes),
-L1 screens get LVL-SIZE and IMG-L1, and IMG-SOURCE is not reported at L1.
+L1 screens get LVL-SIZE and IMG-L1, and IMG-SOURCE is not reported at L1. L3 masters get
+LVL-LIGHT when their screen-map "moves" miss the minimum bar (>= 3, >= 1 structural S move)
+or, with no moves recorded, when their text order agreement is still >= 0.97.
 Only the Python standard library is used.
 """
 
@@ -42,6 +44,8 @@ DESTRUCTIVE_LABEL = re.compile(r"discard|delete|remove|log ?out|sign ?out|erase"
 STRONG_VARIANT = re.compile(r"primary|purchase|generate", re.I)
 LEVELS = ("L1", "L2", "L3", "L4")
 ORDER_MIN = {"L1": 0.85, "L2": 0.7}
+L3_ORDER_MAX = 0.97
+L3_MIN_MOVES = 3
 
 
 def load(p):
@@ -203,6 +207,7 @@ def main():
     scope_secs = {sec_map.get(r["baseline"].get("section")) for r in results}
     extras = [c for c in c_screens if c["id"] not in matched_ids and c["id"] not in extras_ok and (not a.flow or c.get("section") in scope_secs)]
 
+    moves_of = {e["baselineId"]: e.get("moves") for e in smap.get("screens", []) if e.get("moves") is not None}
     issues = []
     cur_level = {}
     for r in results:
@@ -218,6 +223,16 @@ def main():
                 issues.append(("LVL-LAYOUT", "warn", m["name"], f'{r["level"]}: text order agreement {r["order"]} with baseline {b["name"]} (min {ORDER_MIN[r["level"]]}): blocks moved'))
             if height_class(b) != height_class(m):
                 issues.append(("LVL-LAYOUT", "warn", m["name"], f'{r["level"]}: height class {height_class(b)} → {height_class(m)}'))
+        if r["level"] == "L3":
+            moves = moves_of.get(b["id"])
+            if moves is not None:
+                structural = [x for x in moves if str(x).upper().startswith("S")]
+                if len(moves) < L3_MIN_MOVES or not structural:
+                    issues.append(("LVL-LIGHT", "warn", m["name"], f'L3: moves {", ".join(moves) or "none"} — need >= {L3_MIN_MOVES} with >= 1 structural (S): reads as L2+'))
+            else:
+                order = order_agreement(b, m, copy_map)
+                if order is not None and order >= L3_ORDER_MAX:
+                    issues.append(("LVL-LIGHT", "warn", m["name"], f'L3: text order agreement {order} with baseline {b["name"]} and no moves recorded: blocks in baseline order, reads as L2+'))
         if r["level"] == "L1":
             if (b.get("w"), b.get("h")) != (m.get("w"), m.get("h")):
                 issues.append(("LVL-SIZE", "warn", m["name"], f'L1: frame {b.get("w")}×{b.get("h")} → {m.get("w")}×{m.get("h")}'))

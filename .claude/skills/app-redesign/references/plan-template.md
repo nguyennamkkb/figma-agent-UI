@@ -10,7 +10,7 @@ Write it in the user's language. One file, 8 parts, approved at the end of `star
 ## 1. Mục tiêu và tóm tắt
 - Mục tiêu (nguyên văn): > …
 - 5 ý: cảm giác · người dùng · mục tiêu kinh doanh · tham chiếu · ràng buộc (ghi "giả định" nếu tự suy ra)
-- Mức thay đổi: L1 đổi màu · L2 làm mới (giữ bố cục) · L3 đổi bố cục · L4 làm mới toàn bộ — mức chọn, lý do, luồng nào khác mức chung
+- Mức thay đổi: L1 đổi màu · L2 làm mới (giữ bố cục) · L3 đổi bố cục (mỗi màn chính ≥ 3 nước đổi bố cục, có ≥ 1 nước cấu trúc) · L4 làm mới toàn bộ — mức chọn, lý do, luồng nào khác mức chung
   | Mức | Giữ nguyên | Được đổi | Ảnh hero |
 - Quy mô: <n> màn, <n> trạng thái, <n> luồng, <n> dạng màn, <n> liên kết; ước lượng <n> phiên build
 

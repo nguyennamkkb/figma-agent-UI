@@ -19,7 +19,7 @@ How far the Look may move is the **change level**, set in `start` and confirmed 
 |---|---|---|
 | **L1** Reskin | colours, type, radius, effects; restyled in place | layout, components' structure, images |
 | **L2** Refresh (default) | + components, icons, imagery (minimum change), copy clarity | layout and block order |
-| **L3** Recompose | + block order, hierarchy, in-screen navigation | screens, states, flows |
+| **L3** Recompose | + block order, grouping, hierarchy, in-screen navigation; each master ≥ 3 layout moves incl. 1 structural (`levels.md` §1.1) | screens, states, flows |
 | **L4** New in style | + information architecture (merge/split screens), art direction | functions only |
 
 A flow may run at another level than the project (`build FL-NN L1`).
