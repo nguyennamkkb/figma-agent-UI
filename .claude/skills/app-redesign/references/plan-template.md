@@ -9,7 +9,9 @@ Write it in the user's language. One file, 8 parts, approved at the end of `star
 
 ## 1. Mục tiêu và tóm tắt
 - Mục tiêu (nguyên văn): > …
+- Mục đích: app anh em (khác bản gốc, phát hành thêm) | làm mới chính app này
 - 5 ý: cảm giác · người dùng · mục tiêu kinh doanh · tham chiếu · ràng buộc (ghi "giả định" nếu tự suy ra)
+- Trả lời 4 câu hỏi: hướng · mức · sáng/tối · phong cách ảnh (và phương án đã gợi ý); các trục còn lại là giả định theo hướng đã chọn
 - Mức thay đổi: L1 đổi màu · L2 làm mới (giữ bố cục) · L3 đổi bố cục (mỗi màn chính ≥ 3 nước đổi bố cục, có ≥ 1 nước cấu trúc) · L4 làm mới toàn bộ — mức chọn, lý do, luồng nào khác mức chung
   | Mức | Giữ nguyên | Được đổi | Ảnh hero |
 - Quy mô: <n> màn, <n> trạng thái, <n> luồng, <n> dạng màn, <n> liên kết; ước lượng <n> phiên build
@@ -22,9 +24,10 @@ Sơ đồ luồng chính (mermaid hoặc danh sách cạnh)
 (archetypes.md §3: rác, tên, màn ảnh phẳng, design system, CTA, copy, trạng thái thiếu, liên kết, quảng cáo)
 
 ## 4. Hướng giao diện
+Bảng khoảng cách 10 trục (questions.md §2): bản gốc | A | B | C — app anh em: mỗi hướng khác bản gốc ≥ 6/10 trục, luôn gồm họ màu, phong cách ảnh, bố cục; khác cả các app anh em đã phát hành
 | | A · bám mục tiêu | B · an toàn | C · táo bạo |   (cả 3 hướng nằm trong mức đã chọn)
 | Bảng màu (hex) | Chữ | Bo góc / đổ bóng | Ảnh | CTA | Sửa được gì | Rủi ro |
-Hướng đề xuất: … · 3 màn main: <tên> (page Explore, section …)
+Hướng đã chọn: … (lý do) · hướng bị loại: … (lý do) · 3 màn main: <tên> (page Explore, section …)
 Ảnh: bảng gốc → mới (giữ / đổi gì) cho các ảnh hero
 
 ## 5. Component và CTA

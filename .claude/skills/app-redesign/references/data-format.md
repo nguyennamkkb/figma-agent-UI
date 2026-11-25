@@ -9,10 +9,12 @@ All files live in `redesign/<app-slug>/` at the repo root (not in the skill).
 
 - Working file: "<Figma file name>" (confirmed <date>; the copy, not the original)
 - Original: "<original file name>" (never connected; its links are looked up in the copy, section-link.md)
+- Purpose: sibling | refresh (references/questions.md; "assumption" until answered)
+- Released siblings: <app name — direction, palette, image style> | none
 - Scope: whole app | pilot FL-NN (start with a section link)
 - Screen pages: <page names scanned for the baseline>
 - Level: L1 | L2 | L3 | L4 (references/levels.md; "assumption" until approved)
-- Status: start/1 file confirmed | start/done — level <Ln>, direction <X> approved | build | handed off
+- Status: start/1 file confirmed | start/answered — level <Ln>, direction <X> | start/done — level <Ln>, direction <X> approved | build | handed off
 - foundations: todo | done (components: Button <id>, …; collections: …)
 
 ## Redesign goal
@@ -25,6 +27,14 @@ All files live in `redesign/<app-slug>/` at the repo root (not in the skill).
 | Business goal | … | |
 | References | … | |
 | Constraints | … | |
+
+## Answers (start §5.5, at most 4)
+| Question | Answer | Recommended was |
+|---|---|---|
+| Direction | … | |
+| Level | … | |
+| Theme | … | |
+| Image style | … | |
 
 ## Flows
 | Flow | Section (current) | Level | Way | Status | Notes |
