@@ -17,6 +17,10 @@ import {
   withOpencodeServer,
   withoutClaudeServer,
   withoutOpencodeServer,
+  piConfigPath,
+  withPiServer,
+  withoutPiServer,
+  PI_TOOL_TIMEOUT_SEC,
 } from '../src/server/setup-lib';
 
 describe('setup: server command', () => {
@@ -67,6 +71,29 @@ describe('setup: client configs', () => {
     const removed = withoutOpencodeServer(added);
     expect(removed.mcp?.['figma-agent']).toBeUndefined();
     expect(removed.mcp?.other).toEqual(before.mcp.other);
+  });
+
+  it('adds and removes the Pi entry, keeping user exposure and other servers', () => {
+    const before = { mcpServers: { other: { url: 'https://x/mcp' }, 'figma-agent': { exposure: 'direct', url: 'old' } }, extra: 1 };
+    const added = withPiServer(before, cmd);
+    expect(added.mcpServers?.['figma-agent']).toMatchObject({
+      exposure: 'direct',
+      timeout: PI_TOOL_TIMEOUT_SEC,
+      type: 'stdio',
+      command: 'npx',
+      args: ['-y', 'spec'],
+    });
+    expect(added.mcpServers?.['figma-agent']).not.toHaveProperty('url');
+    expect(added.mcpServers?.other).toEqual(before.mcpServers.other);
+    expect(added.extra).toBe(1);
+    const removed = withoutPiServer(added);
+    expect(removed.mcpServers?.['figma-agent']).toBeUndefined();
+    expect(removed.mcpServers?.other).toEqual(before.mcpServers.other);
+  });
+
+  it('finds the Pi config under ~/.pi/agent or PI_CODING_AGENT_DIR', () => {
+    expect(piConfigPath('/h', {})).toBe('/h/.pi/agent/mcp.json');
+    expect(piConfigPath('/h', { PI_CODING_AGENT_DIR: '/p' })).toBe('/p/mcp.json');
   });
 
   it('adds and removes the Claude Code user entry', () => {
@@ -155,7 +182,7 @@ describe('setup: paths and args', () => {
     expect(o.verbose).toBe(false);
     expect(parseArgs(['install', '--verbose']).verbose).toBe(true);
     expect(parseArgs([]).command).toBe('help');
-    expect(parseArgs(['doctor']).clients.size).toBe(3);
+    expect(parseArgs(['doctor']).clients.size).toBe(4);
   });
 });
 describe('staleNpxCopies', () => {
