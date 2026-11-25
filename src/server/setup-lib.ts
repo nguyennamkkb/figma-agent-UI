@@ -115,6 +115,41 @@ export function withoutClaudeServer(config: ClaudeConfig): ClaudeConfig {
   return { ...config, mcpServers: rest };
 }
 
+export const PI_TOOL_TIMEOUT_SEC = 300;
+export const PI_DESCRIPTION = 'Read, create, edit and screenshot designs in the Figma file where the figma-agent-UI plugin is open';
+
+export function piConfigPath(home: string, env: NodeJS.ProcessEnv): string {
+  return join(env.PI_CODING_AGENT_DIR || join(home, '.pi', 'agent'), 'mcp.json');
+}
+
+type PiConfig = { mcpServers?: Record<string, Record<string, unknown>>; [key: string]: unknown };
+
+export function withPiServer(config: PiConfig, cmd: ServerCommand): PiConfig {
+  const previous = config.mcpServers?.[SERVER_NAME] ?? {};
+  const { url: _url, headers: _headers, oauth: _oauth, auth: _auth, ...kept } = previous;
+  return {
+    ...config,
+    mcpServers: {
+      ...(config.mcpServers ?? {}),
+      [SERVER_NAME]: {
+        description: PI_DESCRIPTION,
+        timeout: PI_TOOL_TIMEOUT_SEC,
+        ...kept,
+        type: 'stdio',
+        command: cmd.command,
+        args: cmd.args,
+      },
+    },
+  };
+}
+
+export function withoutPiServer(config: PiConfig): PiConfig {
+  if (!config.mcpServers?.[SERVER_NAME]) return config;
+  const rest = { ...config.mcpServers };
+  delete rest[SERVER_NAME];
+  return { ...config, mcpServers: rest };
+}
+
 export function shortPath(path: string, home: string, platform: Platform): string {
   if (!home || !path.startsWith(home)) return path;
   return (platform === 'win32' ? '%USERPROFILE%' : '~') + path.slice(home.length);
@@ -166,8 +201,8 @@ export function tokenCopyHint(platform: Platform): string {
   return 'xclip -selection clipboard < ~/.figma-agent/token';
 }
 
-export type McpClient = 'claude' | 'opencode' | 'codex';
-export const MCP_CLIENTS: readonly McpClient[] = ['claude', 'opencode', 'codex'];
+export type McpClient = 'claude' | 'opencode' | 'codex' | 'pi';
+export const MCP_CLIENTS: readonly McpClient[] = ['claude', 'opencode', 'codex', 'pi'];
 
 export type CliOptions = {
   command: 'install' | 'uninstall' | 'doctor' | 'help';
