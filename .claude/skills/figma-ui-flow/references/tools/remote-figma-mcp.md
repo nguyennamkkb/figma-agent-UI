@@ -1,6 +1,6 @@
 # Running figma-ui-flow on the official Figma MCP (remote)
 
-Read this file when the session has **only** the official Figma MCP (`use_figma`, `get_metadata`…). If the session has `figma-agent` (`figma_status`, `render_tree`…), read `run-with-figma-agent.md` and the `figma-agent-tools` skill instead.
+Read this file when the session has **only** the official Figma MCP (`use_figma`, `get_metadata`…). If the session has `figma-agent` (`figma_status`, `render_tree`…), read `connect.md`, `tool-reference.md` and `../process/stage-recipes.md` instead.
 
 ## Contents
 1. Requirements and connection check
@@ -69,7 +69,7 @@ Each `use_figma` script should:
 
 ## 5. Plugin API recipes and common errors
 
-The JavaScript recipes (variables, binding, Auto Layout, text, components, audit) work the same in `use_figma` and `execute_code`: see `../../figma-agent-tools/references/plugin-api-recipes.md`. Common errors: `../../figma-agent-tools/references/troubleshooting.md`.
+The JavaScript recipes (variables, binding, Auto Layout, text, components, audit) work the same in `use_figma` and `execute_code`: see `figma-ui-flow/references/tools/execute-code.md`. Common errors: `figma-ui-flow/references/knowledge/troubleshooting.md`.
 
 | Symptom specific to the remote MCP | Fix |
 |---|---|

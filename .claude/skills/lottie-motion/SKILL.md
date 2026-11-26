@@ -1,6 +1,6 @@
 ---
 name: lottie-motion
-description: Design and export production-grade Lottie/dotLottie animations for mobile and web — motion brief, motion spec, motion tokens, Figma Motion authoring, native Figma Lottie/dotLottie export, Python generation, structural audit, runtime compatibility, optimization, QA and developer handoff. Invoke as `/lottie-motion start <brief>`, `/lottie-motion build [MOT-ID]`, `/lottie-motion audit <file>`, `/lottie-motion handoff [MOT-ID]`. Use when the user asks to design or export Lottie, convert Figma Motion to Lottie/dotLottie, make an SVG/icon/loading/success animation, optimize or audit a Lottie file, prepare a motion handoff, or says "xuất Lottie", "làm animation Lottie", "dotLottie", "tối ưu Lottie", "kiểm tra Lottie", "Figma Motion sang Lottie", "bàn giao animation". Figma mechanics come from figma-agent-tools; screen design from figma-ui-flow.
+description: Design and export production-grade Lottie/dotLottie animations for mobile and web — motion brief, motion spec, motion tokens, Figma Motion authoring, native Figma Lottie/dotLottie export, Python generation, structural audit, runtime compatibility, optimization, QA and developer handoff. Invoke as `/lottie-motion start BRIEF`, `/lottie-motion build [MOT-ID]`, `/lottie-motion audit FILE`, `/lottie-motion handoff [MOT-ID]`. Use when the user asks to design or export Lottie, convert Figma Motion to Lottie/dotLottie, make an SVG/icon/loading/success animation, optimize or audit a Lottie file, prepare a motion handoff, or says "xuất Lottie", "làm animation Lottie", "dotLottie", "tối ưu Lottie", "kiểm tra Lottie", "Figma Motion sang Lottie", "bàn giao animation". Figma mechanics and screen design come from figma-ui-flow.
 ---
 
 # lottie-motion — design for the runtime, export once
@@ -83,10 +83,10 @@ motion/<project>/
 ## `/lottie-motion build [MOT-ID]`
 
 1. Read the spec and tokens. If the spec is incomplete, go back to `start`. Run `python3 scripts/spec_check.py <spec> --markdown`.
-2. Build/reuse the Figma frame with `figma-ui-flow` and `figma-agent-tools`. The animated frame must be a **top-level frame** for native animation export.
+2. Build/reuse the Figma frame with `figma-ui-flow`. The animated frame must be a **top-level frame** for native animation export.
 3. Animate:
    - **Figma Motion:** until a dedicated `set_motion` tool exists, use `execute_code` with `applyAnimationStyle` / `applyManualKeyframeTrack` / `setTimelineDuration`. Read `references/figma-export.md` for the exact calls and traps.
-   - **Prototype:** use `set_interactions` for Smart Animate / transitions; read `figma-agent-tools`.
+   - **Prototype:** use `set_interactions` for Smart Animate / transitions; read `figma-ui-flow/references/tools/tool-reference.md` §6.
    - **Python path:** write the compact spec JSON (see `references/python-generator.md`) and run `scripts/motion_to_lottie.py`.
 4. Export:
    - Native: select the top-level frame → **Export → Animated → Lottie** (single) or **dotLottie** (bundle) → save to `motion/<project>/assets/`.

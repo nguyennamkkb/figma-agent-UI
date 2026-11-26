@@ -99,7 +99,26 @@ Off-centre icons come from: no `layout` (icon stuck at 0,0), `justify`/`align` l
 
 **Duo foldable:** `device: "duo-outer"` (466×678, radius 0/40/40/0) and `"duo-inner"` (951×669, radius 36) have a fixed height and no status bar or home indicator. The system UI is an 84 px rail on the right: safe-area column (orange) + `overlay/system-chrome` (camera on outer, time, status; absolute, locked). Inner adds `overlay/hinge` (x 462, 27 wide): keep text and controls off it. Build the screen as `layout: "HORIZONTAL"` → `Content` (FILL, padding 20) + `Vertical Bar` (84 FIXED, FILL height, padding top 172 outer / 122 inner, 24 right, 12 left): Back → prominent action → toolbar group → flexible space → tab bar (inner: compressed to the selected tab, sidebar navigates). `orientation` is ignored.
 
-The build loop in figma-ui-flow locks the layout first, then fills it:
+Pass mechanics (process and checks: `../process/build-loop.md`):
+
+```text
+Pass 1  render_tree{tree: <frame + regions + sized placeholder blocks>}   → rootId, ids
+        get_node{ids:[rootId], depth:2}  →  one screenshot{id: rootId}
+Pass 2  create_component_set{…}  for blocks repeated ≥ 3×
+        render_tree{parentId: ids["Screen/Content/Hero"], tree}          → fill a placeholder in place
+        delete_nodes + render_tree{parentId: <region>, index, tree}      → or replace it (instance, image)
+        update_nodes{updates:[…]}                                        → text, icons, colours in batches
+        get_node / write bounds after each write → one screenshot{id: rootId} at the end
+Pass 3  audit_design{rootId} → stress_test{id: rootId} → update_nodes fixes → screenshot{id, scale: 1}
+```
+
+- `render_tree` with `parentId` appends into that frame (`index` to insert at a position). The new subtree's `ids` keys start at the subtree root, not the screen.
+- Give regions their final sizing in Pass 1: `widthMode: "FILL"` inside the vertical root, `heightMode: "FILL"` for the scrolling content, `HUG` for header/footer. Placeholder blocks get a fixed size, a temporary tint (`#FF00001A`) and, if they will hold children, their final `layout`/`gap`/`padding`.
+- A frame given a `width` inside auto layout must also get `widthMode: "FIXED"`, otherwise it hugs its content and clips absolute children (same for height).
+- One write may fill several neighbouring placeholders: wrap them in the region's call, or send consecutive calls without screenshots in between.
+- A placeholder's fixed height was an estimate: set `heightMode: "HUG"` once real content defines it.
+
+The build loop locks the layout first, then fills it:
 
 ```jsonc
 // Pass 1 — frame + regions + sized placeholder blocks (1 call)
@@ -126,13 +145,8 @@ The build loop in figma-ui-flow locks the layout first, then fills it:
 
 ## 6. Traps met on real builds
 
-- **Text outside auto layout** (a child of a `layout: "NONE"` frame or of the page) is sized with `textAutoResize`, not layout sizing: no `width` → it hugs (`WIDTH_AND_HEIGHT`), a `width` → it wraps at that width (`HEIGHT`). Plugins before 1.6.19 failed the whole tree with `set_layoutSizingVertical: node must be an auto-layout frame…`; on an older plugin put such labels in a small auto-layout row (`widthMode: "FILL"` + `textAlign`).
-- **`color` on an `svg` node recolours every solid fill and stroke inside it.** A two-colour icon (a bag whose handle is drawn in the background colour, a flag) loses its details: leave `color` out and keep the colours in the markup.
-- **SVG `<pattern>` fills do not import reliably** (hatched bars, striped tracks come out flat or black). Render the hatching to a PNG at 3× (PIL) and place it as an `image`; regenerate the PNG when the sizes change.
-- **No rich text in `render_tree`.** One word in another colour or weight ("**Save $10** on coffee") → render the text, then `execute_code`: `setRangeFills(start, end, [h.solid(hex)])` / `setRangeFontName` after loading the font.
-- **Content that runs past the screen edge** (tabs, carousels peeking at the sides): the row gets `clip: false`, the screen frame keeps `clip: true`; a carousel is a `layout: "NONE"` frame with the side cards at negative / overflowing `x`.
-- **Two-size numbers** ("$79" big, ".00" small): two text nodes in a `HORIZONTAL` frame with `align: "BASELINE"`.
-- Emoji inside text (`"Hey, Den 👋🏻"`) render with any font; no special handling.
+Moved to `../knowledge/traps.md` (one list for every skill): text outside auto layout, `svg` `color`, SVG `<pattern>`, rich text, rows past the edge, two-size numbers, emoji.
+
 
 ## 7. update_nodes
 

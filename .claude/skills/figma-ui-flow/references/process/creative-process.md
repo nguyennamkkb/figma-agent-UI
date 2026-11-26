@@ -121,7 +121,7 @@ No purpose → no animation.
 ### 7.3 Figma Motion (timeline, if the account has it)
 - Keyframe animation directly on the canvas: position, scale, rotation, opacity, easing; use it for micro-interactions, transitions, animated illustrations.
 - Shader properties can also be keyframed → animated backgrounds and lighting.
-- Duration and easing come from motion tokens (`design-system.md` section 2.5).
+- Duration and easing come from motion tokens (`../standards/design-system.md` section 2.5).
 - Always export specs for dev: duration, delay, easing (cubic-bezier or spring stiffness/damping), changed properties.
 - Design a **Reduce Motion** alternative: replace slides/zooms with a short fade or an instant change.
 

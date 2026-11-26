@@ -3,6 +3,7 @@
 Source of truth: tool descriptions in `src/server/index.ts` and input schemas in `src/shared/schemas.ts`. If the live tool list in the session disagrees with this file, trust the session. Every tool also accepts `file` (several files connected) and `page` (run on that page, then restore).
 
 ## Contents
+0. State model, picking a tool, other vocabularies
 1. Orient and read
 2. Build and edit
 3. Pages, tokens and styles
@@ -11,6 +12,54 @@ Source of truth: tool descriptions in `src/server/index.ts` and input schemas in
 6. Prototype and handoff
 7. Escape hatch
 8. gemini-image-mcp (images)
+
+---
+
+## 0. State model, picking a tool, other vocabularies
+
+### State model
+
+- **The canvas is the only state.** Nothing survives between calls except node ids: keep every id a write returns, and the `ids` name-path map from `render_tree` (`"Screen/Header/Title"` → `"12:34"`; repeats get `#2`, `#3`).
+- Every tool takes `page` (id or exact name): it runs there and restores the previous page. Prefer it to `set_current_page`, always when agents run in parallel.
+- Name layers meaningfully when you create them — the name paths are how you address them later.
+
+### Pick the tool
+
+| Group | Tools |
+|---|---|
+| Orient | `figma_status`, `get_document_info`, `get_design_system` (`usedIn` = variables bound inside a node), `list_fonts` |
+| Read | `get_selection`, `get_node{ids[], depth}`, `find_nodes{types,name,text}` |
+| Find before create | `search_design_system{query}` |
+| Build | `render_tree` (new tree; `parentId`+`index` to build inside an existing frame), `create_component_set` |
+| Edit | `update_nodes` (batch), `move_nodes`, `clone_node`, `delete_nodes` |
+| Copy across files | `copy_nodes{file: source, ids, name, targetFile}` → `paste_nodes{file: target, snapshot, x, y \| replaceId}` |
+| Pages | `manage_pages{template|create|rename|delete|order, dryRun}`, `set_current_page` |
+| Tokens & styles | `import_tokens` (DTCG, linted), `create_variables`, `create_styles`, `render_foundations` |
+| Prototype | `set_interactions` |
+| Verify | `screenshot{id}`, `audit_design{rootId, checks}`, `stress_test{id, cases}` |
+| Bulk fix | `bind_variables`, `rename_by_rule` — **both `dryRun: true` by default** |
+| Handoff | `annotate`, `set_dev_status`, `export_tokens`, `export_assets` |
+| Show the user | `select_nodes{ids, zoom}` |
+| Anything else in the Plugin API | `execute_code` (last resort) |
+| Generated images | `gemini-image-mcp` (`image_generate`) or `muse2api` (`muse_generate_image`); both on → ask the user which one before the task (`asset-generator` → "Image MCP") → local path into `image.src` / `fill.image` |
+
+Order of preference: dedicated tool → `render_tree`/`update_nodes` → `execute_code`. Dedicated tools validate input, return ids and clean up on failure; `execute_code` does none of that.
+
+### From the official Figma MCP vocabulary
+
+| Master calls | Use in figma-agent | Notes |
+|---|---|---|
+| `whoami` | `figma_status` | Includes user, file, version |
+| `get_metadata` | `get_document_info`, then `get_node{ids, depth}` | JSON, not XML |
+| `get_screenshot` | `screenshot{id}` | `id` is singular |
+| `get_design_context` | `get_node{ids, depth: 3}` | Same vocabulary as `render_tree` |
+| `get_variable_defs` | `get_design_system{usedIn: nodeId}` | Tokens/styles bound within the node |
+| `search_design_system` | `search_design_system{query}` | Rule #3: call before creating |
+| `use_figma` (structured writes) | Dedicated tools in §3; `execute_code` is only an escape hatch | |
+| `use_figma` (read-only audit) | `audit_design` | No need to write the §5.7 snippet yourself |
+| `generate_figma_design`, `create_new_file`, `generate_diagram`, Code Connect | — | Not available. See §5 |
+
+**Priority:** dedicated tools → `render_tree`/`update_nodes` → `execute_code`. Dedicated tools validate their input, return ids, and clean up on failure. `execute_code` does not.
 
 ---
 
@@ -85,7 +134,7 @@ Source of truth: tool descriptions in `src/server/index.ts` and input schemas in
 
 ## 7. Escape hatch
 
-`execute_code{code, timeoutMs 30000}` — see SKILL.md §6 and `plugin-api-recipes.md`. Use it only when no tool above fits (constraints, boolean ops, vector edits, unusual bulk edits).
+`execute_code{code, timeoutMs 30000}` — rules and recipes in `execute-code.md`. Use it only when no tool above fits (constraints, boolean ops, vector edits, unusual bulk edits).
 
 `execute_code{…, savePath}` — absolute `.json` path: the server writes the returned value to that file with no size limit (`FIGMA_AGENT_MAX_OUTPUT` does not apply) and replies only `{written, bytes, keys|items}`. Use it for read-only scans whose output is data for a script (inventories, baselines), so the JSON never passes through the conversation; `Read` the file only when you need to look at it.
 

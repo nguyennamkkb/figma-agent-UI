@@ -133,12 +133,11 @@ Mọi tool nhận `page` (id/tên) để chạy trên page đó rồi trả page
 
 **Figma Slides:** agent đọc và dựng slide trong deck Slides. 7 tool chỉ dành cho Design bị từ chối (`set_interactions`, `annotate`, `set_dev_status`, `bind_variables`, `create_component_set`, `stress_test`, `render_foundations`); variables, styles và token (`create_variables`, `create_styles`, `import_tokens`, `export_tokens`, `get_design_system`, `search_design_system`) vẫn dùng được. Chi tiết: `specs/002-slides-integration/`.
 
-**Skill:** repo kèm 11 skill trong `.claude/skills/`, được `install` cài global:
+**Skill:** repo kèm 10 skill trong `.claude/skills/`, được `install` cài global:
 
 | Skill | Dùng cho |
 |---|---|
-| `figma-agent-tools` | sổ tay mọi tool MCP: tham số, kết quả, lỗi, công thức `execute_code`, ảnh gemini |
-| `figma-ui-flow` | luồng và kiến thức tạo UI: 11 luật, 8 giai đoạn có gate, vòng dựng màn từ ngoài vào trong theo 3 lượt (`references/build-loop.md`) |
+| `figma-ui-flow` | một skill cho cả quy trình, chuẩn và tool: 11 luật, 8 giai đoạn có gate, vòng dựng màn 3 lượt; kiến thức chia 4 tầng `references/process/` (làm gì) · `standards/` (chuẩn nào) · `tools/` (sổ tay mọi tool MCP, DSL `render_tree`, `execute_code`) · `knowledge/` (lỗi → cách sửa, nhật ký bẫy); gộp từ `figma-agent-tools` cũ |
 | `asset-generator` | viết prompt ảnh theo tỉ lệ và bộ ảnh nhất quán cho app, và sinh asset nền trong suốt bằng `gemini-image-mcp` (gộp từ `app-asset-generator` + `generating-oneshot-image-prompts`) |
 | `design-md-writer` | viết `DESIGN.md` mô tả design system cho agent |
 | `style-direction` | chọn phong cách cho app iOS/Android: từ tên phong cách, ảnh tham chiếu hoặc brief; đo DNA có mức tin cậy (`scripts/extract_palette.py`), 3 hướng Safe/Balanced/Bold, xuất Style brief + `tokens.json` (thay `ios-style-screen-creator`) |

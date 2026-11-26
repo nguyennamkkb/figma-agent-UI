@@ -1,5 +1,7 @@
 # Desktop flow: files, plugin, cleanup
 
+> **Run only when the user asks for it explicitly.** The script drives Figma's GUI (keystrokes, menu clicks); by default the agent asks the user to open files and the plugin themselves (`connect.md` §1).
+
 OS-side companion to the MCP tools: `scripts/figma-desktop.sh`. The MCP tools
 cannot open files, launch the plugin, create files, or rename them — this script
 covers exactly those gaps. **It never touches the canvas**; verify every step

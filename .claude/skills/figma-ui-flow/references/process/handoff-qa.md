@@ -25,7 +25,7 @@
 - [ ] *(theme = Both only)* Switching Light/Dark mode: no element keeps a wrong color. Single theme: every screen is in the chosen theme and no unused mode is left in the Semantic collection.
 
 ### C. Layout
-- [ ] Content frames use Auto Layout; resizing does not break (see `file-standards.md` 3.5).
+- [ ] Content frames use Auto Layout; resizing does not break (see `../standards/file-standards.md` 3.5).
 - [ ] Device safe areas are respected.
 - [ ] Alignment follows the grid; spacing is consistent across screens of the same type.
 

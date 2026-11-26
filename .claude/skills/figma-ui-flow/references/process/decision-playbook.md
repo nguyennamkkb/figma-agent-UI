@@ -32,7 +32,7 @@ Every screen, one line each:
 
 - Value before the ask: paywall or upgrade appears after the aha moment or when the user hits a premium need or a fair limit — not on first open, not blocking the core task.
 - Paywall shows benefits, free limits, price, period, trial terms, a visible close and Restore purchases. No fake timers or hidden prices.
-- Ads at natural breaks; rewarded ads are opt-in; never interrupt the core action. Slot sizes (native full 360 × 800, inline native fixed height pinned to the bottom): `file-standards.md` §4.5.
+- Ads at natural breaks; rewarded ads are opt-in; never interrupt the core action. Slot sizes (native full 360 × 800, inline native fixed height pinned to the bottom): `../standards/file-standards.md` §4.5.
 - Hybrid: the free path stays useful; don't degrade it to force an upgrade.
 - Credits/coins: the cost shows on the CTA only on the last screen before spending (`Generate Now | 40`). Earlier or disabled CTAs show no cost: put this in the button's Disabled variant, not per screen.
 - Packs: honest comparisons only. No "Save %" when the unit price is the same. Translate the amount into what it buys (`≈ 60 videos`) and give every pack a visible selection control (radio), not only a tinted card.

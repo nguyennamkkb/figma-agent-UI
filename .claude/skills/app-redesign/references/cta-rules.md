@@ -1,6 +1,6 @@
 # CTA rules for a redesign
 
-Recipes (gradients, inner shadows, band geometry, sizes, states) live in `figma-ui-flow/references/cta-playbook.md`; this file says which class each button of the baseline becomes and what `audit` checks.
+Recipes (gradients, inner shadows, band geometry, sizes, states) live in `figma-ui-flow/references/standards/cta-playbook.md`; this file says which class each button of the baseline becomes and what `audit` checks.
 
 ## 1. Class → variant
 

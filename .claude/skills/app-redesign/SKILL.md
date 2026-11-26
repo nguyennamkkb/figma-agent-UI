@@ -1,6 +1,6 @@
 ---
 name: app-redesign
-description: Redesign the UI of an existing app in Figma without changing what it does — usually a sibling app that must read as another product, to publish one more app with the same functions. The user duplicates the original file, the agent works only in that confirmed copy, takes a baseline scan before any edit, understands every screen, state and flow, answers its own self-questions (distance from the original on 10 axes), asks the user at most 4 questions (direction A/B/C, level, light/dark, image style) before drawing anything, then shows 3 main screens to approve, then rebuilds flow by flow at a chosen change level (L1 reskin, L2 refresh, L3 recompose, L4 new in style) and proves nothing was lost (screens, states, links, ads, CTA classes, hero images). Three commands only — `/app-redesign start <redesign goal> [L1|L2|L3|L4] [section link]`, `/app-redesign build [FL-NN|section link] [L1–L4]`, `/app-redesign audit [FL-NN|section link]`; a Figma section link runs that one flow alone (a pilot), and when other flows were already redesigned the agent asks whether to follow the same way or try another. Use when the user wants to clone, reskin, restyle, modernise or "làm lại giao diện" an app/project while keeping its functions, says "redesign app này", "clone dự án", "thiết kế lại UI giữ chức năng", "làm lại từng luồng", "kiểm tra bản redesign có thiếu gì", or names one of the three commands. Screen building follows figma-ui-flow, styles style-direction, images asset-generator, ads ads-board, tool mechanics figma-agent-tools.
+description: Redesign the UI of an existing Figma app without changing what it does — usually a sibling app that must read as another product. Works only in the user's confirmed duplicate, scans a baseline first, understands every screen, state and flow, weighs the distance from the original on 10 axes, asks at most 4 questions (direction A/B/C, level, light/dark, image style) before drawing, gets 3 main screens approved, rebuilds flow by flow at a change level (L1 reskin, L2 refresh, L3 recompose, L4 new in style) and proves nothing was lost (screens, states, links, ads, CTA classes, hero images). Commands — `/app-redesign start GOAL [L1-L4] [section link]`, `build [FL-NN or section link] [L1-L4]`, `audit [FL-NN or section link]`. Use when the user wants to clone, reskin, restyle or modernise an app while keeping its functions — "redesign app này", "clone dự án", "làm lại giao diện", "thiết kế lại UI giữ chức năng", "kiểm tra bản redesign có thiếu gì".
 ---
 
 # app-redesign — new UI, same functions
@@ -83,7 +83,7 @@ Vietnamese phrasings: "chỉ đổi màu" → level L1, "giữ bố cục" → L
 | Files and JSON formats, `project.md` template | `references/data-format.md` |
 | Screen archetypes, mandatory states, diagnosis checklist | `references/archetypes.md` |
 | Hero/onboarding images from the source image | `references/imagery.md` |
-| CTA classes, effects, checks | `references/cta-rules.md` (recipes: `figma-ui-flow/references/cta-playbook.md`) |
+| CTA classes, effects, checks | `references/cta-rules.md` (recipes: `figma-ui-flow/references/standards/cta-playbook.md`) |
 | The plan document the user approves | `references/plan-template.md` |
 | Scripts | `scripts/scan.js` (inside Figma), `scripts/analyze.py`, `scripts/parity.py`, `scripts/bake_fade.py` (onboarding hero fade) |
 

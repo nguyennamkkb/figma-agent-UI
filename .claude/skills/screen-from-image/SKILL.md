@@ -1,6 +1,6 @@
 ---
 name: screen-from-image
-description: Redraw one or several app screens from an image (screenshot, Dribbble shot, mockup with several phones, a Figma image node) into editable Figma screens as fast as possible — read each screen's function, its auto-layout tree and the emotion of its images first, then build one screen with one render_tree of real content, generated images and library icons; with two or more screens the first (most representative) screen is built and the agent STOPS for approval before drawing the rest. Invoke as `/screen-from-image <image|link> [screens]`. Use when the user says "vẽ lại ảnh này ra Figma", "dựng lại màn hình từ ảnh", "copy UI từ screenshot", "recreate this Dribbble shot", "vẽ lại 3 màn này". Not for a single banner or popup visual (ui-visual), restyling an existing Figma app (app-redesign) or picking a style only (style-direction).
+description: Redraw one or several app screens from an image (screenshot, Dribbble shot, mockup with several phones, a Figma image node) into editable Figma screens as fast as possible — read each screen's function, its auto-layout tree and the emotion of its images first, then build one screen with one render_tree of real content, generated images and library icons; with two or more screens the first (most representative) screen is built and the agent STOPS for approval before drawing the rest. Invoke as `/screen-from-image IMAGE-OR-LINK [screens]`. Use when the user says "vẽ lại ảnh này ra Figma", "dựng lại màn hình từ ảnh", "copy UI từ screenshot", "recreate this Dribbble shot", "vẽ lại 3 màn này". Not for a single banner or popup visual (ui-visual), restyling an existing Figma app (app-redesign) or picking a style only (style-direction).
 ---
 
 # screen-from-image — understand, build one, approve, build the rest
@@ -46,7 +46,7 @@ Budget: about 5–8 tool calls per screen, image generation excluded. A screen t
 |---|---|
 | Read sheet template + a full worked example | `references/read-sheet.md` |
 | Element → how to build it, image emotion → prompt, traps met on real builds | `references/build-traps.md` |
-| `render_tree` vocabulary, sizing rules | `figma-agent-tools/references/render-tree-dsl.md` |
+| `render_tree` vocabulary, sizing rules | `figma-ui-flow/references/tools/render-tree-dsl.md` |
 | Cut-out generation, key colours, `remove_bg.py` | `asset-generator` Part B |
 | Icons by name (`icons.py`) | `icon-libraries` |
-| Full quality pass when asked (audit, stress, handoff) | `figma-ui-flow/references/build-loop.md` §2–3 |
+| Full quality pass when asked (audit, stress, handoff) | `figma-ui-flow/references/process/build-loop.md` §2–3 |

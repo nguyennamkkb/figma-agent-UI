@@ -1,6 +1,6 @@
 # Screen build loop: outside-in, three passes
 
-Applies to **every** screen, in both Stage 4 (directions to compare) and Stage 5 (real screens). Tool names in parentheses are `figma-agent` tools. Detailed syntax: the `figma-agent-tools` skill; pass → tool table: `run-with-figma-agent.md`.
+Applies to **every** screen, in both Stage 4 (directions to compare) and Stage 5 (real screens). Tool names in parentheses are `figma-agent` tools. Detailed syntax: `../tools/render-tree-dsl.md`; pass → tool table: §13.
 
 ## Contents
 1. Why outside-in, and why not a screenshot per block
@@ -15,6 +15,8 @@ Applies to **every** screen, in both Stage 4 (directions to compare) and Stage 5
 10. Moving to the next screen
 11. Example: Paywall / Timeline
 12. Anti-patterns
+13. Pass → tool on figma-agent
+14. Verify at the tool level
 
 ---
 
@@ -161,3 +163,25 @@ Numeric check: Content `FILL × FILL`, Header/Footer `HUG`, 208 + 64 + 216 + gap
 | Giving a frame a `width` but leaving it HUG | It shrinks to its content and clips absolute children | `widthMode: "FIXED"` with the width; numeric check catches it |
 | Polishing 3 directions before the gate | Wasted effort on the rejected ones | Sketch mode, stop at the gate |
 | Building screen 2 while screen 1 still has Blockers | The errors get duplicated | DoD first, then From template |
+
+## 13. Pass → tool on figma-agent
+
+Mechanics of each call: `../tools/render-tree-dsl.md` §5.
+
+| Pass | Write | Check |
+|---|---|---|
+| 0 Prepare | — (images: the image MCP picked for the task — gemini `image_generate{outputDir}` or muse `muse_generate_image{output_dir}`, `asset-generator` → "Image MCP") | `search_design_system`, `get_design_system`, `list_fonts` |
+| 1 Layout | `render_tree{tree: frame + regions + sized placeholder blocks}` (1–2 writes) | `get_node{ids:[rootId], depth: 2}` → one `screenshot{id: rootId}` |
+| 2 Fill | `create_component_set` for repeated blocks → `render_tree{parentId: <placeholder or region>, index?}` per cluster (`delete_nodes` the placeholder when replacing it) → `update_nodes` in batches | `get_node` (or the write's `bounds`) after each write; one `screenshot{id: rootId}` at the end; extra screenshots only for unusual blocks |
+| 3 Lock | `update_nodes`, `rename_by_rule`, `bind_variables` (dryRun → real) | `audit_design{rootId}`, `stress_test{id}` → `screenshot{id: sectionId}` → `delete_nodes` the section → final `screenshot{id, scale: 1}` |
+| From template | `clone_node{id: <screen that met DoD>, parentId}` → `update_nodes` / `render_tree{parentId, index}` for what differs | `get_node` on the edits; `screenshot` of the changed areas; then Pass 3 |
+
+Easy-to-confuse parameters (`ids` array vs `id` string, dryRun defaults, ms vs seconds…): `figma-ui-flow/references/tools/tool-reference.md`.
+
+## 14. Verify at the tool level (summary of §3 for a single edit)
+
+- **After every write:** read sizes back — the write's `bounds`, or `get_node{ids, depth: 2}` on the written subtree. Check: fixed sizes kept (no unintended HUG), children fit their parent, heights + gaps + padding add up, long text has a width, FILL/HUG as planned. Fix the specific node with `update_nodes`; don't rebuild.
+- **At the end of each pass:** `screenshot` the screen (`scale` 1–1.5) and read it for clipped/overflowing text, wrong wrapping, overlaps, misalignment, uneven spacing, weak contrast, leftover placeholders.
+- **Extra screenshot only for unusual blocks:** rotation, absolute or overlapping layers, custom shapes, text over images, meaningful gradients/shadows — or a number you can't explain. Screenshot that block (`screenshot{id}`), not the page.
+- `stress_test` lists text that overflows its own clip area only; a HUG text clipped by an ancestor is missed. Always screenshot the stress section.
+- `audit_design` findings are heuristics: `small-target` on a non-interactive label and contrast sampled behind an opaque plate or over an image are judged by eye, and say so in the report.

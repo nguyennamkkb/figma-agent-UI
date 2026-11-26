@@ -1,10 +1,22 @@
-# Plugin API recipes for `execute_code`
+# execute_code — rules and Plugin API recipes
 
 These run unchanged in `execute_code` (globals `figma`, `h`) and in the remote Figma MCP's `use_figma`. Prefer the dedicated tools first: `create_variables` / `import_tokens` (§2), `bind_variables` (§3), `render_tree` (§4–5), `create_component_set` (§6), `audit_design` (§7). Reach for these only when a tool does not cover the case.
 
 Helpers available in `execute_code`: `h.solid(hex)`, `h.rgb(hex)`, `h.hex(rgb)`, `h.getNode(id)`, `h.loadFont(fontName)`, `h.loadNodeFonts(text)`, `h.resolveFont(family, style)`, `h.serialize(node, depth)`, `h.summary(node)`, `h.freeSpot()`.
 
 > Reference samples. When the API throws, read the error message and the current Plugin API docs — don't retry the same guess.
+
+## 0. Rules
+
+The body of an async function with `figma` and `h` in scope; top-level `await`, **`return`** a JSON-friendly value (`console.log` is not returned).
+
+- **No loop or wait that can fail to finish.** The sandbox is single-threaded and cannot be interrupted: the server times out, Figma closes the plugin, the user must reopen it. Bounded loops only, well under 30 s.
+- Colors are 0–1 with opacity on the paint: `h.solid('#3B82F6')`. `fills`/`strokes`/`effects` are immutable: clone, edit, reassign.
+- Load fonts first: `await h.loadNodeFonts(node)` / `await h.loadFont({family, style})`.
+- Async APIs only (`documentAccess: dynamic-page`): `getNodeByIdAsync`, `setCurrentPageAsync`, `getMainComponentAsync`.
+- `resize()` resets sizing to FIXED: resize first, then `layoutSizing*`; append to the auto-layout parent before `FILL`.
+- New top-level nodes at `h.freeSpot()`. Never `figma.closePlugin()`. Return `{createdNodeIds, mutatedNodeIds}`.
+- Recipes: the sections below.
 
 ## 1. Switch page and get a node
 ```js
