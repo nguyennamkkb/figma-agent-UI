@@ -24,7 +24,7 @@ How far the Look may move is the **change level**, set in `start` and confirmed 
 
 A flow may run at another level than the project (`build FL-NN L1`).
 
-Two items have mandatory rules: **hero/onboarding images are regenerated from the original image as reference** (`references/imagery.md`), and **every CTA is a component instance of the right class; only Purchase carries the two diagonal bands** (`references/cta-rules.md`).
+Two items have mandatory rules: **hero/onboarding images are regenerated from the original image as reference, and onboarding heroes get their bottom fade baked with `scripts/bake_fade.py`** (`references/imagery.md`), and **every CTA is a component instance of the right class; only Purchase carries the two diagonal bands** (`references/cta-rules.md`).
 
 Let `SKILL_DIR` be this folder. Answer the user in their language (Vietnamese when they write Vietnamese).
 
@@ -39,6 +39,7 @@ Let `SKILL_DIR` be this folder. Answer the user in their language (Vietnamese wh
 7. **Ask before drawing, at most 4 questions.** After the analysis, answer the self-questions yourself, then one `AskUserQuestion` with at most 4 questions (direction, level, theme, image style — `references/questions.md`) before any frame or image is made. A sibling keeps nothing visual of the original by default and differs from it on ≥ 6 of 10 axes.
 8. **A section link = that flow alone.** Resolve it to `FL-NN` and say it back; before writing, if any flow was already redesigned, ask whether this flow follows the same way or another (`references/section-link.md`). Another way is a trial on Explore that never touches what the edited flows use.
 9. Scans are read-only `execute_code` runs with `savePath`: the JSON goes to disk, never through the conversation.
+10. **Native ad on Home: full width, no rounded corners.** A native ad created or restyled on a Home screen spans the full screen width (edge to edge, FILL) with `cornerRadius` 0 on the ad, its media and its background, at every level and in every direction; no card inset or shadow around it (`ads-board/references/ads-kit.md` → "Native on Home"). Parity/audit flag a Home native ad with radius > 0 or width < screen width.
 
 ## 2. Project folder (in the repo, outside this skill)
 
@@ -84,13 +85,14 @@ Vietnamese phrasings: "chỉ đổi màu" → level L1, "giữ bố cục" → L
 | Hero/onboarding images from the source image | `references/imagery.md` |
 | CTA classes, effects, checks | `references/cta-rules.md` (recipes: `figma-ui-flow/references/cta-playbook.md`) |
 | The plan document the user approves | `references/plan-template.md` |
-| Scripts | `scripts/scan.js` (inside Figma), `scripts/analyze.py`, `scripts/parity.py` |
+| Scripts | `scripts/scan.js` (inside Figma), `scripts/analyze.py`, `scripts/parity.py`, `scripts/bake_fade.py` (onboarding hero fade) |
 
 ## 5. Scripts
 
 ```
 execute_code{ file, code: <scan.js with OPTIONS edited>, savePath: "<abs>/redesign/<app>/inventory.baseline.json", timeoutMs: 300000 }
 python3 SKILL_DIR/scripts/analyze.py redesign/<app>/inventory.baseline.json
+python3 SKILL_DIR/scripts/bake_fade.py in.png out.png 0.76 0.92 --bg <screen bg hex>
 python3 SKILL_DIR/scripts/parity.py redesign/<app>/inventory.baseline.json redesign/<app>/inventory.current.json --map redesign/<app>/screen-map.json --images redesign/<app>/image-map.json [--flow FL-03] [--level L1]
 ```
 

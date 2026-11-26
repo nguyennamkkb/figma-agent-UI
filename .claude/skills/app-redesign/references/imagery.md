@@ -34,20 +34,20 @@ At L3 and L4 the "Keep" column above shrinks to the image's message and emotion;
 5. Side by side on Explore: `source | new` frames with the screen code as title; ask the user ◆.
 6. Approved → place it into the hero layer's fill (keep the node, change the image), add the entry to `image-map.json` with `approved: true` and the new hash (read it back with `get_node`).
 
-## Onboarding images — the fade-bottom template (mandatory)
+## Onboarding images — the baked bottom fade (mandatory)
 
-Model: `examples/onboarding-fade-reference.png` (720×1160, tall portrait). The fade is **generated inside the image**: never crop a finished image and add an alpha ramp afterwards (rejected 2026-11-18).
+Model: AI Chatbot F4, frame `Compare · OB2b · E · fade 76→92%` (`13002:22650`): hero 360×640 at the top of a 360×800 screen whose fill is the background colour (`#FBF6F3`), the fade baked into the image pixels from 76 % to 92 % of its height, the copy block (pager, title, body) starting at y ≈ 592 (92 % of 640) on the flat colour, Next button below. Earlier model kept for the scene recipe: `examples/onboarding-fade-reference.png`.
 
-What the model image does, and every onboarding image must do:
+Two steps: **the AI makes the scene, the script makes the fade.** A fade drawn by the image model lands anywhere between 70 and 95 % and never hits the exact hex; `bake_fade.py` is exact and repeatable.
 
-| Band (of the height) | Content |
+| Band (of the image height) | Content |
 |---|---|
-| 0–90 % | the scene at full detail down to 90 %: main subject in the upper two thirds, a foreground element pushing toward the camera (hand, card, object), a background in action with depth (debris, light, haze), lower parts (body, ground, props) still detailed |
-| 90–100 % | short fade: the scene dissolves smoothly into the screen background colour, reaching it at the very bottom edge |
+| 0–76 % | the scene at full detail: main subject in the upper two thirds, a foreground element toward the camera, a background in action with depth |
+| 68–92 % | progressive Gaussian blur (starts 8 % above the fade) |
+| 76–92 % | smoothstep blend into the screen background hex |
+| 92–100 % | flat background colour: the copy block starts here |
 
-The fade band is **10 % of the height, no more** (user, 2026-11-18: a 35 % fade left the open zone too long). Smooth (no hard line, no band); the colour it fades to is the screen background (dark apps: near-black; Mist-type light apps: the `bg/canvas` hex).
-
-### Prompt template (fill the brackets, keep the order)
+### 1. Generate the scene
 
 ```
 [Medium: hyperrealistic cinematic photo | glossy 3D render], tall vertical portrait 9:16.
@@ -55,22 +55,32 @@ The fade band is **10 % of the height, no more** (user, 2026-11-18: a 35 % fade 
 Foreground: [element] pushing toward the camera with strong wide-angle perspective.
 Background: [scene in action that tells the feature], depth with [particles / light streaks / haze], [warm light] against [cool light].
 Palette: [hex values of the direction].
-Bottom fade: the scene stays fully detailed down to 90 percent of the image height; only the lowest 10 percent fades smoothly into a solid [background name] [#hex], reaching plain [#hex] exactly at the bottom edge, no hard edge, no band.
+The lower quarter stays simple and continuous (floor, table, soft background, the subject's body): no faces, hands, text or key objects below 75 percent of the height. No fade, no border, no text, no UI.
 ```
 
-With a source image (redesign): start with "Recreate the reference image faithfully: same composition, same subject, same text, same quality. Change only: …", then the Palette and Bottom fade lines. The source decides the subject; the template decides the fade and the bottom zone.
+With a source image (redesign): start with "Recreate the reference image faithfully: same composition, same subject, same quality. Change only: …", then the Palette line and the lower-quarter line. The source decides the subject; the template decides the bottom zone.
 
-### One image for the Ads and the No Ads version
+### 2. Bake the fade
+
+```
+python3 SKILL_DIR/scripts/bake_fade.py redesign/<app>/images/new/<screen>-hero.png redesign/<app>/images/new/<screen>-hero.faded.png 0.76 0.92 --bg <screen background hex>
+```
+
+- `--bg` is the exact fill of the onboarding frame (`bg/canvas` of the direction; dark apps their near-black). Never fade to a colour the frame does not have.
+- Defaults 0.76 → 0.92 fit a 360×640 hero with the copy at y ≈ 592. When the copy starts elsewhere, set `end = copy top / hero height` and keep the band about 16 % (`start = end − 0.16`).
+- Check the result with `Read`: no key detail (face, hands, phone screen) inside the fade, no visible band, bottom rows equal to the hex. A key detail in the fade → move the subject up (regenerate or crop the top before baking), do not shorten the fade.
+
+### 3. Place it, one image for the Ads and the No Ads version
 
 Each onboarding page has **one** image used by both versions; never generate a separate Ads image.
 
 1. Source: the **full, uncropped** artwork of the page (export the separated Thumb/image layer, not the cropped hero of one version).
-2. Generate at 9:16 with the template above.
-3. Measure where the detail ends (last row with luminance std > 6; models land between 70 and 95 %, not exactly 90). Place the same hash in both versions, fill mode FILL, 360×640, `y = min(0, title.y − detailEnd × 640 − 8)`: the detail stops just above the title. Hide the old `Fade` layer.
-4. Wrap the hero in a group with an alpha mask (`Hero fade mask`, linear gradient opaque to 90 %, transparent at 100 %) so the image edge melts into the screen's own background (the screen background is not a flat colour, a bare image edge shows a seam).
+2. Hero = rectangle 360×640 at x 0, y 0 (behind the status bar), fill the baked image, scale mode FILL; the frame fill is the same hex as `--bg`, so the image bottom melts into the screen without a mask or seam.
+3. Copy block top ≥ `end × 640` (592 with the defaults); the No Ads version and the Ads version move the copy and the CTA, never the image. If the Ads version needs the copy higher, rebake with a smaller `end` for both versions (one image) rather than letting text sit on the scene.
+4. No extra `Fade` layer or alpha mask on top: the fade is in the pixels. Hide an old `Fade` layer left from the baseline. A mask is only needed when the screen background is not a flat colour (gradient, aura): then bake to its colour at the hero's bottom edge and add a short alpha mask (last 4 %) to hide the seam.
 5. Check both versions by screenshot: no image detail behind the title or subtitle, no hard edge at the fade, no second status bar from a phone mockup.
 
-Lesson (AI Chatbot, 2026-11-18): full-height images ran behind the No Ads titles, separate Ads images doubled the set, and a crop with an alpha ramp added afterwards was rejected. The user gave the model image: the fade must be part of the generated picture.
+Lessons: AI Chatbot 2026-11-18 — full-height images ran behind the No Ads titles, separate Ads images doubled the set, a crop with a transparent alpha ramp added afterwards was rejected (seam on the screen background), a 35 % fade left the open zone too long. AI Chatbot F4 2026-11-26 — the approved fade is baked opaque into the image, 76 → 92 % with progressive blur, to the frame's exact background hex (`bake_fade.py`).
 
 Cut-out assets (icons, stickers, mascots) follow asset-generator Part B. User photos, partner logos and screenshots of real products are not regenerated: list their hashes in `image-map.json` → `keep`.
 

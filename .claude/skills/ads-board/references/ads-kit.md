@@ -13,6 +13,9 @@ Built once per file; every version section only uses instances and clones from h
 | Base screens (not in the Kit) | the app's real screens of the flow, listed in `rules.md` → "Base screens" (e.g. page 05, FL-01) | The builder clones them **by frame name**, never a version section and never a separate master, so the board follows the app design and version sections can be deleted and rebuilt |
 | Token `Semantic/ad/cta` | CTA fill of every ad, a slightly darker tone of the app's primary button | Labels use `text/on-accent` |
 
+## Native on Home
+A Native ad placed on a Home screen (tab / dashboard, not onboarding or language) is edge to edge: width = the screen width (FILL, no side margin), `cornerRadius` 0 on the ad frame, its media and its background, no outer card inset or shadow. The inner padding (12/16) stays for the text and CTA. Applies to every Layout variant and to the clone/instance on the screen; the same rule holds when the app is redesigned (`app-redesign`).
+
 ## Adding to the Kit
 - New Native layout → new variant in `Ad / Native` with the same child names; then add it to `spec-format.md`.
 - New ad format → new component + a row in `archetypes.md` + an `ad` value in `spec-format.md`.
