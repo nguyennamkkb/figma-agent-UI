@@ -91,6 +91,9 @@ Source of truth: tool descriptions in `src/server/index.ts` and input schemas in
 
 ## 8. gemini-image-mcp (images for heroes, illustrations, backgrounds)
 
+The other supported image MCP is **muse2api** (`muse_generate_image{prompt, size, n, image_paths, background: "transparent"|"opaque", output_dir}`). When both are on, ask the user which one before the task starts and keep it for the whole set (`asset-generator` → "Image MCP — pick one before any work").
+
+
 1. `bridge_status` → `workerCount ≥ 1`. Zero workers: ask the user to open/reload the studio tab (`pageUrl`); `image_generate` can also auto-open it.
 2. `image_generate{prompt, aspectRatio "1:1"|"4:3"|"3:4"|"16:9"|"9:16", savePath: "<project>/generated-images/<screen>-<role>.png"}`. Put **"no text, no letters, no UI"** in the prompt and name the palette with hex values from the design. Two workers → two images run in parallel; send independent prompts in one turn.
 3. `Read` the file to look at it before using it.

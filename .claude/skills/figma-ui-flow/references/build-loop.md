@@ -36,6 +36,8 @@ Decide at the start of the screen and say which one in the first progress update
 
 When unsure, use **New build** for the first screen of a set and **From template** for the rest.
 
+**From a reference image** (recreate a screenshot or a Dribbble shot): run the **`screen-from-image`** skill — read sheet per screen (function, auto-layout tree, tokens, image emotion), one `render_tree` per screen with real content, the first screen approved before the rest when there are several.
+
 ## 3. The check budget: numbers every write, eyes per pass
 
 **After every write — numeric check** (`get_node{ids:[<written root>], depth: 2}`; the write result's `bounds` is often enough):
@@ -62,7 +64,7 @@ When unsure, use **New build** for the first screen of a set and **From template
   └─ Footer   FILL × HUG     Rating · CTA 56 · Caption · Link
   ```
 - Inventory what to reuse (`search_design_system`, `get_design_system`). Mark which blocks repeat (≥ 3 times) — they become components in Pass 2.
-- Generate images now (gemini) so Pass 2 only attaches them.
+- Generate images now (the image MCP picked for the task, `asset-generator` → "Image MCP") so Pass 2 only attaches them.
 - In **Sketch** mode this pass is a few lines in your head; in **From template** it is "what differs from the template".
 
 ## 5. Pass 1 — Layout

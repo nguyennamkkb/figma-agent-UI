@@ -60,6 +60,7 @@ Asked once, in one `AskUserQuestion`, after the analysis and the directions on p
 Everything else (type, shape, icons, navigation, copy tone, screens to prove the direction) follows the chosen direction and is written in `plan.md` as *assumption*; the user changes it through "Other" or the notes of question 1.
 
 - A question already answered by the goal (an explicit `L3`, "dark only", a named image style) is not asked: leave it out and say the value in the summary above the dialog.
+- **Image MCP is not one of the 4.** When both gemini and muse are on, ask which one at the very start of `start` (before the scan), alone, and write it in `project.md` → *Answers*; every later image of the project uses it (`asset-generator` → "Image MCP — pick one before any work").
 - "Tùy bạn" or no answer → the recommended option, said back in one line.
 - Answers go to `project.md` → *Answers* and *Decisions*, and to `plan.md` §1.
 

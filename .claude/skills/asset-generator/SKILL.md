@@ -14,6 +14,21 @@ Two modes in one skill. Pick once per request, then follow only that part.
 
 A scene that fills its slot uses Part A. A subject laid over native UI uses Part B.
 
+## Image MCP — pick one before any work
+
+Two image MCPs are supported. Every skill that generates images (`screen-from-image`, `ui-visual`, `app-redesign`, `ads-board`, `figma-ui-flow`) follows this section.
+
+| MCP | Generate | Reference image | Background | Output |
+|---|---|---|---|---|
+| **gemini-image-mcp** | `bridge_status` (workers ≥ 1) → `image_generate{prompt, aspectRatio, outputDir}` | `refImagePath` (one) | opaque, JPEG: key colour + `remove_bg.py` for cut-outs | `filePath` |
+| **muse2api** | `muse_health` → `muse_generate_image{prompt, size, n, output_dir}` | `image_paths` (up to 4 local files) | `background: "transparent"` cuts out itself (keys on green, see Step 2), or `"opaque"` | file paths in the result |
+
+1. Look at the tools available in the session: `image_generate` (gemini) and/or `muse_generate_image` (muse).
+2. **Both on → ask the user which one before starting the task** (one `AskUserQuestion`, or bundled with the skill's own first question), not at the first image. Neither is recommended by default; say in the options what each is better at (gemini: one reference, chromakey we control; muse: up to 4 references, `n` variants, built-in transparency).
+3. Only one on → use it, mention it in one line. None on → say so and stop before the image steps; native and text work can continue.
+4. The answer holds for the whole task (and the project: write it in the project brief when the skill keeps one). Never switch MCP mid-set without asking: two generators break the series look.
+5. Map the steps of this skill to the chosen MCP: Step 4 call, the reference parameter, and for muse with `background: "transparent"` skip `remove_bg.py` unless the subject is green.
+
 # Part A — One-shot image prompts
 
 Transform brief user concepts into **One-Shot Image Generation Prompts** with strict medium consistency, exact color control, and tailored spatial composition across the standard aspect ratios (`1:1`, `3:4`, `4:3`, `2:3`, `3:2`, `16:9`, `9:16`, and the full-screen iPhone ratio `9:19.5`). Ensure the image generator produces the exact intended framing and style on the first run without token contradiction.
@@ -150,6 +165,10 @@ direction/tokens), main colors. Generate **one** image — no variants unless th
 | green (leaves, plants, green brand) | `#FF00FF` pure magenta |
 | both green and pink/purple | `#0000FF` pure blue |
 
+The **muse** image MCP (`muse_generate_image{background: "transparent"}`) removes the background itself and always keys on green: for a green subject (green lenses, dollar signs, a world map, plants) its check reports `key color left inside the subject` even when the cut-out is fine. Open the cut-out on a contrasting colour and zoom the edges before using it; if green was eaten, generate it opaque on magenta (template below) and run `remove_bg.py` yourself.
+
+**Recreating a reference shot** (a Dribbble mockup, a screenshot): screenshot the reference at scale 1, crop each asset with PIL (×3 upscale) and pass the crop as the reference image (`image_paths` / `refImagePath`). The new asset matches the reference style on the first try; generate the whole set in parallel, then trim each PNG to its alpha bounding box before placing it with `scaleMode: "FIT"`.
+
 ## Step 3 — Prompt (copy this template)
 ```
 [Subject], [style, e.g. flat vector illustration / soft 3D clay / line icon], [colors from the design tokens],
@@ -161,8 +180,10 @@ Crisp clean edges.
 ```
 Never write "transparent background" — the model paints a fake checkerboard.
 
-## Step 4 — Generate (gemini-image-mcp)
-Call `image_generate` once:
+## Step 4 — Generate (the MCP picked above)
+With muse: `muse_generate_image{prompt, size, background: "transparent", image_paths?, output_dir: "assets/raw"}`, then go to Step 6 (Step 5 only for a green subject or a failed cut-out).
+
+With gemini, call `image_generate` once:
 - `prompt`: the filled template
 - `aspectRatio`: `"1:1"` (or the asset's shape: `3:4`, `4:3`, `9:16`, `16:9`)
 - `outputDir`: e.g. `assets/raw` — **don't** use `savePath` with a `.png` name: the service may return JPEG
