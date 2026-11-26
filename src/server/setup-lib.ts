@@ -4,7 +4,6 @@ export const SERVER_NAME = 'figma-agent';
 export const REPO_SPEC = 'github:nguyennamkkb/figma-agent-UI';
 export const PACKAGE_NAME = 'figma-agent-ui';
 export const BUNDLED_SKILLS = [
-  'figma-agent-tools',
   'figma-ui-flow',
   'asset-generator',
   'design-md-writer',
@@ -21,6 +20,7 @@ export const RETIRED_SKILLS = [
   'app-asset-generator',
   'generating-oneshot-image-prompts',
   'ios-style-screen-creator',
+  'figma-agent-tools',
 ] as const;
 export const PLUGIN_FILES = ['manifest.json', 'code.js', 'ui.html'] as const;
 

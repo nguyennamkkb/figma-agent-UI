@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# figma-desktop.sh — OS-side companion for the figma-agent-tools skill.
+# figma-desktop.sh — OS-side companion for the figma-ui-flow skill (references/tools/desktop-flow.md).
 # Handles what MCP tools cannot: opening files in Figma desktop, launching the
 # dev plugin via the app menu, and creating/renaming files via kimi-webbridge.
 #

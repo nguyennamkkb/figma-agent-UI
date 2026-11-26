@@ -17,14 +17,4 @@
 
 ## 2. Traps met on real builds
 
-- **Text outside auto layout** (child of a `layout: "NONE"` frame or the page): sized with `textAutoResize`. No `width` → hugs; `width` → wraps. Plugins before 1.6.19 failed the whole tree; on an old plugin wrap such labels in an auto-layout row.
-- **`color` on an `svg` recolours every fill and stroke inside it**: leave it out for two-colour icons (a bag with a handle in the background colour) and keep the colours in the markup.
-- **SVG `<pattern>`** comes out flat or black: render the texture to a PNG at 3×.
-- **No rich text in `render_tree`**: one word in another colour or weight → `execute_code` `setRangeFills` / `setRangeFontName` after the render.
-- **Rows past the screen edge** (tabs, peeking carousels): the row `clip: false`, the screen `clip: true`; a carousel is a `layout: "NONE"` frame with side cards at negative or overflowing `x`.
-- **Two-size numbers** ("$79" + ".00"): two texts in a `HORIZONTAL` frame, `align: "BASELINE"`.
-- **A width inside auto layout needs `widthMode: "FIXED"`**, otherwise the frame hugs and clips absolute children (same for height).
-- **Long single-line copy** wraps once real fonts load: check the line width in the sheet (characters × ~0.55 × font size) against the slot.
-- **muse `background: transparent` keys on green**: a green subject (fox with leaves, a map) gets flagged; check the edges by eye, or generate on magenta and run `remove_bg.py`.
-- **Generated images have margins**: trim to the alpha bbox before placing, or the subject looks smaller than in the picture.
-- Emoji inside text render with any font.
+The full list lives in `figma-ui-flow/references/knowledge/traps.md` (one log for every skill; add new traps there). Read it before the first `render_tree`. The ones that bite most when copying a picture: text outside auto layout, `color` on a multi-colour `svg`, SVG `<pattern>`, no rich text, rows past the edge, two-size numbers on `BASELINE`, a width inside auto layout without `FIXED`, long single-line copy, muse keying on green, margins around generated images.

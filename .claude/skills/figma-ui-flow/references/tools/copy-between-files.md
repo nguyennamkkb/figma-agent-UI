@@ -2,6 +2,17 @@
 
 The standard way to bring frames, sections or layers from one Figma file (the source, e.g. the client's original) into another (the target, e.g. the clone being rebuilt). The result is an exact copy built from real layers, not a screenshot. Never hand-write a cross-file copy with `execute_code`: plugin output stops at 20k characters, `clientStorage` hangs on large payloads, and the known traps below are already handled by the tools.
 
+## 0. Quick path
+
+Use when the user wants a screen "y hệt" the original, or to bring source screens into the clone before restyling. Both files must be open with the plugin connected. The rest of this file has the fields, what is copied and troubleshooting.
+
+1. `copy_nodes{file: <source>, ids, name, targetFile: <target>}`: one snapshot per screen or per Section. Read `skipped` and `missingInTarget`.
+2. `paste_nodes{file: <target>, page: "06 · Explore (WIP)", snapshot: name, x, y}` next to earlier copies; `exact: true` and an empty `mismatches` mean every layer kept its size. `screenshot` the copy and the source side by side.
+3. `fontFallbacks` lists text set in Inter because the target lacks the font: install the font later and swap it (the original is in plugin data `figma-agent/original-font`), or copy again with `outlineMissingFonts: true` when the exact look matters more than editing.
+4. Into a flow: `paste_nodes{replaceId: <old frame>}` keeps the slot and name, then rewrite the text-flow `@id`s and redraw connectors (`../standards/file-standards.md` §2.2.1 "Replacing a flow's screens").
+
+Never hand-write a cross-file copy with `execute_code`: snapshots on disk avoid the 20k output limit and plugin `clientStorage`, and the tools fix the known traps (hidden padding, masks, outlined-text strokes, video fills).
+
 ## 1. When to use
 
 | Situation | Use |
@@ -63,7 +74,7 @@ paste_nodes{
 paste_nodes{ file, snapshot: "IAP", replaceId: "4:53" }
 ```
 
-`replaceId` takes the old node's parent, index, x/y and **name**, pastes there and deletes the old node only after success. A failure removes the partial copy and leaves the old node untouched. Deleting the old frame also deletes every connector attached to it. Then follow `figma-ui-flow/references/file-standards.md` §2.2.1 "Replacing a flow's screens": rewrite the text-flow `@id`s (other flows included) and redraw the missing connectors.
+`replaceId` takes the old node's parent, index, x/y and **name**, pastes there and deletes the old node only after success. A failure removes the partial copy and leaves the old node untouched. Deleting the old frame also deletes every connector attached to it. Then follow `figma-ui-flow/references/standards/file-standards.md` §2.2.1 "Replacing a flow's screens": rewrite the text-flow `@id`s (other flows included) and redraw the missing connectors.
 
 ## 6. What is copied, what is not
 

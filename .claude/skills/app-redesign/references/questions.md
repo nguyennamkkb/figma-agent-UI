@@ -12,7 +12,7 @@ For each one: evidence from the file → recommendation → confidence. High con
 |---|---|---|
 | 1 | What does the original look like on each axis of §2? | `get_design_system`, `get_node` on the main screens, screenshots, `inventory.baseline.json` |
 | 2 | Which level makes the sibling read as another product? | sibling → L3 by default; L4 when the IA can change without hurting the funnel; L2 only for a refresh |
-| 3 | Which 3 directions are far from the original **and** from each other? | §2 distance table; pole combinations of figma-ui-flow `creative-process.md` §4.1 (density, hierarchy, structure, voice, material) |
+| 3 | Which 3 directions are far from the original **and** from each other? | §2 distance table; pole combinations of `figma-ui-flow/references/process/creative-process.md` §4.1 (density, hierarchy, structure, voice, material) |
 | 4 | Were siblings of this app released before? | `project.md` → *Released siblings*; each new direction also keeps its distance from them |
 | 5 | Which theme? | original theme (sibling → recommend the other one), content (media/creative apps suit dark, productivity apps light), cost: Both doubles QA and needs 2 variable modes (paid Figma plan) |
 | 6 | Which image style? | kinds of image in the baseline (3D, photo, flat illustration, mixed), number of hero images, their emotion; the level's treatment (`imagery.md`) |
@@ -40,7 +40,7 @@ Fill it before proposing directions and put it in `plan.md` §4:
 Rules:
 
 1. Each direction differs from the original on **at least 6 of the 10 axes**, always including **colour family, image style and layout**. Silhouette test: original and direction side by side at 25 % zoom, text unreadable; nobody takes them for the same app.
-2. The 3 directions differ from **each other**: with colour hidden they still look different (`creative-process.md` §4).
+2. The 3 directions differ from **each other**: with colour hidden they still look different (`figma-ui-flow/references/process/creative-process.md` §4).
 3. Each direction keeps the same distance from every released sibling (§1 #4).
 4. No axis may cost a function: parity must still pass.
 

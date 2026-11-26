@@ -52,7 +52,7 @@ Section: keep the flow's section, rename it `FL-NN · <Flow name>`; resize to fi
 
 ## 3. Links
 
-- Re-attach connectors whose ends pointed at archived frames to the new frames (connector gotcha in figma-agent-tools: create without label, set a short label after).
+- Re-attach connectors whose ends pointed at archived frames to the new frames (connector gotcha in `figma-ui-flow/references/process/stage-recipes.md`: create without label, set a short label after).
 - Shared screens (picker, paywall, language used by several flows): build once, link from the other flows, mark the other baseline entries `shared` with the target `currentId`.
 - Update the text flow / prototype links if the file has them (`set_interactions`).
 
