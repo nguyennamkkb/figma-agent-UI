@@ -38,6 +38,8 @@ Decide at the start of the screen and say which one in the first progress update
 
 When unsure, use **New build** for the first screen of a set and **From template** for the rest.
 
+**The template is a screen of the design you want to end with.** When an existing screen is being reworked after another design, that screen is the *content*, the reference screen is the *template*: clone the reference and pour the content in (`rework-after-reference.md`). Cloning the screen being reworked and editing "what differs" only recolours it.
+
 **From a reference image** (recreate a screenshot or a Dribbble shot): run the **`screen-from-image`** skill — read sheet per screen (function, auto-layout tree, tokens, image emotion), one `render_tree` per screen with real content, the first screen approved before the rest when there are several.
 
 ## 3. The check budget: numbers every write, eyes per pass
