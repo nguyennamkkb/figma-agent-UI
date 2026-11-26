@@ -16,9 +16,10 @@ Let `SKILL_DIR` be this folder. Answer the user in their language (Vietnamese wh
 3. **Proportions, not pixels.** Every measured value is turned into a ratio of its container (`scripts/ratios.py`) and recomputed for the target slot.
 4. **Change level is fixed first.** `L1` reskin · `L2` re-subject · `L3` recompose · `L4` new-in-style (`references/decode-checklist.md` §0). It decides what may move.
 5. **No borrowed identity.** A clone keeps the style DNA, never the source brand's mascot, logo, photos or copy — those are replaced in every level except an explicit internal L1 of the user's own asset.
-6. **Gates (◆) stop the command.** Do not continue past a gate in the same turn.
-7. **Every piece passes its own check** before compositing (asset QC in `references/prompt-blocks.md` §4), and the whole passes `references/qa-rubric.md` before handoff.
-8. Scratch work on the canvas is removed after verification; the user's existing frames are never edited unless named as the target. `node.clone()` parents the copy to the **current page**, not the reference's parent: move it next to the reference (`parent.appendChild(copy)`) and check the page before compositing. A page switched inside `execute_code` does not carry to the next tool call: pass `page` to `render_tree` / `execute_code`, then verify the created node's page. In `render_tree`, text inside a frame without auto layout fails; wrap copy in an auto-layout frame placed absolutely.
+6. **Image MCP fixed at intake.** Both gemini and muse on → ask which one in step 0, before any work, and use it for every layer (`asset-generator` → "Image MCP — pick one before any work"). Where the steps say Gemini / `image_generate` / `refImagePath`, read the chosen MCP's call and reference parameter.
+7. **Gates (◆) stop the command.** Do not continue past a gate in the same turn.
+8. **Every piece passes its own check** before compositing (asset QC in `references/prompt-blocks.md` §4), and the whole passes `references/qa-rubric.md` before handoff.
+9. Scratch work on the canvas is removed after verification; the user's existing frames are never edited unless named as the target. `node.clone()` parents the copy to the **current page**, not the reference's parent: move it next to the reference (`parent.appendChild(copy)`) and check the page before compositing. A page switched inside `execute_code` does not carry to the next tool call: pass `page` to `render_tree` / `execute_code`, then verify the created node's page. In `render_tree`, text inside a frame without auto layout fails; wrap copy in an auto-layout frame placed absolutely.
 
 ## 2. Project folder (in the repo, outside this skill)
 

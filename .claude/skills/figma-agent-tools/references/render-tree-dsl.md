@@ -6,7 +6,8 @@
 3. Paints and effects people get wrong
 4. Sizing rules (the source of most failures)
 5. Building in passes
-6. update_nodes
+6. Traps met on real builds
+7. update_nodes
 
 ---
 
@@ -123,7 +124,17 @@ The build loop in figma-ui-flow locks the layout first, then fills it:
 - Read the frame back with `get_node{ids:[rootId], depth: 2}` to confirm sizing modes and that everything fits before filling.
 - A frame with a `width` inside auto layout also needs `widthMode: "FIXED"`, or it hugs its content.
 
-## 6. update_nodes
+## 6. Traps met on real builds
+
+- **Text outside auto layout** (a child of a `layout: "NONE"` frame or of the page) is sized with `textAutoResize`, not layout sizing: no `width` → it hugs (`WIDTH_AND_HEIGHT`), a `width` → it wraps at that width (`HEIGHT`). Plugins before 1.6.19 failed the whole tree with `set_layoutSizingVertical: node must be an auto-layout frame…`; on an older plugin put such labels in a small auto-layout row (`widthMode: "FILL"` + `textAlign`).
+- **`color` on an `svg` node recolours every solid fill and stroke inside it.** A two-colour icon (a bag whose handle is drawn in the background colour, a flag) loses its details: leave `color` out and keep the colours in the markup.
+- **SVG `<pattern>` fills do not import reliably** (hatched bars, striped tracks come out flat or black). Render the hatching to a PNG at 3× (PIL) and place it as an `image`; regenerate the PNG when the sizes change.
+- **No rich text in `render_tree`.** One word in another colour or weight ("**Save $10** on coffee") → render the text, then `execute_code`: `setRangeFills(start, end, [h.solid(hex)])` / `setRangeFontName` after loading the font.
+- **Content that runs past the screen edge** (tabs, carousels peeking at the sides): the row gets `clip: false`, the screen frame keeps `clip: true`; a carousel is a `layout: "NONE"` frame with the side cards at negative / overflowing `x`.
+- **Two-size numbers** ("$79" big, ".00" small): two text nodes in a `HORIZONTAL` frame with `align: "BASELINE"`.
+- Emoji inside text (`"Hey, Den 👋🏻"`) render with any font; no special handling.
+
+## 7. update_nodes
 
 ```jsonc
 { "updates": [ { "id": "12:34", "props": { "text": "New", "fill": { "var": "color/primary" } } } ] }

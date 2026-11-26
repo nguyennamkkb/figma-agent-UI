@@ -1,6 +1,7 @@
 import type { AnyProps, NumOrVar } from '../shared/schemas';
 import { deviceFrame } from '../shared/devices';
 import { GRID_PRESETS, toLayoutGrid } from '../shared/grids';
+import { sizesThroughLayout, textAutoResizeFor } from '../shared/text-sizing';
 import { expandSides, parseLetterSpacing, parseLineHeight, weightToStyle } from '../shared/values';
 import { loadFont, loadNodeFonts, resolveFont } from './fonts';
 import { resolveEffects, resolveFill } from './paints';
@@ -311,13 +312,15 @@ export function applyPlacement(node: SceneNode, p: AnyProps, isNew: boolean): vo
       throw new Error(`${axis} HUG only works on auto-layout frames and text; set layout or a fixed size.`);
     }
   }
-  if (wm !== undefined) node.layoutSizingHorizontal = wm;
-  if (hm !== undefined) node.layoutSizingVertical = hm;
+  const viaLayout = sizesThroughLayout(isText, parentAL);
+  if (viaLayout && wm !== undefined) node.layoutSizingHorizontal = wm;
+  if (viaLayout && hm !== undefined) node.layoutSizingVertical = hm;
 
   if (isText && (isNew || wm !== undefined || p.width !== undefined)) {
     const text = node as TextNode;
-    if (text.layoutSizingHorizontal === 'HUG') text.textAutoResize = 'WIDTH_AND_HEIGHT';
-    else if (hm !== 'FIXED' && p.height === undefined) text.textAutoResize = 'HEIGHT';
+    const hugsWidth = viaLayout ? text.layoutSizingHorizontal === 'HUG' : wm === 'HUG';
+    const autoResize = textAutoResizeFor(hugsWidth, hm, p.height !== undefined);
+    if (autoResize) text.textAutoResize = autoResize;
     if (p.maxLines !== undefined) {
       text.textTruncation = 'ENDING';
       text.maxLines = p.maxLines;

@@ -58,6 +58,7 @@ Rules:
 | Layout, information density, avoiding card stacks/meaningless emptiness, visual review | `mobile-ui-master` |
 | iPhone / iPad / Watch / Widget per HIG | `apple-design-iphone`, `apple-design-ipad`, `apple-design-watch`, `apple-design-widget` |
 | Visual style from a named style, reference image or brief; reliable DNA extraction; iOS + Android mapping | `style-direction` |
+| Redraw screens from an image (screenshot, Dribbble shot, mockup) fast, first screen approved before the rest | `screen-from-image` |
 | Prompts for illustrations, hero images, backgrounds; transparent cut-out assets | `asset-generator` |
 
 ## 11 core rules (they override any personal habit)
@@ -137,7 +138,7 @@ Read `references/creative-process.md`. When the user names a style, gives a refe
 
 Read `references/build-loop.md` — **mandatory** for every screen.
 
-1. **Pick the mode:** **Sketch** (quick idea, Stage 4), **From template** (a similar screen exists: clone and edit what differs), **New build** (complex, no template). First screen of a set = New build, the rest = From template.
+1. **Pick the mode:** **Sketch** (quick idea, Stage 4), **From template** (a similar screen exists: clone and edit what differs), **New build** (complex, no template), **From a reference image** (recreate a screenshot or shot: the `screen-from-image` skill). First screen of a set = New build, the rest = From template.
 2. **Pass 0 Prepare:** the screen contract (`decision-playbook.md`: purpose, entry → exit, one primary action, information order, states), real content, a region map down to block sizes, which blocks repeat (→ components), images generated up front.
 3. **Pass 1 Layout (1–2 writes):** start from `assets/frames/<device>.render-tree.json` (`file-standards.md` §4.3) — root frame at the platform size + named regions + **sized placeholder blocks** carrying their final Auto Layout. Numeric check, then one screenshot: the screen should already read as the final layout in grey boxes.
 4. **Pass 2 Fill:** components first for anything repeated ≥ 3 times (Stage 3), then fill placeholders **by cluster** (several blocks per write) and add real text, icons, images in batches. Numeric check after each write; one screenshot at the end of the pass, extra ones only for unusual blocks.

@@ -29,7 +29,7 @@ At L3 and L4 the "Keep" column above shrinks to the image's message and emotion;
 
 1. Source file: `redesign/<app>/images/source/` (exported during `start`; re-export at 2× with `export_assets` if the source is small).
 2. Prompt in two blocks: **Keep:** the left column, described concretely for this image. **Change:** the 2–3 changes. Add the palette hex values of the approved direction and "no text, no letters, no UI".
-3. `image_generate{prompt, aspectRatio closest to the slot, refImagePath: <source>, savePath: redesign/<app>/images/new/<screen>-<role>.png}`. The first approved image becomes a second reference for the rest of the set (consistency).
+3. With the project's image MCP (`project.md` → *Answers*; gemini shown, muse = `muse_generate_image` with `image_paths`): `image_generate{prompt, aspectRatio closest to the slot, refImagePath: <source>, savePath: redesign/<app>/images/new/<screen>-<role>.png}`. The first approved image becomes a second reference for the rest of the set (consistency).
 4. `Read` the result; reject on AI defects (hands, eyes, warped text), lower resolution than the source, or a different mood.
 5. Side by side on Explore: `source | new` frames with the screen code as title; ask the user ◆.
 6. Approved → place it into the hero layer's fill (keep the node, change the image), add the entry to `image-map.json` with `approved: true` and the new hash (read it back with `get_node`).

@@ -133,7 +133,7 @@ Mọi tool nhận `page` (id/tên) để chạy trên page đó rồi trả page
 
 **Figma Slides:** agent đọc và dựng slide trong deck Slides. 7 tool chỉ dành cho Design bị từ chối (`set_interactions`, `annotate`, `set_dev_status`, `bind_variables`, `create_component_set`, `stress_test`, `render_foundations`); variables, styles và token (`create_variables`, `create_styles`, `import_tokens`, `export_tokens`, `get_design_system`, `search_design_system`) vẫn dùng được. Chi tiết: `specs/002-slides-integration/`.
 
-**Skill:** repo kèm 10 skill trong `.claude/skills/`, được `install` cài global:
+**Skill:** repo kèm 11 skill trong `.claude/skills/`, được `install` cài global:
 
 | Skill | Dùng cho |
 |---|---|
@@ -147,6 +147,7 @@ Mọi tool nhận `page` (id/tên) để chạy trên page đó rồi trả page
 | `app-redesign` | làm lại giao diện app đã có mà giữ nguyên chức năng, thường là app anh em để phát hành thêm (khác bản gốc ≥ 6/10 trục; sau khi phân tích chỉ hỏi tối đa 4 câu — hướng A/B/C, mức, sáng/tối, phong cách ảnh — trước khi vẽ): `start <mục tiêu> [L1–L4] [link section]` / `build [FL-NN|link section] [L1–L4]` / `audit [FL-NN|link section]` trên bản sao đã xác nhận; dán link section để làm thử riêng một luồng, nếu đã có luồng được sửa thì skill hỏi làm theo cách đó hay cách khác (cách khác = bản thử trên page Explore), 4 mức thay đổi (L1 đổi màu tại chỗ · L2 làm mới, giữ bố cục · L3 đổi bố cục · L4 làm mới toàn bộ), quét baseline trước khi sửa, kiểm tra không thiếu màn, trạng thái, liên kết, quảng cáo, CTA, ảnh hero (`scripts/scan.js`, `analyze.py`, `parity.py`) |
 | `ui-visual` | tạo visual UI chuyên nghiệp (banner, popup có header minh hoạ, hero, thumbnail, coupon, topic card): `clone <ref> [L1–L4]` sao chép có kiểm soát mức thay đổi, `create <brief>`, `extract <ref>`; đo mẫu bằng `scripts/decode.js`, tính tỷ lệ cho slot mới bằng `ratios.py`, sinh từng mảnh bằng `gemini-image-mcp` + `asset-generator`, ghép lớp bằng `compose.js` (filter ảnh, blend, mask, glow, viền kính, phá khung), kiểm tra bằng 12 bài QA |
 | `lottie-motion` | thiết kế và xuất Lottie/dotLottie chuẩn chuyên gia: `start <brief>` (motion spec + tokens + chọn đường xuất), `build [MOT-ID]` (Figma Motion hoặc Python generator + audit), `audit <file>` (cấu trúc, feature risk, budget, score), `handoff [MOT-ID]` (spec, asset, preview, runtime report, iOS/Android notes); kèm `scripts/spec_check.py`, `motion_to_lottie.py`, `lottie_audit.py`, `dotlottie_pack.py`, ma trận runtime iOS/Android/web và QA 4 lớp |
+| `screen-from-image` | vẽ lại một hoặc nhiều màn từ ảnh (screenshot, shot Dribbble, mockup) nhanh nhất: phiếu đọc mỗi màn (chức năng, cây auto layout, token, cảm xúc ảnh) rồi một `render_tree` mỗi màn; nhiều màn thì dựng 1 màn tiêu biểu để duyệt trước. Ảnh tạo bằng gemini-image-mcp hoặc muse2api — bật cả hai thì skill hỏi dùng cái nào trước khi làm |
 
 Ví dụ DSL: `examples/fintech-wallet.json` (dán vào ô *Test render_tree locally* trong plugin để thử không cần agent).
 

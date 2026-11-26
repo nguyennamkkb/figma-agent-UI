@@ -14,6 +14,7 @@ export const BUNDLED_SKILLS = [
   'app-redesign',
   'ui-visual',
   'lottie-motion',
+  'screen-from-image',
 ] as const;
 export const RETIRED_SKILLS = [
   'phosphor-icons',

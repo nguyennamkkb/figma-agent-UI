@@ -45,7 +45,7 @@ This skill is about **mechanics**: which tool, which parameters, what comes back
 | Handoff | `annotate`, `set_dev_status`, `export_tokens`, `export_assets` |
 | Show the user | `select_nodes{ids, zoom}` |
 | Anything else in the Plugin API | `execute_code` (last resort) |
-| Generated images | `gemini-image-mcp`: `bridge_status` → `image_generate{prompt, savePath, aspectRatio}` → local path into `image.src` / `fill.image` |
+| Generated images | `gemini-image-mcp` (`image_generate`) or `muse2api` (`muse_generate_image`); both on → ask the user which one before the task (`asset-generator` → "Image MCP") → local path into `image.src` / `fill.image` |
 
 Order of preference: dedicated tool → `render_tree`/`update_nodes` → `execute_code`. Dedicated tools validate input, return ids and clean up on failure; `execute_code` does none of that.
 
