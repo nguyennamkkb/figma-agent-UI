@@ -22,10 +22,18 @@ Let `SKILL_DIR` be the directory containing this file. Do not read everything at
 4. Write, then read the numbers back (the write's `bounds` or `get_node`); screenshot only if the edit is visual. Failed write → `safeToRetryWithoutCanvasRead` decides (`references/knowledge/troubleshooting.md` → Errors and retries).
 5. Never delete or overwrite what the user made without asking.
 
+## Words that set the scope
+
+- "theo phong cách / theo mẫu / giống màn X / theo style vừa tạo" about a **screen** = its layout patterns, component anatomy, imagery, density **and** tokens → rebuild (L3), not a recolour.
+- "đổi màu / đổi tông / đổi theme / chỉ màu" = tokens only (L1).
+- "phong cách" about a whole app with no reference screen = visual direction → `style-direction`.
+Full table and levels: `references/process/rework-after-reference.md` §1.
+
 ## Door 1 — by task
 
 | Task | Read, in this order |
 |---|---|
+| Rework an existing screen after another screen or style ("sửa màn này theo phong cách/mẫu ở trên") | `references/process/rework-after-reference.md` → `build-loop.md` → `references/knowledge/traps.md` §4 |
 | Draw a new screen (file has a system) | `references/process/build-loop.md` → `references/tools/render-tree-dsl.md` → `references/knowledge/traps.md` |
 | New project from scratch | the 8 stages below, from Stage 1; per stage the tool calls are in `references/process/stage-recipes.md` |
 | Design system: tokens, styles, components | `references/standards/design-system.md` → `references/process/stage-recipes.md` (Stages 2–3) → `references/tools/execute-code.md` when no tool fits |
@@ -62,6 +70,7 @@ Do not read everything at once. Each stage below states which file it needs.
 | `files: []`, ⚠️ `versionCheck`, `Unknown command`, time-outs | `references/tools/connect.md` + `references/knowledge/troubleshooting.md` → Connection and versions |
 | Wrong size: a frame hugged, text overflows or clips, a footer floats | `references/tools/render-tree-dsl.md` §4 → `references/process/build-loop.md` §3 |
 | Wrong colour, a recoloured icon, a flat pattern, a missing image edge, an onboarding hero fade | `references/knowledge/traps.md` |
+| A reworked screen came back as the old screen recoloured | `references/process/rework-after-reference.md` + `references/knowledge/traps.md` §4 |
 | `audit_design` finding that looks wrong | `references/knowledge/troubleshooting.md` → Audit false positives |
 | `execute_code` hangs or throws | `references/tools/execute-code.md` §0 + `references/knowledge/troubleshooting.md` → Plugin API |
 | What the plugin cannot do (publish, Code Connect, multi-mode on free plan) | `references/tools/connect.md` §3 |
@@ -137,6 +146,7 @@ Not every task runs all 8. Determine the entry point in Stage 0, then run from t
 | "Clean up / standardize this file" | Stage 7 (audit) → back to Stages 2–3 to fix |
 | Create a design system / library | Stage 2 → 3 |
 | Draw a new screen in a file that already has a system | Stage 5 |
+| Rework an existing screen after a reference screen | Stage 5 with `references/process/rework-after-reference.md` |
 | "Find ideas / make it prettier / more creative" | Stage 4 |
 | Prototype, animation | Stage 6 |
 | Developer handoff | Stage 7 → 8 |

@@ -26,3 +26,8 @@ Things that go wrong **without a clear error**, or with an error that does not n
 ## 3. Images on screens
 
 - **Onboarding hero fade** drawn by the image model never lands on the exact background hex or height → generate the scene only and bake the fade with `app-redesign/scripts/bake_fade.py` (recipe: `app-redesign/references/imagery.md` → "Onboarding images — the baked bottom fade"). *(seen: 2026-11-26, AI Chatbot F4 `13002:22650`)*
+
+## 4. Requests about style
+
+- **"Sửa lại màn đó theo phong cách đã tạo phía trên" came back as a recolour** — the agent read "phong cách" as tokens and used the source screen as the template, so layout, rows and images stayed the source's and only colours changed → treat "theo phong cách/mẫu" of a reference screen as L3: mapping table, clone the reference, pour the source content in, accept side by side with the reference and with the silhouette test (`../process/rework-after-reference.md`). *(seen: 2026-11-26, baby-tracker `06 · Explore (WIP)`: source `53:6901`, reference `52:6676`, wrong result `53:7035`, expected direction `53:7160`)*
+
