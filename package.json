@@ -1,6 +1,6 @@
 {
   "name": "figma-agent-ui",
-  "version": "1.6.17",
+  "version": "1.6.18",
   "description": "Figma plugin + MCP server that lets an AI agent read, create, edit and screenshot designs",
   "main": "code.js",
   "bin": {
