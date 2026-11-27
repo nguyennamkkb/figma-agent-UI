@@ -1,0 +1,273 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Desk</title>
+<style>
+:root{--bg:#f5f6f8;--panel:#fff;--panel-2:#f0f2f5;--text:#14161a;--text-2:#4a4f59;--text-3:#8a909b;--line:#e3e6eb;--accent:#2f6fdb;--ok:#18864b;--warn:#b26b00;--bad:#c33a32;--wait:#7457c7;--rev:#b08800;--shadow:0 1px 2px rgba(16,24,40,.06),0 1px 3px rgba(16,24,40,.08);
+--r-engineer:#2f6fdb;--r-designer:#c2418f;--r-tester:#18864b;--r-fixer:#c3672b;--r-writer:#6b6f80;--r-reviewer:#7457c7;--r-researcher:#0e8a8a;--r-lead:#14161a}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1115;--panel:#171a20;--panel-2:#1d2128;--text:#e8eaee;--text-2:#b3b8c2;--text-3:#7b818c;--line:#2a2f38;--accent:#6c9cff;--ok:#43c07a;--warn:#e5a23b;--bad:#ff6d63;--wait:#a68cff;--rev:#e3c14d;--shadow:none;--r-lead:#e8eaee}}
+*{box-sizing:border-box}html,body{margin:0}body{background:var(--bg);color:var(--text);font:13.5px/1.45 ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:1320px;margin:0 auto;padding:16px 16px 56px}
+a{color:var(--accent)}code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px}
+.top{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin-bottom:12px}.top h1{font-size:18px;margin:0;letter-spacing:-.01em}
+.goal{color:var(--text-2);flex:1 1 360px;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:3px 10px;border-radius:999px;border:1px solid var(--line);background:var(--panel);font-size:12px;color:var(--text-2);white-space:nowrap}
+.dot{width:8px;height:8px;border-radius:50%;display:inline-block;background:var(--text-3)}.dot.green{background:var(--ok)}.dot.yellow{background:var(--warn)}.dot.red{background:var(--bad)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:12px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px 12px;box-shadow:var(--shadow);min-width:0}.kpi b{display:block;font-size:22px;font-variant-numeric:tabular-nums;line-height:1.2}.kpi span{color:var(--text-3);font-size:11.5px;text-transform:uppercase;letter-spacing:.04em}
+.kpi svg{display:block;margin-top:4px}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(12,minmax(0,1fr))}.c12{grid-column:span 12}.c8{grid-column:span 8}.c7{grid-column:span 7}.c5{grid-column:span 5}.c4{grid-column:span 4}.c6{grid-column:span 6}
+@media (max-width:980px){.c8,.c7,.c5,.c4,.c6{grid-column:span 12}}
+section{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;box-shadow:var(--shadow);min-width:0}
+h2{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--text-2);margin:0 0 10px;display:flex;align-items:center;gap:8px}h2 .n{color:var(--text-3);font-weight:500}h2 .sp{flex:1}
+.attn{border-color:color-mix(in srgb,var(--warn) 45%,var(--line))}
+.row{display:flex;gap:10px;align-items:flex-start;padding:7px 0;border-top:1px solid var(--line)}.row:first-of-type{border-top:0}.row .what{flex:1;min-width:0}
+.cmd{display:inline-flex;gap:6px;align-items:center;background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:2px 6px;max-width:100%;overflow:hidden}.cmd code{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+button{font:inherit;color:inherit;background:var(--panel-2);border:1px solid var(--line);border-radius:6px;padding:2px 8px;cursor:pointer}button:hover{border-color:var(--text-3)}button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.id{font-weight:650;font-variant-numeric:tabular-nums;cursor:pointer}.id:hover{color:var(--accent)}.p{font-size:10.5px;padding:0 6px;border-radius:9px;border:1px solid var(--line);color:var(--text-2);margin:0 2px}.p.P0{border-color:var(--bad);color:var(--bad)}.p.P1{border-color:var(--accent);color:var(--accent)}
+.muted{color:var(--text-3)}.small{font-size:12px}.ell{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.workers{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.card{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--panel);position:relative;min-width:0;border-left:4px solid var(--rc,var(--text-3))}
+.card.idle{opacity:.6;border-style:dashed;border-left-style:solid}.card .role{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--rc);font-weight:700}
+.card .title{font-weight:600;margin:3px 0 4px}.card .meta{font-size:12px;color:var(--text-2);display:grid;gap:2px}.card .flags{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.flag{font-size:11px;padding:1px 6px;border-radius:5px;background:var(--panel-2);border:1px solid var(--line);color:var(--text-2)}.flag.bad{color:var(--bad);border-color:var(--bad)}.flag.warn{color:var(--warn);border-color:var(--warn)}.flag.ok{color:var(--ok);border-color:var(--ok)}.flag.q{color:var(--wait);border-color:var(--wait)}
+.timeline{width:100%;overflow-x:auto}.timeline svg{display:block;min-width:640px}
+.bar{height:7px;background:var(--panel-2);border-radius:4px;overflow:hidden;display:flex}.bar i{display:block;height:100%}
+.kanban{display:grid;grid-template-columns:repeat(5,minmax(170px,1fr));gap:10px;overflow-x:auto}.col{background:var(--panel-2);border-radius:10px;padding:8px;min-height:80px}.col h3{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--text-2);margin:2px 4px 8px;display:flex;justify-content:space-between}
+.tk{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:7px 8px;margin-bottom:7px;cursor:pointer;border-left:3px solid var(--rc,var(--line))}.tk:hover{border-color:var(--text-3)}.tk .t{margin:2px 0}.tk .m{font-size:11.5px;color:var(--text-3)}
+.filters{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.filters select,.filters input{font:inherit;color:inherit;background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:3px 6px}.filters input{min-width:160px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}th,td{text-align:left;padding:6px 8px;border-top:1px solid var(--line);white-space:nowrap}th{color:var(--text-3);font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:.04em;border-top:0}td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.tabs{display:flex;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.feed .row{font-size:12.5px}.feed time{color:var(--text-3);font-variant-numeric:tabular-nums;width:74px;flex:none}
+.empty{color:var(--text-3);font-style:italic;padding:6px 0}
+dialog{border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--text);width:min(760px,96vw);max-height:88vh;padding:0}dialog::backdrop{background:rgba(0,0,0,.35)}
+.dlg-h{display:flex;gap:10px;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel)}.dlg-b{padding:12px 16px}
+.kv{display:grid;grid-template-columns:120px 1fr;gap:4px 12px;font-size:12.5px}.kv dt{color:var(--text-3)}.kv dd{margin:0;overflow-wrap:anywhere}
+ol.hist{list-style:none;padding:0;margin:8px 0 0;border-left:2px solid var(--line)}ol.hist li{padding:3px 0 3px 12px;position:relative;font-size:12.5px}ol.hist li::before{content:"";position:absolute;left:-5px;top:9px;width:8px;height:8px;border-radius:50%;background:var(--text-3)}
+.foot{margin-top:14px;color:var(--text-3);font-size:11.5px;text-align:center}
+</style>
+</head>
+<body>
+<main>
+  <div class="top">
+    <h1 id="title">Desk</h1>
+    <span class="pill" id="health"><i class="dot"></i><span>…</span></span>
+    <span class="pill" id="orca"></span>
+    <span class="pill" id="workers"></span>
+    <span class="goal" id="goal"></span>
+    <span class="pill" id="updated"></span>
+  </div>
+  <div class="kpis" id="kpis"></div>
+  <div class="grid">
+    <section class="c12 attn" id="needs"><h2>Needs you <span class="n" id="needs-n"></span><span class="sp"></span><span class="muted small" id="health-why"></span></h2><div id="needs-b"></div></section>
+    <section class="c12"><h2>Team <span class="n" id="team-n"></span></h2><div class="workers" id="team"></div></section>
+    <section class="c12"><h2>Timeline <span class="sp"></span><span class="tabs" id="win"></span></h2><div class="timeline" id="timeline"></div></section>
+    <section class="c5"><h2>Plans</h2><div id="plans"></div></section>
+    <section class="c7"><h2>Model efficiency <span class="muted small">(closed in view + running)</span></h2><div id="models"></div></section>
+    <section class="c12"><h2>Board <span class="n" id="board-n"></span><span class="sp"></span><span class="filters" id="filters"></span></h2><div class="kanban" id="kanban"></div></section>
+    <section class="c7"><h2>Activity</h2><div class="feed" id="feed"></div></section>
+    <section class="c5"><h2>Knowledge</h2><div class="tabs" id="ktabs"></div><div id="kbody"></div></section>
+  </div>
+  <div class="foot" id="foot"></div>
+</main>
+<dialog id="dlg"><div class="dlg-h"><b id="dlg-t"></b><span style="flex:1"></span><button id="dlg-x">Close</button></div><div class="dlg-b" id="dlg-b"></div></dialog>
+<script>const D = /*DESK*/{"items":[],"goal":[],"recent":[],"metrics":{"health":{"level":"green","reasons":[]},"perDay":[],"quiet":[],"models":[]},"team":{},"plans":{}}/*END*/;
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const KEY = 'agentkit-desk-ui';
+const ui = (() => { try { return { win: '24h', tab: 'memory', f: {}, ...JSON.parse(localStorage.getItem(KEY) || '{}') }; } catch { return { win: '24h', tab: 'memory', f: {} }; } })();
+const saveUi = () => { try { localStorage.setItem(KEY, JSON.stringify({ ...ui, y: window.scrollY })); } catch {} };
+const NOW = Date.now();
+const ICON = { inbox: '📥', todo: '⬜', doing: '🔵', waiting: '⏸', review: '🟡', done: '✅', dropped: '⏹', failed: '❌', archived: '🗄' };
+const COLOR = { doing: 'var(--accent)', review: 'var(--rev)', done: 'var(--ok)', failed: 'var(--bad)', dropped: 'var(--text-3)', waiting: 'var(--wait)', todo: 'var(--line)', inbox: 'var(--line)' };
+const T = D.items.filter((i) => i.kind === 'task');
+const lead = (t) => !t.executor || t.executor === 'lead';
+const roleOf = (t) => (lead(t) ? 'lead' : t.role || 'engineer');
+const rc = (r) => `var(--r-${['engineer', 'designer', 'tester', 'fixer', 'writer', 'reviewer', 'researcher', 'lead'].includes(r) ? r : 'writer'})`;
+const by = (...s) => T.filter((t) => s.includes(t.status));
+const sortP = (a, b) => (a.prio || 'P9').localeCompare(b.prio || 'P9') || (b.uses || 0) - (a.uses || 0);
+const dur = (ms) => { if (ms == null || isNaN(ms)) return '–'; const m = Math.round(ms / 6e4); return m < 60 ? `${m}m` : m < 1440 ? `${(m / 60).toFixed(m < 600 ? 1 : 0)}h` : `${(m / 1440).toFixed(1)}d`; };
+const ago = (iso) => (iso ? dur(NOW - Date.parse(iso)) : '–');
+const startedAt = (t) => (t.history || []).find((h) => h.status === 'doing')?.at;
+const lastH = (t) => (t.history || []).at(-1) || {};
+const idLink = (id) => `<span class="id" data-open="${esc(id)}">${esc(id)}</span>`;
+const prio = (p) => (p ? `<span class="p ${esc(p)}">${esc(p)}</span>` : '');
+const cmd = (c) => `<span class="cmd"><code>${esc(c)}</code><button data-copy="${esc(c)}" title="copy">⧉</button></span>`;
+const C = 'node .agentkit/desk.mjs';
+
+document.title = `Desk — ${D.title || 'Work'}`;
+$('title').textContent = `Desk — ${D.title || 'Work'}`;
+const H = D.metrics.health || { level: 'green', reasons: [] };
+$('health').innerHTML = `<i class="dot ${H.level}"></i><span>${{ green: 'Healthy', yellow: 'Attention', red: 'Action needed' }[H.level]}</span>`;
+$('health').title = H.reasons.join('\n') || 'nothing waiting';
+$('health-why').textContent = H.reasons.slice(0, 4).join(' · ');
+const running = by('doing').filter((t) => !lead(t));
+$('orca').innerHTML = D.team.orca ? '<i class="dot green"></i>Orca' : '<i class="dot"></i>Orca not installed';
+$('workers').textContent = `workers ${running.length}/${D.team.maxWorkers ?? 3}`;
+$('goal').textContent = D.goal?.length ? `Goal: ${D.goal.join(' · ')}` : 'Goal not set yet — the agent infers it from your requests';
+$('goal').title = (D.goal || []).join('\n');
+$('updated').textContent = `updated ${ago(D.generated || D.updated)} ago`;
+const spark = (vals) => {
+  const w = 120, h = 26, max = Math.max(1, ...vals);
+  const pts = vals.map((v, i) => `${(i * w) / Math.max(1, vals.length - 1)},${h - 2 - (v / max) * (h - 4)}`).join(' ');
+  return `<svg width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" aria-hidden="true"><polyline fill="none" stroke="var(--ok)" stroke-width="1.6" points="${pts}"/></svg>`;
+};
+const M = D.metrics;
+const kpi = (label, val, extra = '') => `<div class="kpi"><b>${val}</b><span>${label}</span>${extra}</div>`;
+$('kpis').innerHTML = [
+  kpi('doing', by('doing').length),
+  kpi('queue', by('todo').length),
+  kpi('waiting', by('waiting').length),
+  kpi('to verify', by('review').length),
+  kpi('done · 7 days', M.done7 ?? 0, spark((M.perDay || []).map((d) => d.done))),
+  kpi('cycle time (median)', M.cycleHours == null ? '–' : dur(M.cycleHours * 36e5)),
+  kpi('rework', `${Math.round((M.rework || 0) * 100)}%`),
+].join('');
+
+const needs = [];
+for (const t of T.filter((x) => x.question)) needs.push({ icon: '❓', id: t.id, text: `${roleOf(t)} asks: “${t.question.text}”`, age: t.question.at, c: `${C} reply ${t.id} "…"` });
+for (const t of by('review')) needs.push({ icon: '🟡', id: t.id, text: `reported done${t.sha ? ' @' + t.sha : ''} — verify the diff against the plan`, age: lastH(t).at, c: `${C} done ${t.id} --sha ${t.sha || '<sha>'} --proof "…"` });
+for (const t of by('failed')) needs.push({ icon: '❌', id: t.id, text: `failed: ${t.why || ''}`, age: lastH(t).at, c: `${C} resume ${t.id}` });
+for (const q of M.quiet || []) needs.push({ icon: '⚠️', id: q.id, text: `quiet for ${q.minutes} min — check the worker`, c: `${C} fleet` });
+for (const t of by('waiting').filter((x) => x.on === 'user' || x.on === 'lead')) needs.push({ icon: '⏸', id: t.id, text: `waiting on ${t.on}: ${t.text}`, age: lastH(t).at, c: `${C} resume ${t.id}` });
+for (const r of (D.review || []).filter((x) => x.status === 'pending')) needs.push({ icon: '📝', id: r.id, text: `proposal “${r.title}” waits for your yes or no`, c: `${C} approve ${r.id} --quote "…"`, noLink: true });
+for (const t of by('inbox')) needs.push({ icon: '📥', id: t.id, text: `unsorted: ${t.text}`, c: `${C} file ${t.id} task|memory|lesson` });
+$('needs-n').textContent = needs.length || '';
+$('needs-b').innerHTML = needs.length ? needs.map((n) => `<div class="row"><span>${n.icon}</span><div class="what">${n.noLink ? `<b>${esc(n.id)}</b>` : idLink(n.id)} ${esc(n.text)}${n.age ? ` <span class="muted small">· ${ago(n.age)} ago</span>` : ''}</div>${cmd(n.c)}</div>`).join('') : '<div class="empty">Nothing needs you right now.</div>';
+if (!needs.length) $('needs').classList.remove('attn');
+
+const quiet = new Map((M.quiet || []).map((q) => [q.id, q.minutes]));
+const card = (t) => {
+  const r = roleOf(t);
+  const lease = Object.entries(D.leases || {}).filter(([, l]) => l.holder === t.id).map(([k]) => k);
+  const flags = [];
+  if (t.status === 'review') flags.push('<span class="flag warn">to verify</span>');
+  if (t.question) flags.push('<span class="flag q">asking</span>');
+  if (quiet.has(t.id)) flags.push(`<span class="flag ${quiet.get(t.id) > 30 ? 'bad' : 'warn'}">quiet ${quiet.get(t.id)}m</span>`);
+  for (const l of lease) flags.push(`<span class="flag">🔒 ${esc(l)}</span>`);
+  if (t.sha) flags.push(`<span class="flag ok mono">@${esc(t.sha.slice(0, 9))}</span>`);
+  const wt = (t.worktree || '').replace(/^path:/, '').split('/').filter(Boolean).pop();
+  const note = lastH(t).note;
+  return `<div class="card" style="--rc:${rc(r)}"><div class="role">${esc(r)}${lead(t) ? ' · you' : ''}</div>
+    <div class="title">${idLink(t.id)} ${prio(t.prio)} ${esc(t.text)}</div>
+    <div class="meta">${lead(t) ? '' : `<span class="ell mono">${esc([t.agent, t.model].filter(Boolean).join(' · ') || t.executor)}</span>`}
+      <span>${t.plan ? `plan <b>${esc(t.plan)}</b> · ` : ''}${wt ? `<span class="mono">${esc(wt)}</span> · ` : ''}${t.status === 'review' ? `reported ${ago(lastH(t).at)} ago` : `running ${dur(NOW - Date.parse(startedAt(t) || lastH(t).at || D.generated))}`}</span>
+      ${note ? `<span class="ell" title="${esc(note)}">“${esc(note)}” <span class="muted">${ago(lastH(t).at)} ago</span></span>` : ''}
+      ${t.files?.length ? `<span class="ell mono muted" title="${esc(t.files.join(', '))}">${esc(t.files.slice(0, 2).join(', '))}${t.files.length > 2 ? ` +${t.files.length - 2}` : ''}</span>` : ''}</div>
+    <div class="flags">${flags.join('')}</div></div>`;
+};
+const teamTasks = [...by('doing').filter(lead), ...by('doing', 'review').filter((t) => !lead(t))];
+const busyRoles = new Set(teamTasks.map(roleOf));
+const idle = (D.team.roles || []).filter((r) => !busyRoles.has(r) && r !== 'researcher');
+$('team-n').textContent = `${running.length} running${by('review').filter((t) => !lead(t)).length ? ` · ${by('review').filter((t) => !lead(t)).length} to verify` : ''}`;
+$('team').innerHTML = (teamTasks.map(card).join('') + idle.map((r) => `<div class="card idle" style="--rc:${rc(r)}"><div class="role">${esc(r)}</div><div class="title muted">idle</div></div>`).join('')) || '<div class="empty">Nobody is working on a task. Start one, or hand work to the team.</div>';
+
+const spans = [];
+for (const t of T) { const s = startedAt(t); if (s) spans.push({ id: t.id, text: t.text, role: roleOf(t), start: Date.parse(s), end: ['done', 'dropped', 'failed'].includes(t.status) ? Date.parse(lastH(t).at) : NOW, status: t.status }); }
+for (const e of D.recent || []) if (e.started && !spans.some((x) => x.id === e.id) && e.kind !== 'memory' && e.kind !== 'lesson') spans.push({ id: e.id, text: e.text, role: !e.executor || e.executor === 'lead' ? 'lead' : e.role || 'engineer', start: Date.parse(e.started), end: Date.parse(e.closed), status: e.status });
+function timeline() {
+  const span = ui.win === '7d' ? 7 * 864e5 : 864e5;
+  const from = NOW - span;
+  const inView = spans.filter((s) => s.end >= from);
+  const lanes = [...new Set(['lead', ...inView.map((s) => s.role)])];
+  const W = 1000, L = 92, lh = 28, top = 22, Hh = top + lanes.length * lh + 6;
+  const x = (t) => L + ((Math.max(t, from) - from) / span) * (W - L - 8);
+  const ticks = [];
+  const step = ui.win === '7d' ? 864e5 : 3 * 36e5;
+  for (let t = Math.ceil(from / step) * step; t <= NOW; t += step) ticks.push(t);
+  let g = ticks.map((t) => `<line x1="${x(t)}" x2="${x(t)}" y1="${top - 4}" y2="${Hh}" stroke="var(--line)"/><text x="${x(t) + 3}" y="12" font-size="10" fill="var(--text-3)">${ui.win === '7d' ? new Date(t).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric' }) : new Date(t).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</text>`).join('');
+  lanes.forEach((r, i) => {
+    const y = top + i * lh;
+    g += `<text x="4" y="${y + 17}" font-size="11" font-weight="600" fill="${rc(r)}">${esc(r)}</text><line x1="${L}" x2="${W}" y1="${y + lh}" y2="${y + lh}" stroke="var(--line)" stroke-dasharray="2 3"/>`;
+    for (const s of inView.filter((v) => v.role === r)) {
+      const x1 = x(s.start), x2 = Math.max(x1 + 3, x(s.end)), w = x2 - x1;
+      g += `<g data-open="${esc(s.id)}" style="cursor:pointer"><rect x="${x1}" y="${y + 5}" width="${w}" height="${lh - 10}" rx="4" fill="${COLOR[s.status] || 'var(--accent)'}" opacity="${s.status === 'doing' ? 0.9 : 0.75}"><title>${esc(`${s.id} ${s.text}\n${s.status} · ${dur(s.end - s.start)}`)}</title></rect>${w > 46 ? `<text x="${x1 + 5}" y="${y + 18}" font-size="10.5" fill="#fff" pointer-events="none">${esc(s.id)}</text>` : ''}</g>`;
+    }
+  });
+  g += `<line x1="${x(NOW)}" x2="${x(NOW)}" y1="${top - 4}" y2="${Hh}" stroke="var(--bad)" stroke-width="1.2"/>`;
+  $('timeline').innerHTML = inView.length ? `<svg viewBox="0 0 ${W} ${Hh}" width="100%" height="${Hh}" role="img" aria-label="work timeline">${g}</svg>` : `<div class="empty">No work started in the last ${ui.win === '7d' ? '7 days' : '24 hours'}.</div>`;
+  $('win').innerHTML = ['24h', '7d'].map((w) => `<button data-win="${w}" class="${ui.win === w ? 'on' : ''}">${w}</button>`).join('');
+}
+timeline();
+
+const planNames = [...new Set([...T.map((t) => t.plan), ...(D.recent || []).map((e) => e.plan), ...Object.keys(D.plans || {})].filter(Boolean))].sort();
+$('plans').innerHTML = planNames.length ? planNames.map((p) => {
+  const open = T.filter((t) => t.plan === p && !['done', 'dropped', 'failed'].includes(t.status));
+  const closedIds = new Set([...T.filter((t) => t.plan === p && t.status === 'done').map((t) => t.id), ...(D.recent || []).filter((e) => e.plan === p && e.status === 'done').map((e) => e.id)]);
+  const total = open.length + closedIds.size, git = (D.plans || {})[p];
+  const run = open.some((t) => t.status === 'doing' && !lead(t));
+  const st = git?.worktree ? (run ? 'ACTIVE' : open.length ? 'WAITING' : 'READY') : git ? (open.length ? 'PARKED' : 'BRANCH') : open.length ? 'PLANNED' : 'CLOSED';
+  const col = { ACTIVE: 'var(--accent)', WAITING: 'var(--warn)', READY: 'var(--ok)', PARKED: 'var(--wait)' }[st] || 'var(--text-3)';
+  const seg = (n, c) => (n ? `<i style="width:${(100 * n) / Math.max(1, total)}%;background:${c}"></i>` : '');
+  return `<div class="row"><div class="what"><b>${esc(p)}</b> <span class="flag" style="color:${col};border-color:${col}">${st}</span> <span class="muted small">${closedIds.size}/${total} done${git?.worktree ? ' · ' + esc(git.worktree.split('/').pop()) : ''}</span>
+    <div class="bar" style="margin-top:5px">${seg(closedIds.size, 'var(--ok)')}${seg(open.filter((t) => t.status === 'review').length, 'var(--rev)')}${seg(open.filter((t) => t.status === 'doing').length, 'var(--accent)')}${seg(open.filter((t) => t.status === 'waiting').length, 'var(--wait)')}</div></div></div>`;
+}).join('') : '<div class="empty">No plans — solo work so far.</div>';
+
+const ms = (M.models || []).sort((a, b) => b.dispatched - a.dispatched);
+$('models').innerHTML = ms.length ? `<table><thead><tr><th>agent · model</th><th class="num">runs</th><th class="num">running</th><th class="num">done</th><th class="num">failed</th><th class="num">success</th><th class="num">cycle</th></tr></thead><tbody>${ms.map((m) => `<tr><td class="mono">${esc(m.model)}</td><td class="num">${m.dispatched}</td><td class="num">${m.running || 0}</td><td class="num">${m.done}</td><td class="num">${m.failed}</td><td class="num">${m.done + m.failed ? Math.round((100 * m.done) / (m.done + m.failed)) + '%' : '–'}</td><td class="num">${m.cycleHours == null ? '–' : dur(m.cycleHours * 36e5)}</td></tr>`).join('')}</tbody></table>` : '<div class="empty">No worker runs yet.</div>';
+
+const opts = (k, vals) => `<select data-f="${k}"><option value="">${k}: all</option>${vals.map((v) => `<option ${ui.f[k] === v ? 'selected' : ''}>${esc(v)}</option>`).join('')}</select>`;
+$('filters').innerHTML = opts('plan', planNames) + opts('role', [...new Set(T.map(roleOf))].sort()) + opts('agent', [...new Set(T.map((t) => t.agent).filter(Boolean))].sort()) + `<input type="search" data-f="q" placeholder="search…" value="${esc(ui.f.q || '')}">`;
+function board() {
+  const f = ui.f, q = (f.q || '').toLowerCase();
+  const keep = (t) => (!f.plan || t.plan === f.plan) && (!f.role || roleOf(t) === f.role) && (!f.agent || t.agent === f.agent) && (!q || [t.id, t.text, t.plan, t.role, t.agent, t.model, ...(t.files || [])].join(' ').toLowerCase().includes(q));
+  const cols = [['Todo', ['todo', 'inbox']], ['Doing', ['doing']], ['Waiting', ['waiting']], ['Review', ['review']], ['Closed', ['done', 'dropped', 'failed']]];
+  const list = T.filter(keep);
+  $('board-n').textContent = `${list.length}/${T.length}`;
+  const wip = (D.team.maxWorkers ?? 3) + 1;
+  $('kanban').innerHTML = cols.map(([name, st]) => {
+    const xs = list.filter((t) => st.includes(t.status)).sort(sortP);
+    const over = name === 'Doing' && xs.length > wip;
+    return `<div class="col"><h3><span>${name}</span><span style="${over ? 'color:var(--bad)' : ''}">${xs.length}${name === 'Doing' ? ' / ' + wip : ''}</span></h3>${xs.map((t) => `<div class="tk" data-open="${esc(t.id)}" style="--rc:${rc(roleOf(t))}"><div class="m">${ICON[t.status]} ${esc(t.id)} ${prio(t.prio)} ${esc(roleOf(t))}${t.plan ? ' · ' + esc(t.plan) : ''}</div><div class="t">${esc(t.text)}</div>${t.on || t.until ? `<div class="m">${esc([t.on && 'on ' + t.on, t.until && 'until ' + t.until].filter(Boolean).join(', '))}</div>` : ''}${t.deps?.length ? `<div class="m">after ${esc(t.deps.join(', '))}</div>` : ''}</div>`).join('') || '<div class="empty">—</div>'}</div>`;
+  }).join('');
+}
+board();
+
+const ev = [];
+for (const t of T) for (const h of t.history || []) ev.push({ at: h.at, id: t.id, status: h.status, note: h.note, role: roleOf(t) });
+for (const e of D.recent || []) if (!T.some((t) => t.id === e.id)) ev.push({ at: e.closed, id: e.id, status: e.status, note: e.proof || e.why || e.text, role: e.kind === 'task' ? (!e.executor || e.executor === 'lead' ? 'lead' : e.role) : e.kind });
+ev.sort((a, b) => String(b.at).localeCompare(String(a.at)));
+const evIcon = (e) => (/QUESTION/.test(e.note || '') ? '❓' : /dispatched/.test(e.note || '') ? '🚀' : /worker_done/.test(e.note || '') ? '📨' : /lease/.test(e.note || '') ? '🔒' : /answered|sent /.test(e.note || '') ? '💬' : ICON[e.status] || '·');
+$('feed').innerHTML = ev.length ? ev.slice(0, 60).map((e) => `<div class="row"><time title="${esc(e.at)}">${ago(e.at)} ago</time><span>${evIcon(e)}</span><div class="what ell">${idLink(e.id)} <span class="muted">${esc(e.role || '')}</span> ${esc(e.note || e.status)}</div></div>`).join('') : '<div class="empty">No activity yet.</div>';
+
+const mem = D.items.filter((i) => i.kind === 'memory').sort((a, b) => (b.pin ? 1 : 0) - (a.pin ? 1 : 0) || sortP(a, b));
+const les = D.items.filter((i) => i.kind === 'lesson').sort((a, b) => (b.seen || 1) - (a.seen || 1));
+const tabs = { memory: [`Memory ${mem.length}`, () => mem.map((m) => `<div class="row">${m.pin ? '📌' : '·'}<div class="what"><b>${esc(m.id)}</b> ${prio(m.prio)} ${esc(m.text)} <span class="muted small">×${m.uses || 1}</span></div></div>`).join('')],
+  lessons: [`Lessons ${les.length}`, () => les.map((l) => `<div class="row">✎<div class="what"><b>${esc(l.id)}</b> <span class="flag ${(l.seen || 1) >= 2 ? 'warn' : ''}">×${l.seen || 1}</span> ${esc(l.text)}${l.proposal ? ` → <b>${esc(l.proposal)}</b>` : ''}</div></div>`).join('')],
+  proposals: [`Proposals ${(D.review || []).length}`, () => (D.review || []).map((r) => `<div class="row">📝<div class="what"><b>${esc(r.id)}</b> <span class="flag ${r.status === 'pending' ? 'warn' : r.status === 'approved' ? 'ok' : ''}">${esc(r.status)}</span> ${esc(r.title)}</div></div>`).join('')],
+  leases: [`Leases ${Object.keys(D.leases || {}).length}`, () => Object.entries(D.leases || {}).map(([k, l]) => `<div class="row">🔒<div class="what"><b>${esc(k)}</b> held by ${idLink(l.holder)} <span class="muted small">until ${esc(new Date(l.expires).toLocaleString())}</span></div></div>`).join('')] };
+function knowledge() {
+  $('ktabs').innerHTML = Object.entries(tabs).map(([k, [label]]) => `<button data-tab="${k}" class="${ui.tab === k ? 'on' : ''}">${esc(label)}</button>`).join('');
+  $('kbody').innerHTML = (tabs[ui.tab] || tabs.memory)[1]() || '<div class="empty">Nothing yet.</div>';
+}
+knowledge();
+
+function openTask(id) {
+  const t = T.find((x) => x.id === id) || D.items.find((x) => x.id === id) || (D.recent || []).filter((e) => e.id === id).at(-1);
+  if (!t) return;
+  ui.open = id; saveUi();
+  const kids = T.filter((k) => k.parent === id);
+  const rows = [['status', `${ICON[t.status] || ''} ${t.status || t.kind}`], ['priority', t.prio], ['role', t.kind === 'task' || !t.kind ? roleOf(t) : t.kind], ['done when', t.done], ['next', t.next], ['proof', t.proof], ['why', t.why], ['sha', t.sha], ['plan', t.plan], ['route', t.route], ['agent', [t.agent, t.model].filter(Boolean).join(' · ')], ['worktree', (t.worktree || '').replace(/^path:/, '')], ['dispatch', t.dispatch], ['terminal', t.terminal], ['brief', t.spec], ['files', (t.files || []).join(', ')], ['deps', (t.deps || []).join(', ')], ['parent', t.parent], ['sub-tasks', kids.map((k) => `${k.id} ${k.status}`).join(', ')], ['waiting on', [t.on, t.until && 'until ' + t.until].filter(Boolean).join(' · ')], ['question', t.question?.text], ['created', t.created], ['started', startedAt(t) || t.started], ['closed', t.closed]].filter(([, v]) => v);
+  $('dlg-t').innerHTML = `${esc(t.id)} ${prio(t.prio)} ${esc(t.text)}`;
+  $('dlg-b').innerHTML = `<dl class="kv">${rows.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join('')}</dl>${t.history?.length ? `<h2 style="margin-top:14px">History</h2><ol class="hist">${[...t.history].reverse().map((h) => `<li><span class="muted mono">${esc(new Date(h.at).toLocaleString())}</span> ${ICON[h.status] || ''} <b>${esc(h.status)}</b>${h.note ? ` — ${esc(h.note)}` : ''}</li>`).join('')}</ol>` : ''}`;
+  if (!$('dlg').open) $('dlg').showModal();
+}
+$('dlg-x').onclick = () => $('dlg').close();
+$('dlg').addEventListener('close', () => { delete ui.open; saveUi(); });
+
+document.addEventListener('click', (e) => {
+  const o = e.target.closest('[data-open]'); if (o) return openTask(o.dataset.open);
+  const w = e.target.closest('[data-win]'); if (w) { ui.win = w.dataset.win; saveUi(); return timeline(); }
+  const tb = e.target.closest('[data-tab]'); if (tb) { ui.tab = tb.dataset.tab; saveUi(); return knowledge(); }
+  const cp = e.target.closest('[data-copy]'); if (cp) { try { navigator.clipboard.writeText(cp.dataset.copy); cp.textContent = '✓'; setTimeout(() => (cp.textContent = '⧉'), 1200); } catch {} }
+});
+document.addEventListener('input', (e) => { const k = e.target.dataset?.f; if (k) { ui.f[k] = e.target.value; saveUi(); board(); } });
+$('foot').textContent = `agent-work-kit · generated ${new Date(D.generated || D.updated || NOW).toLocaleString()} from .desk/desk.json · refreshes every 10 s`;
+if (ui.y) window.scrollTo(0, ui.y);
+if (ui.open) openTask(ui.open);
+setInterval(() => { const a = document.activeElement; if (a && a.matches && a.matches('input,select')) return; saveUi(); location.reload(); }, 10000);
+</script>
+</body>
+</html>

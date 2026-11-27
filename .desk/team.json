@@ -1,0 +1,12 @@
+{
+  "build": "",
+  "test": {
+    "command": "",
+    "exclusive": "",
+    "scope": ""
+  },
+  "leadFiles": [],
+  "maxWorkers": 3,
+  "maxPlanWorktrees": 3,
+  "notes": []
+}

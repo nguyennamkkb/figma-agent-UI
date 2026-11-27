@@ -1,0 +1,331 @@
+{
+  "version": 2,
+  "seq": {
+    "Q": 8,
+    "M": 2,
+    "L": 2,
+    "P": 0
+  },
+  "goal": [
+    "figma-tool: trang HTML tĩnh — bấm chip ra 1 câu prompt chuẩn để sửa màn Figma theo mức L1–L4, kèm thư viện prompt mẫu theo màn",
+    "Người mới dán prompt là hình dung được kết quả; mẫu đã test xong mới gom thành công cụ chọn nhanh"
+  ],
+  "items": [
+    {
+      "id": "Q-1",
+      "kind": "task",
+      "created": "2026-11-27",
+      "last": "2026-11-27",
+      "uses": 1,
+      "status": "todo",
+      "prio": "P0",
+      "text": "Test prompt mẫu figma-tool (10 màn × L1–L4) trên màn thật, bắt đầu Onboarding L3/L4; sửa câu agent hiểu sai",
+      "done": "Mỗi mẫu L1–L4 chạy 1 lần trên màn thật, kết quả đúng mức; câu sai đã chỉnh trong SAMPLES",
+      "history": [
+        {
+          "at": "2026-11-27T08:58:33Z",
+          "status": "todo",
+          "note": "added"
+        },
+        {
+          "at": "2026-11-27T08:58:33Z",
+          "status": "doing",
+          "note": "started"
+        },
+        {
+          "at": "2026-11-27T09:01:36Z",
+          "status": "doing",
+          "note": "user: urgent"
+        },
+        {
+          "at": "2026-11-27T09:05:02Z",
+          "status": "todo",
+          "note": "parked for Q-2"
+        },
+        {
+          "at": "2026-11-27T09:23:01Z",
+          "status": "todo",
+          "note": "edit text,done"
+        },
+        {
+          "at": "2026-11-27T09:31:59Z",
+          "status": "todo",
+          "note": "edit text"
+        }
+      ]
+    },
+    {
+      "id": "L-1",
+      "kind": "lesson",
+      "created": "2026-11-27",
+      "last": "2026-11-27",
+      "uses": 1,
+      "text": "[IMPORTANT: User invoked the \"frontend-design\" skill; follow its instructions. Full skill below.] # Frontend Design Approach this as the design lead at a design studio known for giving every client a distinct visual identity that is not mistaken for anyone else's. This client has",
+      "seen": 1,
+      "auto": true
+    },
+    {
+      "id": "Q-2",
+      "kind": "task",
+      "created": "2026-11-27",
+      "last": "2026-11-27",
+      "uses": 1,
+      "status": "done",
+      "prio": "P1",
+      "text": "Cho phép thêm tính chất vào danh sách chọn: form trong trang + lưu localStorage + nhập/xuất JSON",
+      "done": "Thêm 1 tính chất trong UI, tick chọn, prompt sinh ra có clause đó; reload vẫn còn; xuất/nhập JSON khôi phục được",
+      "history": [
+        {
+          "at": "2026-11-27T09:05:02Z",
+          "status": "todo",
+          "note": "added"
+        },
+        {
+          "at": "2026-11-27T09:05:02Z",
+          "status": "doing",
+          "note": "started"
+        },
+        {
+          "at": "2026-11-27T09:18:50Z",
+          "status": "todo",
+          "note": "parked for Q-3"
+        },
+        {
+          "at": "2026-11-27T09:22:58Z",
+          "status": "done",
+          "note": "gộp vào Q-3: chip '+ Thêm' mọi nhóm, localStorage, Dữ liệu → xuất/nhập JSON (đọc cả định dạng cũ)"
+        }
+      ],
+      "proof": "gộp vào Q-3: chip '+ Thêm' mọi nhóm, localStorage, Dữ liệu → xuất/nhập JSON (đọc cả định dạng cũ)",
+      "closed": "2026-11-27",
+      "archived": "2026-11-27"
+    },
+    {
+      "id": "Q-3",
+      "kind": "task",
+      "created": "2026-11-27",
+      "last": "2026-11-27",
+      "uses": 1,
+      "status": "done",
+      "prio": "P0",
+      "text": "Làm lại figma-tool.html: chọn chip → 1 câu prompt chuẩn (như 'Sửa onboard theo mức L3, ảnh gốc làm tham chiếu, phong cách giáng sinh, giữ cảm xúc…'), thư viện prompt mẫu theo màn, ít chữ",
+      "done": "Mở file: chọn màn/mức/phong cách/ảnh/giữ ra đúng câu mẫu của user; mẫu theo màn nạp được; khoá chip theo mức; thêm chip riêng lưu localStorage + xuất/nhập JSON",
+      "files": [
+        "figma-tool.html"
+      ],
+      "history": [
+        {
+          "at": "2026-11-27T09:18:50Z",
+          "status": "todo",
+          "note": "added"
+        },
+        {
+          "at": "2026-11-27T09:18:50Z",
+          "status": "doing",
+          "note": "started"
+        },
+        {
+          "at": "2026-11-27T09:22:58Z",
+          "status": "done",
+          "note": "Orca browser: mẫu L4 ra đúng câu; L1 bỏ ảnh phong cách mới; bấm chip khoá tự lên L4; hex, chip riêng, Lưu mẫu, reload giữ nguyên, Copy + phạm vi; mobile 390px không tràn"
+        }
+      ],
+      "proof": "Orca browser: mẫu L4 ra đúng câu; L1 bỏ ảnh phong cách mới; bấm chip khoá tự lên L4; hex, chip riêng, Lưu mẫu, reload giữ nguyên, Copy + phạm vi; mobile 390px không tràn",
+      "closed": "2026-11-27",
+      "archived": "2026-11-27"
+    },
+    {
+      "id": "Q-4",
+      "kind": "task",
+      "created": "2026-11-27",
+      "last": "2026-11-27",
+      "uses": 1,
+      "status": "done",
+      "prio": "P1",
+      "text": "figma-tool: tách Tông khỏi Phong cách, các hàng tự thu gọn (accordion) hiện tóm tắt lựa chọn",
+      "done": "Phong cách và Tông là 2 hàng; chỉ 1 hàng mở, chọn xong tự sang hàng sau; hàng đóng hiện giá trị đã chọn; có nút Mở hết",
+      "files": [
+        "figma-tool.html"
+      ],
+      "history": [
+        {
+          "at": "2026-11-27T09:24:27Z",
+          "status": "todo",
+          "note": "added"
+        },
+        {
+          "at": "2026-11-27T09:24:27Z",
+          "status": "doing",
+          "note": "started"
+        },
+        {
+          "at": "2026-11-27T09:27:12Z",
+          "status": "done",
+          "note": "Orca browser: Màn/loại lên đầu; khối Link riêng (frame + màn mẫu) vào prompt; Phong cách và Tông tách hàng; accordion tự chuyển hàng, hàng mở có vạch + nền xanh; Bảng mẫu mở lưới nhóm theo màn, bấm mẫu là nạp và thu gọn; 390px không tràn"
+        }
+      ],
+      "proof": "Orca browser: Màn/loại lên đầu; khối Link riêng (frame + màn mẫu) vào prompt; Phong cách và Tông tách hàng; accordion tự chuyển hàng, hàng mở có vạch + nền xanh; Bảng mẫu mở lưới nhóm theo màn, bấm mẫu là nạp và thu gọn; 390px không tràn",
+      "closed": "2026-11-27",
+      "archived": "2026-11-27"
+    },
+    {
+      "id": "M-2",
+      "kind": "memory",
+      "created": "2026-11-27",
+      "last": "2026-11-27",
+      "uses": 1,
+      "prio": "P1",
+      "text": "figma-tool: mỗi màn/loại phải có đủ 4 mẫu L1–L4 trong SAMPLES; Màn/loại luôn ở trên cùng, Link là khối riêng"
+    },
+    {
+      "id": "Q-5",
+      "kind": "task",
+      "created": "2026-11-27",
+      "last": "2026-11-27",
+      "uses": 1,
+      "status": "done",
+      "prio": "P1",
+      "text": "figma-tool: thêm loại 'Màn chức năng' + 4 mẫu L1–L4",
+      "done": "Chip Màn chức năng hiện; bảng mẫu có đủ L1–L4",
+      "files": [
+        "figma-tool.html"
+      ],
+      "history": [
+        {
+          "at": "2026-11-27T09:31:56Z",
+          "status": "todo",
+          "note": "added"
+        },
+        {
+          "at": "2026-11-27T09:31:56Z",
+          "status": "doing",
+          "note": "started"
+        },
+        {
+          "at": "2026-11-27T09:31:56Z",
+          "status": "done",
+          "note": "Orca browser: bấm Màn chức năng hiện 4 mẫu L1–L4, câu prompt đúng"
+        }
+      ],
+      "proof": "Orca browser: bấm Màn chức năng hiện 4 mẫu L1–L4, câu prompt đúng",
+      "closed": "2026-11-27",
+      "archived": "2026-11-27"
+    },
+    {
+      "id": "Q-6",
+      "kind": "task",
+      "created": "2026-11-27",
+      "last": "2026-11-27",
+      "uses": 1,
+      "status": "done",
+      "prio": "P1",
+      "text": "figma-tool: nút reset form",
+      "done": "Bấm Làm lại: mọi lựa chọn, link, ghi chú về mặc định; chip/mẫu tự thêm vẫn còn",
+      "files": [
+        "figma-tool.html"
+      ],
+      "history": [
+        {
+          "at": "2026-11-27T09:32:43Z",
+          "status": "todo",
+          "note": "added"
+        },
+        {
+          "at": "2026-11-27T09:32:43Z",
+          "status": "doing",
+          "note": "started"
+        },
+        {
+          "at": "2026-11-27T09:32:58Z",
+          "status": "done",
+          "note": "Orca: điền link + chọn Home, bấm Làm lại → link trống, prompt về mặc định của Home"
+        }
+      ],
+      "proof": "Orca: điền link + chọn Home, bấm Làm lại → link trống, prompt về mặc định của Home",
+      "closed": "2026-11-27",
+      "archived": "2026-11-27"
+    },
+    {
+      "id": "Q-7",
+      "kind": "task",
+      "created": "2026-11-27",
+      "last": "2026-11-27",
+      "uses": 1,
+      "status": "done",
+      "prio": "P1",
+      "text": "MCP INSTRUCTIONS: nhắc skill asset-generator (cut-out xoá nền) cạnh figma-ui-flow",
+      "done": "Câu nhắc nằm trong INSTRUCTIONS; version bump; build + typecheck + test xanh",
+      "files": [
+        "src/server/index.ts",
+        "package.json"
+      ],
+      "history": [
+        {
+          "at": "2026-11-27T10:03:54Z",
+          "status": "todo",
+          "note": "added"
+        },
+        {
+          "at": "2026-11-27T10:03:54Z",
+          "status": "doing",
+          "note": "started"
+        },
+        {
+          "at": "2026-11-27T10:04:10Z",
+          "status": "done",
+          "note": "build, typecheck, 290/290 test xanh; dist/server.mjs có câu asset-generator; version 1.6.24; lint src sạch (lỗi lint còn lại chỉ ở file .agentkit/.omp/.opencode/.pi chưa track)"
+        }
+      ],
+      "proof": "build, typecheck, 290/290 test xanh; dist/server.mjs có câu asset-generator; version 1.6.24; lint src sạch (lỗi lint còn lại chỉ ở file .agentkit/.omp/.opencode/.pi chưa track)",
+      "closed": "2026-11-27",
+      "archived": "2026-11-27"
+    },
+    {
+      "id": "L-2",
+      "kind": "lesson",
+      "created": "2026-11-27",
+      "last": "2026-11-27",
+      "uses": 1,
+      "text": "Không phải lúc nào cũng tạo ảnh xóa nền đúng khong, chỉ nhắc đến dùng hki cần",
+      "seen": 1,
+      "auto": true
+    },
+    {
+      "id": "Q-8",
+      "kind": "task",
+      "created": "2026-11-27",
+      "last": "2026-11-27",
+      "uses": 1,
+      "status": "done",
+      "prio": "P1",
+      "text": "Phát hành 1.6.24: MCP nhắc asset-generator chỉ khi cần ảnh xoá nền",
+      "done": "commit trên dev, merge main, push, tag v1.6.24",
+      "files": [
+        "src/server/index.ts",
+        "package.json"
+      ],
+      "history": [
+        {
+          "at": "2026-11-27T10:06:05Z",
+          "status": "todo",
+          "note": "added"
+        },
+        {
+          "at": "2026-11-27T10:06:05Z",
+          "status": "doing",
+          "note": "started"
+        },
+        {
+          "at": "2026-11-27T10:06:06Z",
+          "status": "done",
+          "note": "6f4f005 đã lên dev + main, tag v1.6.24 đã push; 290/290 test"
+        }
+      ],
+      "proof": "6f4f005 đã lên dev + main, tag v1.6.24 đã push; 290/290 test",
+      "closed": "2026-11-27",
+      "archived": "2026-11-27"
+    }
+  ],
+  "leases": {},
+  "updated": "2026-11-27T10:06:06Z"
+}

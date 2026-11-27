@@ -1,3 +1,10 @@
+<!-- agentkit:start -->
+<!-- Managed by agent-work-kit (`npx github:nguyennamkkb/agent-work-kit update`). Do not edit inside. Project notes go below the end marker; project rules go to .desk/rules.local.md. -->
+@AGENTS.md
+
+Claude Code: the desk skill is `.claude/skills/desk/SKILL.md`. Hooks show the desk at session start, file what the user says (remember → memory, corrections → lessons, urgent → P0), keep `.desk/` writable only through `node .agentkit/desk.mjs`, and check the desk before you stop. Subagents are tier T1 (`add … --executor subagent`). When a hook blocks you, do what it says; never work around it.
+<!-- agentkit:end -->
+
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.

@@ -1,0 +1,8 @@
+# Written by the kit; personal, generated or noisy.
+.journal.jsonl
+.state.json
+.undo/
+.lock/
+.routing-cache.json
+desk.html
+plans/specs/*.sent.md

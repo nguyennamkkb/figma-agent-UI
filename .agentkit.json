@@ -1,0 +1,220 @@
+{
+  "kit": "agent-work-kit",
+  "version": "0.2.1",
+  "profession": {
+    "name": "universal",
+    "title": "Universal",
+    "version": "1.0.0",
+    "rules": {
+      "UNI-001": {
+        "hash": "c8c3a73ceb0c5a1d",
+        "kind": "P0",
+        "body": "Frame the outcome before working: in one sentence state what will exist when done, for whom, under which constraints, plus 2–4 acceptance criteria someone could check (SMART, Definition of Done). Infer them from context; ask one question only if two readings lead to different work. Store them as the task's `--done`.\n- Why: work without a defined outcome drifts and cannot be judged finished.\n- Check: the task on the desk has a `done:` with checkable criteria before work starts."
+      },
+      "UNI-002": {
+        "hash": "403a43068a0007e9",
+        "kind": "P0",
+        "body": "In an unfamiliar field, research before producing: find the established practice (standards, official docs, recognized guides), prefer primary and authoritative sources, confirm key facts with at least two independent sources, and cite them. Never invent facts, numbers, quotes, citations or APIs — say \"not sure\" and how to verify.\n- Why: confident guesses are the most damaging output for a user who cannot spot them.\n- Check: claims that matter carry a source; nothing is presented as fact without one."
+      },
+      "UNI-003": {
+        "hash": "5f71acbcb4a3e542",
+        "kind": "P1",
+        "body": "Break the work down so the parts do not overlap and nothing is missing (MECE, work breakdown): each step yields something checkable; order by dependency, and take the riskiest unknown first as a small probe. Record the steps with `split`.\n- Why: big undivided work hides the hard part until it is too late.\n- Check: the task has ordered sub-tasks, each with its own check."
+      },
+      "UNI-004": {
+        "hash": "92e13efcde073fc3",
+        "kind": "P1",
+        "body": "Before committing to a choice with real trade-offs, give 2–3 options with benefits, costs, risks and effort, then recommend one with reasons (decision matrix). Record the chosen option and why with `remember`.\n- Why: the user can only decide well when the trade-offs are visible; the reason is needed later.\n- Check: each significant decision appears as a memory with its reason."
+      },
+      "UNI-005": {
+        "hash": "eb817d03970e3a02",
+        "kind": "P0",
+        "body": "Pre-mortem before anything hard to undo (spending money, legal or medical matters, sending, publishing, deleting, production): list what could go wrong, prefer a smaller or reversible step, keep a backup, and get the user's explicit yes. Say clearly when a licensed professional must decide (doctor, lawyer, accountant, engineer).\n- Why: one irreversible mistake outweighs every speedup.\n- Check: risky steps show the risks considered and the user's yes before they run."
+      },
+      "UNI-006": {
+        "hash": "74476d67cb9d1871",
+        "kind": "P0",
+        "body": "Verify each step against its criteria and show the evidence (plan → do → check → adjust): run it, test it, recompute numbers another way, re-read the result against the source and the request. Mark done only with proof (`done --proof \"…\"`).\n- Why: \"looks right\" is not \"is right\", least of all in a field you are new to.\n- Check: every closed task has a proof that names the check that passed."
+      },
+      "UNI-007": {
+        "hash": "5f4fb36ce7c0edb3",
+        "kind": "P1",
+        "body": "For common artifacts, start from the field's proven structure and a checklist instead of a blank page: report or memo — conclusion first (pyramid principle); plan — goal, milestones, owners, risks; email — ask, context, next step; study plan — outcomes, spaced practice, self-tests; budget — sources, assumptions, sensitivity. Adapt it to the user's case.\n- Why: proven structures carry decades of lessons the user does not have yet.\n- Check: the artifact follows a named structure, and its checklist was run."
+      },
+      "UNI-008": {
+        "hash": "97f6b8b20f32fa5b",
+        "kind": "P1",
+        "body": "Communicate like a good teacher: give the answer first (BLUF), then the reasons; use plain language; define each new term once (and `remember` it for the user); point out what the user should check themselves; end with how to use the result and the next step.\n- Why: the user must understand and own the result, not just receive it.\n- Check: replies open with the answer, and new terms are explained."
+      },
+      "UNI-009": {
+        "hash": "fd80a0f191cff7ab",
+        "kind": "P1",
+        "body": "Iterate small: deliver the smallest useful version first (outline, draft, prototype, rough estimate), get the user's feedback at a natural pause, then refine. Do not polish what has not been validated.\n- Why: early feedback is cheap; late rework is expensive.\n- Check: a first version reached the user before a polished one."
+      },
+      "UNI-010": {
+        "hash": "7458beb096362184",
+        "kind": "P2",
+        "body": "After each finished task, do a one-line after-action review: what worked, what did not, what to do differently. Anything worth repeating or avoiding becomes a `lesson`.\n- Why: the method improves only if each task feeds the next.\n- Check: non-trivial tasks leave a lesson or an explicit \"nothing new\"."
+      }
+    }
+  },
+  "harnesses": [
+    "claude",
+    "opencode",
+    "pi",
+    "omp"
+  ],
+  "installedAt": "2026-11-27T08:54:24.964Z",
+  "updatedAt": "2026-11-27T08:54:24.964Z",
+  "files": {
+    "AGENTS.md": {
+      "kind": "block",
+      "hash": "38d3b7626a4a6d25"
+    },
+    ".agentkit/hooks/_lib.mjs": {
+      "kind": "file",
+      "hash": "bc319cfbba1f690e"
+    },
+    ".agentkit/hooks/capture.mjs": {
+      "kind": "file",
+      "hash": "d36fd0be2305f4b6"
+    },
+    ".agentkit/hooks/cli.mjs": {
+      "kind": "file",
+      "hash": "52f7aa1c5ce1323e"
+    },
+    ".agentkit/hooks/dashboard.html": {
+      "kind": "file",
+      "hash": "6923d203e81fd8a1"
+    },
+    ".agentkit/hooks/desk-check.mjs": {
+      "kind": "file",
+      "hash": "488328cfafebae60"
+    },
+    ".agentkit/hooks/guard.mjs": {
+      "kind": "file",
+      "hash": "46e0ea9509979d55"
+    },
+    ".agentkit/hooks/session-start.mjs": {
+      "kind": "file",
+      "hash": "b57a8c3f8d641848"
+    },
+    ".agentkit/hooks/stop-check.mjs": {
+      "kind": "file",
+      "hash": "843fc6bf730a3c07"
+    },
+    ".agentkit/hooks/store.mjs": {
+      "kind": "file",
+      "hash": "5a25457396007672"
+    },
+    ".agentkit/hooks/team.mjs": {
+      "kind": "file",
+      "hash": "9012642be14f7d67"
+    },
+    ".agentkit/desk.mjs": {
+      "kind": "file",
+      "hash": "3a7eff601a1438e7"
+    },
+    ".agentkit/docs/team.md": {
+      "kind": "file",
+      "hash": "24184dc72709b636"
+    },
+    "CLAUDE.md": {
+      "kind": "block",
+      "hash": "ed1afa082ffb957a"
+    },
+    ".claude/skills/desk/SKILL.md": {
+      "kind": "file",
+      "hash": "799d76debd269932"
+    },
+    ".claude/settings.json": {
+      "kind": "json",
+      "patch": {
+        "hooks": {
+          "SessionStart": [
+            {
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "node \"$CLAUDE_PROJECT_DIR/.agentkit/hooks/session-start.mjs\"",
+                  "timeout": 10
+                }
+              ]
+            }
+          ],
+          "UserPromptSubmit": [
+            {
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "node \"$CLAUDE_PROJECT_DIR/.agentkit/hooks/capture.mjs\"",
+                  "timeout": 10
+                }
+              ]
+            }
+          ],
+          "PreToolUse": [
+            {
+              "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "node \"$CLAUDE_PROJECT_DIR/.agentkit/hooks/guard.mjs\"",
+                  "timeout": 10
+                }
+              ]
+            }
+          ],
+          "PostToolUse": [
+            {
+              "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "node \"$CLAUDE_PROJECT_DIR/.agentkit/hooks/desk-check.mjs\"",
+                  "timeout": 10
+                }
+              ]
+            }
+          ],
+          "Stop": [
+            {
+              "hooks": [
+                {
+                  "type": "command",
+                  "command": "node \"$CLAUDE_PROJECT_DIR/.agentkit/hooks/stop-check.mjs\"",
+                  "timeout": 10
+                }
+              ]
+            }
+          ]
+        },
+        "permissions": {
+          "ask": [
+            "Bash(git push:*)",
+            "Bash(git reset --hard:*)",
+            "Bash(git clean:*)",
+            "Bash(rm -rf:*)",
+            "Bash(npm publish:*)"
+          ]
+        }
+      }
+    },
+    ".agents/skills/desk/SKILL.md": {
+      "kind": "file",
+      "hash": "799d76debd269932"
+    },
+    ".opencode/plugins/agentkit-desk/index.js": {
+      "kind": "file",
+      "hash": "4e57a3f2fa5da4fb"
+    },
+    ".pi/extensions/agentkit-desk.js": {
+      "kind": "file",
+      "hash": "89217af3ff594133"
+    },
+    ".omp/extensions/agentkit-desk.js": {
+      "kind": "file",
+      "hash": "89217af3ff594133"
+    }
+  }
+}
