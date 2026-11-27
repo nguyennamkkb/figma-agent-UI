@@ -218,6 +218,8 @@ describe('MCP server', () => {
     );
     const render = tools.find((t) => t.name === 'render_tree')!;
     expect(JSON.stringify(render.inputSchema)).toContain('"frame"');
+    const tuples = tools.filter((t) => JSON.stringify(t.inputSchema).includes('"items":[')).map((t) => t.name);
+    expect(tuples).toEqual([]);
     expect(client.getInstructions()).toMatch(/get_design_system/);
   });
 

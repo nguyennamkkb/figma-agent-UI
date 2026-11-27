@@ -28,7 +28,7 @@ export const PaintInput = z.union([
 ]);
 export const Fill = z.union([PaintInput, z.array(PaintInput)]);
 
-const Side4 = <T extends z.ZodType>(t: T) => z.union([t, z.tuple([t, t, t, t])]);
+const Side4 = <T extends z.ZodType>(t: T) => z.union([t, z.array(t).length(4)]);
 
 export const Stroke = z.strictObject({
   color: Fill,
@@ -105,7 +105,7 @@ const frameProps = {
   counterGap: NumOrVar.optional().describe('Gap between wrapped rows'),
   wrap: z.boolean().optional(),
   padding: z
-    .union([NumOrVar, z.tuple([NumOrVar, NumOrVar]), z.tuple([NumOrVar, NumOrVar, NumOrVar, NumOrVar])])
+    .union([NumOrVar, z.array(NumOrVar).length(2), z.array(NumOrVar).length(4)])
     .optional()
     .describe('All, [vertical, horizontal] or [top, right, bottom, left]'),
   paddingTop: NumOrVar.optional(),

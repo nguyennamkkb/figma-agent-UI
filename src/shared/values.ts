@@ -93,8 +93,8 @@ export function matchFontStyle(wanted: string, available: string[]): string | un
   return available.find((s) => normalizeStyle(s) === w);
 }
 
-export function expandSides<T>(v: T | [T, T] | [T, T, T, T]): [T, T, T, T] {
+export function expandSides<T>(v: T | T[]): [T, T, T, T] {
   if (!Array.isArray(v)) return [v, v, v, v];
   if (v.length === 2) return [v[0], v[1], v[0], v[1]];
-  return v;
+  return [v[0], v[1], v[2], v[3]];
 }
