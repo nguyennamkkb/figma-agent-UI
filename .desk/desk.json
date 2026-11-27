@@ -1,8 +1,8 @@
 {
   "version": 2,
   "seq": {
-    "Q": 8,
-    "M": 2,
+    "Q": 14,
+    "M": 3,
     "L": 2,
     "P": 0
   },
@@ -324,8 +324,202 @@
       "proof": "6f4f005 đã lên dev + main, tag v1.6.24 đã push; 290/290 test",
       "closed": "2026-11-27",
       "archived": "2026-11-27"
+    },
+    {
+      "id": "Q-9",
+      "kind": "task",
+      "created": "2026-11-27",
+      "last": "2026-11-27",
+      "uses": 1,
+      "status": "done",
+      "prio": "P1",
+      "text": "Commit bộ desk (agent-work-kit) lên repo, 1.6.25",
+      "done": "dev + main + tag v1.6.25",
+      "history": [
+        {
+          "at": "2026-11-27T10:07:06Z",
+          "status": "todo",
+          "note": "added"
+        },
+        {
+          "at": "2026-11-27T10:07:06Z",
+          "status": "doing",
+          "note": "started"
+        },
+        {
+          "at": "2026-11-27T10:07:06Z",
+          "status": "done",
+          "note": "655c70c, 34 file, đã push dev/main, tag v1.6.25"
+        }
+      ],
+      "proof": "655c70c, 34 file, đã push dev/main, tag v1.6.25",
+      "closed": "2026-11-27",
+      "archived": "2026-11-27"
+    },
+    {
+      "id": "Q-10",
+      "kind": "task",
+      "created": "2026-11-27",
+      "last": "2026-11-27",
+      "uses": 1,
+      "status": "todo",
+      "prio": "P2",
+      "text": "Cho eslint bỏ qua .agentkit/.omp/.opencode/.pi (13 lỗi parse làm npm run lint đỏ) — cần user duyệt",
+      "done": "npm run lint xanh",
+      "history": [
+        {
+          "at": "2026-11-27T10:07:06Z",
+          "status": "todo",
+          "note": "added"
+        }
+      ]
+    },
+    {
+      "id": "Q-11",
+      "kind": "task",
+      "created": "2026-11-27",
+      "last": "2026-11-27",
+      "uses": 1,
+      "status": "done",
+      "prio": "P1",
+      "text": "figma-tool: thêm chế độ Redesign app, Clone visual, Vẽ từ ảnh, Ads board, Lottie (mỗi chế độ ra lệnh skill chuẩn + mẫu riêng)",
+      "done": "Chọn từng chế độ ra đúng lệnh /app-redesign, /ui-visual, /screen-from-image, /ads-board, /lottie-motion; mẫu nạp được; Sửa màn không đổi; test Orca",
+      "files": [
+        "figma-tool.html"
+      ],
+      "history": [
+        {
+          "at": "2026-11-27T10:20:14Z",
+          "status": "todo",
+          "note": "added"
+        },
+        {
+          "at": "2026-11-27T10:20:14Z",
+          "status": "doing",
+          "note": "started"
+        },
+        {
+          "at": "2026-11-27T10:24:32Z",
+          "status": "done",
+          "note": "Orca: 5 chế độ mới ra đúng lệnh skill; bấm mẫu, chip, gõ chữ, lưu mẫu, Làm lại đều chạy; clone đổi bố cục tự lên L3; ads diff trùng bản thì nhắc; Sửa màn giữ nguyên; console 0 lỗi"
+        }
+      ],
+      "proof": "Orca: 5 chế độ mới ra đúng lệnh skill; bấm mẫu, chip, gõ chữ, lưu mẫu, Làm lại đều chạy; clone đổi bố cục tự lên L3; ads diff trùng bản thì nhắc; Sửa màn giữ nguyên; console 0 lỗi",
+      "closed": "2026-11-27",
+      "archived": "2026-11-27"
+    },
+    {
+      "id": "M-3",
+      "kind": "memory",
+      "created": "2026-11-27",
+      "last": "2026-11-27",
+      "uses": 1,
+      "prio": "P1",
+      "text": "figma-tool có 6 chế độ: Sửa màn (figma-ui-flow), Redesign app, Clone visual, Vẽ từ ảnh, Ads board, Lottie — mỗi chế độ ra lệnh skill chuẩn + mẫu riêng (MODES trong figma-tool.html)"
+    },
+    {
+      "id": "Q-12",
+      "kind": "task",
+      "created": "2026-11-27",
+      "last": "2026-11-27",
+      "uses": 1,
+      "status": "done",
+      "prio": "P1",
+      "text": "figma-tool Redesign: thêm tính chất chọn/nhập sẵn (kiểu app, nền tảng, cảm giác, màu, giữ, tham khảo, Image MCP, flow theo cách cũ/thử riêng) + chip tự thêm",
+      "done": "Các hàng mới hiện đúng theo việc; prompt có dòng 'Đã chọn sẵn'; + Thêm lưu được; test Orca",
+      "files": [
+        "figma-tool.html"
+      ],
+      "history": [
+        {
+          "at": "2026-11-27T10:27:08Z",
+          "status": "todo",
+          "note": "added"
+        },
+        {
+          "at": "2026-11-27T10:27:08Z",
+          "status": "doing",
+          "note": "started"
+        },
+        {
+          "at": "2026-11-27T10:28:29Z",
+          "status": "done",
+          "note": "Orca: mẫu start L4 ra đủ 'Đã chọn sẵn/Cảm giác/Màu/Giữ'; chọn muse2api thêm vào prompt; + Thêm 'Điện ảnh' vào Cảm giác và còn sau reload; build + section + thử riêng hiện Theme/Ảnh/Cảm giác/Màu/Tham khảo; sửa 'cTA' → 'CTA'"
+        }
+      ],
+      "proof": "Orca: mẫu start L4 ra đủ 'Đã chọn sẵn/Cảm giác/Màu/Giữ'; chọn muse2api thêm vào prompt; + Thêm 'Điện ảnh' vào Cảm giác và còn sau reload; build + section + thử riêng hiện Theme/Ảnh/Cảm giác/Màu/Tham khảo; sửa 'cTA' → 'CTA'",
+      "closed": "2026-11-27",
+      "archived": "2026-11-27"
+    },
+    {
+      "id": "Q-13",
+      "kind": "task",
+      "created": "2026-11-27",
+      "last": "2026-11-27",
+      "uses": 1,
+      "status": "done",
+      "prio": "P1",
+      "text": "figma-tool: nút Copy EN — prompt tiếng Anh cho cả 6 chế độ",
+      "done": "Copy EN ra câu tiếng Anh đúng nghĩa với bản Việt ở mọi chế độ; test Orca",
+      "files": [
+        "figma-tool.html"
+      ],
+      "history": [
+        {
+          "at": "2026-11-27T10:37:10Z",
+          "status": "todo",
+          "note": "added"
+        },
+        {
+          "at": "2026-11-27T10:37:10Z",
+          "status": "doing",
+          "note": "started"
+        },
+        {
+          "at": "2026-11-27T10:39:36Z",
+          "status": "done",
+          "note": "62/62 mẫu (40 sửa màn + 22 chế độ khác) ra tiếng Anh không còn chữ Việt; Orca: Copy EN ở Sửa màn và Redesign copy đúng, toast báo, console 0 lỗi"
+        }
+      ],
+      "proof": "62/62 mẫu (40 sửa màn + 22 chế độ khác) ra tiếng Anh không còn chữ Việt; Orca: Copy EN ở Sửa màn và Redesign copy đúng, toast báo, console 0 lỗi",
+      "closed": "2026-11-27",
+      "archived": "2026-11-27"
+    },
+    {
+      "id": "Q-14",
+      "kind": "task",
+      "created": "2026-11-27",
+      "last": "2026-11-27",
+      "uses": 1,
+      "status": "done",
+      "prio": "P1",
+      "text": "figma-tool: tuỳ chọn Dùng ảnh (Có / Có + tham chiếu / Phong cách mới) + MCP ảnh, prompt nhắc skill asset-generator + MCP đang mở",
+      "done": "Redesign, Clone, Vẽ từ ảnh có hàng Dùng ảnh + MCP; Sửa màn có MCP khi tạo ảnh; câu nhắc VI + EN đúng; test Orca",
+      "files": [
+        "figma-tool.html"
+      ],
+      "history": [
+        {
+          "at": "2026-11-27T10:52:53Z",
+          "status": "todo",
+          "note": "added"
+        },
+        {
+          "at": "2026-11-27T10:52:53Z",
+          "status": "doing",
+          "note": "started"
+        },
+        {
+          "at": "2026-11-27T10:54:25Z",
+          "status": "done",
+          "note": "Orca: Vẽ từ ảnh/Clone/Redesign có hàng Dùng ảnh (Có / Có + tham chiếu / Phong cách mới) + MCP; Sửa màn hiện MCP ảnh khi chọn ảnh đổi; prompt nhắc skill asset-generator qua MCP đã chọn hoặc 'MCP đang mở'; EN không còn chữ Việt; console 0 lỗi"
+        }
+      ],
+      "proof": "Orca: Vẽ từ ảnh/Clone/Redesign có hàng Dùng ảnh (Có / Có + tham chiếu / Phong cách mới) + MCP; Sửa màn hiện MCP ảnh khi chọn ảnh đổi; prompt nhắc skill asset-generator qua MCP đã chọn hoặc 'MCP đang mở'; EN không còn chữ Việt; console 0 lỗi",
+      "closed": "2026-11-27",
+      "archived": "2026-11-27"
     }
   ],
   "leases": {},
-  "updated": "2026-11-27T10:06:06Z"
+  "updated": "2026-11-27T10:54:25Z"
 }

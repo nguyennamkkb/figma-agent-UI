@@ -1,0 +1,1619 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>figma-tool · Prompt cho agent Figma</title>
+<style>
+:root{
+  --bg:#F3F4F6;
+  --card:#FFFFFF;
+  --ink:#15171C;
+  --sub:#6A6F7C;
+  --faint:#A5AAB5;
+  --line:#E2E4E9;
+  --line-2:#C9CDD6;
+  --accent:#3B5BFD;
+  --accent-soft:#EEF1FF;
+  --warn:#8F5600;
+  --warn-soft:#FFF4DE;
+  --r:14px;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,monospace;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.5 var(--sans);-webkit-font-smoothing:antialiased}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+.wrap{max-width:1200px;margin:0 auto;padding:18px 20px 110px}
+header{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:700;font-size:16px;letter-spacing:-.01em}
+.brand i{width:18px;height:18px;border-radius:5px;background:var(--ink);position:relative}
+.brand i::after{content:"";position:absolute;right:3px;top:3px;width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.brand span{font-weight:400;color:var(--sub);font-size:13px}
+.menu{position:relative}
+.menu summary{list-style:none;height:32px;padding:0 12px;border:1px solid var(--line);border-radius:9px;background:var(--card);display:flex;align-items:center;font-size:13px;font-weight:600;cursor:pointer;user-select:none}
+.menu summary::-webkit-details-marker{display:none}
+.menu[open] summary{border-color:var(--ink)}
+.menu .pop{position:absolute;right:0;top:38px;z-index:20;background:var(--card);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 30px rgba(20,23,28,.12);padding:6px;min-width:210px;display:grid}
+.menu .pop button{border:0;background:none;text-align:left;padding:8px 10px;border-radius:8px;font-size:13px}
+.menu .pop button:hover{background:var(--bg)}
+.menu .pop .danger{color:#B42318}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) 400px;gap:16px;align-items:start}
+@media (max-width:980px){.grid{grid-template-columns:minmax(0,1fr)}}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chips+.chips{margin-top:8px}
+.chip{height:32px;padding:0 12px;border-radius:999px;border:1px solid var(--line);background:var(--card);font-size:13px;display:inline-flex;align-items:center;gap:6px;white-space:nowrap;transition:background .12s,border-color .12s}
+.chip:hover{border-color:var(--line-2)}
+.chip.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.chip.lock{color:var(--faint);border-style:dashed;background:transparent}
+.chip.lock small{font-size:10.5px;font-weight:700}
+.chip.add{color:var(--sub);border-style:dashed;background:transparent}
+.chip.add input{border:0;outline:0;background:transparent;width:150px;padding:0}
+.chip .x{margin-right:-5px;width:16px;height:16px;border-radius:50%;display:inline-grid;place-items:center;font-size:12px;line-height:1;opacity:.55}
+.chip .x:hover{opacity:1;background:rgba(127,127,127,.25)}
+.mcp-line{display:flex;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap}
+.mcp-line>span{font-size:12px;font-weight:600;color:var(--sub)}
+.chips.small .chip{height:28px;padding:0 10px;font-size:12.5px}
+.levels{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media (max-width:760px){.levels{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.lv{border:1px solid var(--line);border-radius:12px;background:var(--card);padding:9px 10px;text-align:left;display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;align-items:center}
+.lv:hover{border-color:var(--line-2)}
+.lv svg{width:28px;height:44px;display:block}
+.lv b{display:block;font-size:13.5px;line-height:1.25}
+.lv b em{font-style:normal;color:var(--sub);font-weight:600;margin-right:4px}
+.lv span{display:block;font-size:11.5px;color:var(--sub);line-height:1.3;margin-top:2px}
+.lv.on{border-color:var(--accent);background:var(--accent-soft);box-shadow:inset 0 0 0 1px var(--accent)}
+.lv.on b em{color:var(--accent)}
+.field{display:flex;gap:8px;align-items:center;margin-top:8px;flex-wrap:wrap}
+.field input[type=text]{flex:1;min-width:180px;height:34px;border:1px solid var(--line);border-radius:9px;padding:0 10px;background:#FAFAFB}
+.field input[type=text]::placeholder{color:var(--faint)}
+input[type=text]:focus{outline:2px solid var(--accent-soft);border-color:var(--accent)}
+.swatch{height:28px;display:inline-flex;align-items:center;gap:6px;padding:0 6px 0 4px;border:1px solid var(--line);border-radius:8px;font:11.5px var(--mono);background:var(--card)}
+.swatch i{width:20px;height:20px;border-radius:5px;border:1px solid rgba(0,0,0,.1)}
+.swatch button{border:0;background:none;color:var(--sub);padding:0 2px;font-size:13px}
+.linkbtn{border:1px dashed var(--line-2);background:transparent;height:30px;padding:0 10px;border-radius:8px;font-size:12.5px;color:var(--sub)}
+.linkbtn:hover{color:var(--ink);border-color:var(--ink)}
+.samples-head{display:flex;align-items:center;justify-content:space-between;margin:12px 0 6px;font-size:12px;color:var(--sub)}
+.samples-head button{border:0;background:none;color:var(--accent);font-size:12px;font-weight:600;padding:0}
+.samples{display:flex;gap:8px;overflow-x:auto;padding:1px 1px 6px;scroll-snap-type:x proximity}
+.sample{flex:0 0 250px;scroll-snap-align:start;text-align:left;border:1px solid var(--line);border-radius:12px;background:#FAFAFB;padding:10px 12px;font-size:12.5px;line-height:1.45;position:relative}
+.sample:hover{border-color:var(--accent);background:var(--card)}
+.sample .tag{display:inline-block;font-size:10.5px;font-weight:700;padding:1px 6px;border-radius:5px;background:var(--ink);color:#fff;margin-right:6px}
+.sample .who{font-size:11px;color:var(--sub)}
+.sample p{margin:6px 0 0;color:#2B2F38;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.sample .x{position:absolute;right:6px;top:6px;width:20px;height:20px;border-radius:6px;display:grid;place-items:center;color:var(--sub);font-size:13px}
+.sample .x:hover{background:var(--bg);color:#B42318}
+.out{position:sticky;top:16px;padding:18px}
+@media (max-width:980px){.out{position:static}}
+.out-head{display:flex;align-items:center;justify-content:space-between}
+.out-head h3{margin:0;font-size:13px;color:var(--sub);font-weight:600}
+.badge{font-size:11px;font-weight:700;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
+.prompt{margin:10px 0 0;font-size:16px;line-height:1.6;white-space:pre-wrap;word-break:break-word;min-height:96px}
+.prompt .gap{color:var(--warn);background:var(--warn-soft);border-radius:4px;padding:0 3px}
+.prompt .scope{display:block;margin-top:10px;font-size:13px;line-height:1.55;color:var(--sub)}
+.attach{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.attach b{font-size:12px;color:var(--sub);font-weight:600;align-self:center}
+.attach span{font-size:12px;padding:3px 9px;border-radius:999px;background:var(--warn-soft);color:var(--warn);font-weight:600}
+.expect{margin-top:12px;padding:10px 12px;border-radius:10px;background:var(--bg);font-size:12.5px;color:#3C414C}
+.expect b{color:var(--ink)}
+.actions{display:flex;gap:8px;margin-top:14px}
+.btn{height:40px;padding:0 14px;border-radius:10px;border:1px solid var(--line);background:var(--card);font-weight:600;font-size:13px}
+.btn:hover{border-color:var(--ink)}
+.btn.primary{flex:1;background:var(--ink);border-color:var(--ink);color:#fff}
+.btn.en{border-color:var(--accent);color:var(--accent)}
+.btn.en:hover{background:var(--accent-soft)}
+.btn.primary:hover{background:var(--accent);border-color:var(--accent)}
+.opt{display:flex;align-items:center;gap:8px;margin-top:12px;font-size:12.5px;color:var(--sub);cursor:pointer;user-select:none}
+.opt input{accent-color:var(--accent);margin:0}
+.hint{font-size:12px;color:var(--faint);margin:8px 0 0}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.bar{display:none}
+@media (max-width:980px){
+  .bar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:30;gap:8px;padding:10px 14px;background:rgba(255,255,255,.94);backdrop-filter:blur(8px);border-top:1px solid var(--line)}
+  .bar p{flex:1;margin:0;font-size:12px;color:var(--sub);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+}
+.left{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;min-width:0}
+.samples-card{padding:12px 14px 8px}
+.samples-card .samples-head{margin:0 0 8px}
+.rows-head{display:flex;justify-content:space-between;align-items:center;padding:10px 18px;font-size:12px;color:var(--sub);border-bottom:1px solid var(--line)}
+.rh-actions{display:flex;gap:14px;align-items:center}
+.rows-head .reset{color:var(--sub)}
+.rows-head .reset:hover{color:#B42318}
+.rows-head button{border:0;background:none;color:var(--accent);font-size:12px;font-weight:600;padding:0}
+.row{display:block;padding:0;border-top:1px solid var(--line)}
+.rows-head+.row{border-top:0}
+.rhead{width:100%;display:grid;grid-template-columns:88px minmax(0,1fr) 16px;gap:12px;align-items:center;border:0;background:none;text-align:left;padding:13px 18px;border-radius:0}
+.row:not(.open) .rhead:hover{background:#FAFAFB}
+.rhead h2{margin:0;font-size:13px;font-weight:600;color:var(--sub)}
+.rhead h2 small{display:block;font-weight:400;color:var(--faint);font-size:11px;line-height:1.3}
+.sum{font-size:13.5px;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sum.empty{color:var(--faint)}
+.chev{color:var(--faint);font-size:16px;transition:transform .15s;justify-self:end}
+.row.open .chev{transform:rotate(90deg)}
+.row.open .sum{visibility:hidden}
+.body{padding:0 44px 16px 118px;margin-top:-34px;position:relative}
+.row:not(.open) .body{display:none}
+@media (max-width:600px){.rhead{grid-template-columns:72px minmax(0,1fr) 16px}.body{padding:0 14px 14px;margin-top:0}}
+.samples-card .samples-head span{cursor:pointer;font-weight:600}
+.samples-card .samples-head button{height:28px;padding:0 10px;border-radius:8px;border:1px solid var(--accent);background:var(--card)}
+.samples-card.open{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+.samples-card.open .samples-head button{background:var(--accent);color:#fff}
+.sample-board{max-height:62vh;overflow:auto;padding-right:4px}
+.sample-board h4{margin:10px 0 6px;font-size:12px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.04em}
+.sample-board h4:first-child{margin-top:2px}
+.sample-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+.sample-grid .sample{flex:none}
+.sample.cur{border-color:var(--accent);background:var(--accent-soft)}
+.row.open{background:#F8F9FF;box-shadow:inset 3px 0 0 var(--accent)}
+.row.open .rhead h2{color:var(--accent)}
+.row.open .chev{color:var(--accent)}
+.row:not(.open) .rhead h2{color:var(--ink)}
+.row:not(.open) .chev{color:var(--line-2)}
+.row:not(.open) .rhead:hover .chev{color:var(--ink)}
+.chev{font-size:18px;font-weight:700}
+.screen-card{padding:14px 18px 16px}
+.screen-head{display:flex;align-items:baseline;gap:10px;margin-bottom:10px}
+.screen-head h2{margin:0;font-size:15px;font-weight:700}
+.screen-head span{font-size:12px;color:var(--faint)}
+.link-card{padding:14px 18px 14px;display:grid;gap:8px}
+.link-card .screen-head{margin-bottom:2px}
+.lf{display:grid;grid-template-columns:104px minmax(0,1fr);align-items:center;gap:10px}
+.lf span{font-size:12.5px;font-weight:600;color:var(--sub)}
+.lf input{height:36px;border:1px solid var(--line);border-radius:9px;padding:0 10px;background:#FAFAFB;width:100%}
+.lf input::placeholder{color:var(--faint)}
+.lf input:not(:placeholder-shown){background:var(--card);border-color:var(--line-2)}
+@media (max-width:600px){.lf{grid-template-columns:minmax(0,1fr);gap:4px}}
+.modes{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 14px;padding:4px;background:var(--card);border:1px solid var(--line);border-radius:14px}
+.mode{flex:1 1 130px;border:0;background:transparent;border-radius:10px;padding:8px 12px;text-align:left}
+.mode b{display:block;font-size:13.5px}
+.mode small{display:block;font-size:11px;color:var(--faint);font-family:var(--mono)}
+.mode:hover{background:var(--bg)}
+.mode.on{background:var(--ink);color:#fff}
+.mode.on small{color:#AEB4C2}
+.mode-pane{display:grid;gap:12px}
+.open-list .sample-grid{max-height:none}
+.mrow{display:grid;grid-template-columns:104px minmax(0,1fr);gap:12px;padding:13px 18px;border-top:1px solid var(--line);align-items:start}
+.mrow:first-child{border-top:0}
+.mrow>h2{margin:0;font-size:13px;font-weight:600;color:var(--ink);padding-top:6px}
+.mrow input[type=text]{width:100%;height:36px;border:1px solid var(--line);border-radius:9px;padding:0 10px;background:#FAFAFB}
+.mrow input[type=text]::placeholder{color:var(--faint)}
+@media (max-width:600px){.mrow{grid-template-columns:minmax(0,1fr);gap:6px}.mrow>h2{padding:0}}
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,8px);background:var(--ink);color:#fff;padding:9px 14px;border-radius:10px;font-size:13px;opacity:0;transition:opacity .18s,transform .18s;pointer-events:none;z-index:50;max-width:90vw}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media (max-width:980px){.toast{bottom:84px}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand"><i></i>figma-tool <span>Prompt cho agent Figma</span></div>
+    <details class="menu" id="menu">
+      <summary>Dữ liệu</summary>
+      <div class="pop">
+        <button type="button" id="shareBtn">Copy link chia sẻ</button>
+        <button type="button" id="exportBtn">Xuất JSON</button>
+        <button type="button" id="importBtn">Nhập JSON</button>
+        <button type="button" id="resetBtn" class="danger">Xoá chip & mẫu tự thêm</button>
+      </div>
+    </details>
+    <input type="file" id="importFile" accept="application/json" class="sr">
+  </header>
+
+  <nav class="modes" id="modes"></nav>
+
+  <div class="grid">
+    <div class="left">
+      <div id="modePane" class="mode-pane" hidden>
+        <section class="card samples-card open-list">
+          <div class="samples-head"><span id="mSamplesTitle">Mẫu</span></div>
+          <div class="sample-grid" id="mSamples"></div>
+        </section>
+        <main class="card" id="mForm">
+          <div class="rows-head"><span id="mFormTitle">Tự chọn</span><span class="rh-actions"><button type="button" id="mReset" class="reset">↺ Làm lại</button></span></div>
+          <div id="mFields"></div>
+        </main>
+      </div>
+      <section class="card screen-card edit-only">
+        <div class="screen-head"><h2>Màn / loại</h2><span>chọn trước — mẫu bên dưới đổi theo</span></div>
+        <div class="chips" id="screen"></div>
+      </section>
+      <section class="card link-card edit-only">
+        <div class="screen-head"><h2>Link</h2><span>tuỳ chọn — dán từ Figma (Copy link to selection)</span></div>
+        <label class="lf"><span>Frame cần sửa</span><input type="text" id="link" placeholder="https://www.figma.com/design/…?node-id=…"></label>
+        <label class="lf"><span>Màn mẫu</span><input type="text" id="refLink" placeholder="Link màn theo phong cách muốn học theo"></label>
+      </section>
+      <section class="card samples-card edit-only" id="samplesCard">
+        <div class="samples-head"><span id="samplesTitle">Mẫu</span><button type="button" id="samplesAll"></button></div>
+        <div class="samples" id="samples"></div>
+      </section>
+      <main class="card edit-only" id="rows">
+        <div class="rows-head"><span>Tự chọn</span><span class="rh-actions"><button type="button" id="resetForm" class="reset">↺ Làm lại</button><button type="button" id="expandAll"></button></span></div>
+      <section class="row" data-row="level">
+        <button type="button" class="rhead"><h2>Mức</h2><span class="sum" data-sum="level"></span><span class="chev">›</span></button>
+        <div class="body">
+          <div class="levels" id="levels"></div>
+        </div>
+      </section>
+      <section class="row" data-row="style">
+        <button type="button" class="rhead"><h2>Phong cách</h2><span class="sum" data-sum="style"></span><span class="chev">›</span></button>
+        <div class="body">
+          <div class="chips" id="style"></div>
+        </div>
+      </section>
+      <section class="row" data-row="mood">
+        <button type="button" class="rhead"><h2>Tông<small>chọn nhiều</small></h2><span class="sum" data-sum="mood"></span><span class="chev">›</span></button>
+        <div class="body">
+          <div class="chips" id="mood"></div>
+        </div>
+      </section>
+      <section class="row" data-row="color">
+        <button type="button" class="rhead"><h2>Màu</h2><span class="sum" data-sum="color"></span><span class="chev">›</span></button>
+        <div class="body">
+          <div class="chips" id="color"></div>
+          <div id="hexField" hidden>
+            <div class="field" id="hexList"></div>
+            <div class="field">
+              <input type="text" id="hexInput" placeholder="#RRGGBB rồi Enter" style="flex:0 1 170px;min-width:150px">
+              <label class="linkbtn" for="hexFile" style="display:inline-flex;align-items:center">Lấy màu từ ảnh</label>
+              <input type="file" id="hexFile" accept="image/*" class="sr">
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="row" data-row="image">
+        <button type="button" class="rhead"><h2>Ảnh</h2><span class="sum" data-sum="image"></span><span class="chev">›</span></button>
+        <div class="body">
+          <div class="chips" id="image"></div>
+          <div class="mcp-line" id="mcpLine" hidden><span>MCP ảnh</span><div class="chips small" id="mcpChips"></div></div>
+        </div>
+      </section>
+      <section class="row" data-row="changes">
+        <button type="button" class="rhead"><h2>Thay đổi<small>khoá theo mức</small></h2><span class="sum" data-sum="changes"></span><span class="chev">›</span></button>
+        <div class="body">
+          <div class="chips" id="changes"></div>
+        </div>
+      </section>
+      <section class="row" data-row="keeps">
+        <button type="button" class="rhead"><h2>Giữ<small>chọn nhiều</small></h2><span class="sum" data-sum="keeps"></span><span class="chev">›</span></button>
+        <div class="body">
+          <div class="chips" id="keeps"></div>
+        </div>
+      </section>
+      <section class="row" data-row="note">
+        <button type="button" class="rhead"><h2>Thêm</h2><span class="sum" data-sum="note"></span><span class="chev">›</span></button>
+        <div class="body">
+          <div class="field" style="margin:0"><input type="text" id="note" placeholder="Ý riêng, vd: gói Best Value nổi bật và chọn sẵn"></div>
+        </div>
+      </section>
+      </main>
+    </div>
+
+    <aside class="card out">
+      <div class="out-head"><h3>Prompt</h3><span class="badge" id="badge"></span></div>
+      <div class="prompt" id="prompt"></div>
+      <div class="attach" id="attach"></div>
+      <div class="expect" id="expect"></div>
+      <div class="actions">
+        <button class="btn primary" type="button" id="copyBtn" title="⌘/Ctrl + Enter">Copy</button>
+        <button class="btn en" type="button" id="copyEnBtn" title="⌘/Ctrl + Shift + Enter">Copy EN</button>
+        <button class="btn" type="button" id="saveBtn">Lưu mẫu</button>
+      </div>
+      <label class="opt" id="scopeOpt"><input type="checkbox" id="scope"> Kèm phạm vi mức và tiêu chí xong</label>
+    </aside>
+  </div>
+</div>
+
+<div class="bar"><p id="barText"></p><button class="btn" type="button" id="barCopyEn" style="flex:0 0 auto">EN</button><button class="btn primary" type="button" id="barCopy" style="flex:0 0 96px">Copy</button></div>
+<div class="toast" id="toast"></div>
+
+<script>
+const RANK = { L1: 1, L2: 2, L3: 3, L4: 4 };
+
+const LEVELS = {
+  L1: { name: 'Đổi màu', hint: 'Màu, chữ, bo góc', allow: 'màu, font, bo góc, bóng', deny: 'di chuyển, đổi cỡ khối, thay ảnh', done: 'bố cục và ảnh y nguyên, chỉ bề mặt khác', expect: 'Bố cục và ảnh giữ nguyên, chỉ đổi màu, chữ, bo góc.' },
+  L2: { name: 'Làm mới', hint: 'Component, icon, ảnh nhẹ', allow: 'component, icon, chữ gọn hơn, ảnh đổi nhẹ', deny: 'đổi thứ tự hay kích thước khối', done: 'cùng bố cục, component và ảnh mới', expect: 'Cùng bố cục, component và icon mới.' },
+  L3: { name: 'Bố cục mới', hint: 'Sắp xếp lại trong màn', allow: 'đổi thứ tự, gộp/tách khối, kiểu hiển thị, kích thước', deny: 'gộp/tách màn, bỏ chức năng, state, quảng cáo', done: 'thu nhỏ 25% vẫn thấy khác bố cục gốc, đủ chức năng', expect: 'Màn sắp xếp lại khác hẳn, đủ chức năng cũ.' },
+  L4: { name: 'Mới hoàn toàn', hint: 'Phong cách + cấu trúc', allow: 'mọi thứ của L3, gộp/tách màn, art direction mới', deny: 'bỏ chức năng; màn gộp phải đủ state và action', done: 'nhìn như app khác nhưng đủ chức năng', expect: 'Như một sản phẩm khác, chức năng giữ nguyên.' }
+};
+
+const BUILT = {
+  screen: [
+    { id: 'onboard', label: 'Onboarding', word: 'onboard' },
+    { id: 'splash', label: 'Splash', word: 'splash' },
+    { id: 'home', label: 'Home', word: 'màn Home' },
+    { id: 'paywall', label: 'Paywall', word: 'paywall' },
+    { id: 'popup', label: 'Popup', word: 'popup' },
+    { id: 'list', label: 'Danh sách', word: 'màn danh sách' },
+    { id: 'detail', label: 'Chi tiết', word: 'màn chi tiết' },
+    { id: 'feature', label: 'Màn chức năng', word: 'màn chức năng' },
+    { id: 'result', label: 'Kết quả', word: 'màn kết quả' },
+    { id: 'settings', label: 'Cài đặt', word: 'màn Cài đặt' }
+  ],
+  style: [
+    { id: 'xmas', label: 'Giáng sinh' },
+    { id: 'tet', label: 'Tết', word: 'Tết' },
+    { id: 'halloween', label: 'Halloween', word: 'Halloween' },
+    { id: 'valentine', label: 'Valentine', word: 'Valentine' },
+    { id: 'aura', label: 'Aura' },
+    { id: 'glass', label: 'Liquid glass' },
+    { id: 'pastel', label: 'Pastel' },
+    { id: 'minimal', label: 'Tối giản' },
+    { id: 'luxury', label: 'Cao cấp' },
+    { id: 'cute3d', label: '3D dễ thương', word: '3D dễ thương' },
+    { id: 'neon', label: 'Neon' },
+    { id: 'ref', label: 'Theo màn mẫu' }
+  ],
+  mood: [
+    { id: 'bright', label: 'sáng' },
+    { id: 'dark', label: 'tối' },
+    { id: 'warm', label: 'ấm' },
+    { id: 'cool', label: 'lạnh' },
+    { id: 'soft', label: 'nhẹ nhàng' },
+    { id: 'vivid', label: 'rực rỡ' },
+    { id: 'playful', label: 'vui tươi' },
+    { id: 'premium', label: 'sang trọng' }
+  ],
+  color: [
+    { id: 'style', label: 'Theo phong cách' },
+    { id: 'moodboard', label: 'Từ moodboard' },
+    { id: 'brand', label: 'Giữ màu brand' },
+    { id: 'hex', label: 'Tự chọn' }
+  ],
+  image: [
+    { id: 'keep', label: 'Giữ nguyên', min: 'L1', clause: 'giữ nguyên ảnh', expect: 'Ảnh giữ nguyên.' },
+    { id: 'light', label: 'Đổi nhẹ', min: 'L2', clause: 'ảnh gốc được đưa vào tham chiếu, chỉ đổi nhân vật và màu nhấn', expect: 'Ảnh giống gốc, khác nhân vật và màu nhấn.' },
+    { id: 'redraw', label: 'Vẽ lại theo bố cục', min: 'L3', clause: 'ảnh gốc được đưa vào tham chiếu, vẽ lại theo bố cục mới', expect: 'Ảnh vẽ lại, cùng chủ thể và cảm xúc.' },
+    { id: 'new', label: 'Phong cách mới', min: 'L4', expect: 'Ảnh mới theo phong cách đã chọn.' }
+  ],
+  changes: [
+    { id: 'comp', label: 'Component', min: 'L2', clause: 'làm mới component' },
+    { id: 'icon', label: 'Bộ icon', min: 'L2', clause: 'đổi bộ icon' },
+    { id: 'copy', label: 'Chữ gọn hơn', min: 'L2', clause: 'viết lại chữ gọn hơn' },
+    { id: 'motion', label: 'Chuyển động nhẹ', min: 'L2', clause: 'thêm chuyển động nhẹ khi vào màn' },
+    { id: 'order', layout: true, label: 'Thứ tự khối', min: 'L3', clause: 'đổi thứ tự khối' },
+    { id: 'merge', layout: true, label: 'Gộp/tách khối', min: 'L3', clause: 'gộp hoặc tách khối' },
+    { id: 'focus', layout: true, label: 'Khối nổi bật', min: 'L3', clause: 'đổi khối nổi bật nhất' },
+    { id: 'view', layout: true, label: 'Kiểu hiển thị', min: 'L3', clause: 'đổi kiểu hiển thị (list, lưới, carousel)' },
+    { id: 'size', layout: true, label: 'Kích thước khối', min: 'L3', clause: 'đổi kích thước khối chính' },
+    { id: 'mergeScreen', structure: true, label: 'Gộp màn', min: 'L4', clause: 'gộp màn, giữ đủ state và action' },
+    { id: 'splitScreen', structure: true, label: 'Tách màn', min: 'L4', clause: 'tách màn' },
+    { id: 'entry', structure: true, label: 'Điểm vào luồng', min: 'L4', clause: 'đổi điểm vào luồng' }
+  ],
+  keeps: [
+    { id: 'emotion', label: 'Cảm xúc ảnh' },
+    { id: 'info', label: 'Thông tin ảnh' },
+    { id: 'copy', label: 'Nội dung chữ' },
+    { id: 'func', label: 'Chức năng', word: 'chức năng và luồng' },
+    { id: 'ads', label: 'Quảng cáo', word: 'vị trí quảng cáo' },
+    { id: 'cta', label: 'Nút CTA', word: 'nút CTA' }
+  ]
+};
+
+const KEY = { screen: 'screen', style: 'style', mood: 'moods', color: 'color', image: 'image', changes: 'changes', keeps: 'keeps' };
+const MULTI = { mood: true, changes: true, keeps: true };
+const GATED = { image: true, changes: true };
+const ADDABLE = { screen: '+ Màn khác', style: '+ Khác', mood: '+', changes: '+ Thêm', keeps: '+ Thêm' };
+const CONFLICTS = { 'changes:copy': ['keeps', 'copy'], 'keeps:copy': ['changes', 'copy'] };
+
+const SAMPLES = [
+  { screen: 'onboard', state: { level: 'L1', moods: ['dark'], keeps: ['func'] } },
+  { screen: 'onboard', state: { level: 'L2', style: 'tet', image: 'light', changes: ['icon'], keeps: ['emotion', 'copy', 'func'] } },
+  { screen: 'onboard', state: { level: 'L3', style: 'xmas', image: 'redraw', keeps: ['emotion', 'info', 'func'] } },
+  { screen: 'onboard', state: { level: 'L4', style: 'aura', moods: ['bright'], color: 'moodboard', image: 'new', keeps: ['func'] } },
+  { screen: 'splash', state: { level: 'L1', color: 'brand', moods: ['vivid'], keeps: ['func'] } },
+  { screen: 'splash', state: { level: 'L2', style: 'glass', image: 'light', changes: ['motion'], keeps: ['emotion', 'func'] } },
+  { screen: 'splash', state: { level: 'L3', style: 'xmas', image: 'redraw', changes: ['focus', 'size', 'order'], keeps: ['emotion', 'func'] } },
+  { screen: 'splash', state: { level: 'L4', style: 'cute3d', moods: ['playful'], color: 'brand', image: 'new', keeps: ['func'] } },
+  { screen: 'home', state: { level: 'L1', style: 'pastel', moods: ['soft'], keeps: ['copy', 'func', 'ads'] } },
+  { screen: 'home', state: { level: 'L2', style: 'glass', changes: ['comp', 'icon'], keeps: ['copy', 'func', 'ads'] } },
+  { screen: 'home', state: { level: 'L3', style: 'minimal', changes: ['merge', 'focus', 'view'], keeps: ['func', 'ads'] } },
+  { screen: 'home', state: { level: 'L4', style: 'aura', moods: ['dark'], color: 'moodboard', image: 'new', changes: ['entry'], keeps: ['func', 'ads'] } },
+  { screen: 'paywall', state: { level: 'L1', style: 'luxury', moods: ['dark'], keeps: ['copy', 'cta', 'func'] } },
+  { screen: 'paywall', state: { level: 'L2', style: 'xmas', image: 'light', changes: ['comp'], keeps: ['copy', 'cta', 'func'], note: 'gói Best Value nổi bật và được chọn sẵn', en: { note: 'the Best Value plan stands out and is preselected' } } },
+  { screen: 'paywall', state: { level: 'L3', changes: ['focus', 'size', 'order'], keeps: ['copy', 'func'], note: 'gói Best Value nổi bật nhất và được chọn sẵn', en: { note: 'the Best Value plan is the most prominent and preselected' } } },
+  { screen: 'paywall', state: { level: 'L4', style: 'luxury', moods: ['premium'], image: 'new', changes: ['focus', 'view', 'merge'], keeps: ['func', 'cta'] } },
+  { screen: 'popup', state: { level: 'L1', color: 'brand', keeps: ['copy', 'cta'] } },
+  { screen: 'popup', state: { level: 'L2', style: 'halloween', image: 'light', keeps: ['copy', 'cta'] } },
+  { screen: 'popup', state: { level: 'L3', style: 'valentine', image: 'redraw', changes: ['order', 'merge', 'size'], keeps: ['emotion', 'cta'] } },
+  { screen: 'popup', state: { level: 'L4', style: 'tet', moods: ['warm', 'vivid'], image: 'new', changes: ['view'], keeps: ['cta', 'func'] } },
+  { screen: 'list', state: { level: 'L1', moods: ['bright'], color: 'hex', hex: ['#111827', '#F9FAFB', '#3B5BFD'], keeps: ['copy', 'func'] } },
+  { screen: 'list', state: { level: 'L2', style: 'minimal', changes: ['comp', 'icon', 'copy'], keeps: ['func', 'ads'] } },
+  { screen: 'list', state: { level: 'L3', style: 'pastel', changes: ['view', 'focus', 'merge'], keeps: ['copy', 'func', 'ads'] } },
+  { screen: 'list', state: { level: 'L4', style: 'neon', moods: ['dark'], changes: ['splitScreen', 'view'], keeps: ['func', 'ads'] } },
+  { screen: 'detail', state: { level: 'L1', style: 'luxury', keeps: ['copy', 'cta', 'func'] } },
+  { screen: 'detail', state: { level: 'L2', style: 'glass', image: 'light', changes: ['comp', 'icon'], keeps: ['copy', 'cta', 'func'] } },
+  { screen: 'detail', state: { level: 'L3', style: 'ref', image: 'redraw', changes: ['order', 'size', 'merge'], keeps: ['emotion', 'cta', 'func'] } },
+  { screen: 'detail', state: { level: 'L4', style: 'cute3d', moods: ['soft'], image: 'new', changes: ['mergeScreen'], keeps: ['func', 'cta'] } },
+  { screen: 'feature', state: { level: 'L1', color: 'brand', moods: ['bright'], keeps: ['copy', 'cta', 'func', 'ads'] } },
+  { screen: 'feature', state: { level: 'L2', style: 'glass', changes: ['comp', 'icon', 'copy'], keeps: ['cta', 'func', 'ads'] } },
+  { screen: 'feature', state: { level: 'L3', style: 'minimal', changes: ['order', 'merge', 'focus'], keeps: ['copy', 'cta', 'func', 'ads'], note: 'ô nhập và nút tạo luôn nằm trong màn hình đầu', en: { note: 'the input field and the create button stay in the first viewport' } } },
+  { screen: 'feature', state: { level: 'L4', style: 'aura', moods: ['dark'], color: 'moodboard', image: 'new', changes: ['mergeScreen', 'view'], keeps: ['func', 'cta', 'ads'] } },
+  { screen: 'result', state: { level: 'L1', moods: ['dark', 'premium'], keeps: ['copy', 'func'] } },
+  { screen: 'result', state: { level: 'L2', style: 'pastel', image: 'light', changes: ['comp', 'motion'], keeps: ['emotion', 'copy', 'func'] } },
+  { screen: 'result', state: { level: 'L3', style: 'ref', image: 'redraw', keeps: ['emotion', 'func'] } },
+  { screen: 'result', state: { level: 'L4', style: 'aura', moods: ['bright'], color: 'moodboard', image: 'new', changes: ['focus', 'view'], keeps: ['func', 'ads'] } },
+  { screen: 'settings', state: { level: 'L1', style: 'minimal', keeps: ['copy', 'func'] } },
+  { screen: 'settings', state: { level: 'L2', style: 'minimal', changes: ['icon', 'comp'], keeps: ['func'] } },
+  { screen: 'settings', state: { level: 'L3', changes: ['merge', 'order', 'view'], keeps: ['copy', 'func', 'ads'] } },
+  { screen: 'settings', state: { level: 'L4', style: 'glass', changes: ['splitScreen', 'entry'], keeps: ['func', 'ads'] } }
+];
+
+const STORE = 'figma-tool.v3';
+const LEGACY = 'figma-tool.custom-properties.v1';
+
+function blankState() {
+  return { screen: 'onboard', link: '', level: 'L3', style: '', refLink: '', moods: [], color: 'style', hex: [], image: '', mcp: '', changes: [], keeps: ['func'], note: '', scope: false };
+}
+
+function blankCustom() { return { screen: [], style: [], mood: [], changes: [], keeps: [] }; }
+
+
+
+let LANG = 'vi';
+function t(vi, en) { return LANG === 'en' ? en : vi; }
+function ft(v, key) {
+  const e = v.en;
+  return LANG === 'en' && e && e[key] && e.vi && e.vi[key] === v[key] ? e[key] : (v[key] || '');
+}
+function withEn(values) {
+  if (!values.en) return values;
+  const vi = {};
+  Object.keys(values.en).forEach(k => { if (k !== 'vi') vi[k] = values[k]; });
+  values.en = Object.assign({}, values.en, { vi });
+  return values;
+}
+const EN = {
+  'screen:onboard': 'the onboarding screens', 'screen:splash': 'the splash screen', 'screen:home': 'the Home screen', 'screen:paywall': 'the paywall', 'screen:popup': 'the popup', 'screen:list': 'the list screen', 'screen:detail': 'the detail screen', 'screen:feature': 'the feature screen', 'screen:result': 'the result screen', 'screen:settings': 'the Settings screen',
+  'style:xmas': 'Christmas', 'style:tet': 'Lunar New Year', 'style:halloween': 'Halloween', 'style:valentine': 'Valentine', 'style:aura': 'Aura', 'style:glass': 'liquid glass', 'style:pastel': 'pastel', 'style:minimal': 'minimal', 'style:luxury': 'premium', 'style:cute3d': 'cute 3D', 'style:neon': 'neon',
+  'mood:bright': 'bright', 'mood:dark': 'dark', 'mood:warm': 'warm', 'mood:cool': 'cool', 'mood:soft': 'soft', 'mood:vivid': 'vivid', 'mood:playful': 'playful', 'mood:premium': 'luxurious',
+  'image:keep': 'keep the images as they are', 'image:light': 'use the original image as reference and change only the character and accent colours', 'image:redraw': 'use the original image as reference and redraw it for the new layout',
+  'changes:comp': 'refresh the components', 'changes:icon': 'change the icon set', 'changes:copy': 'rewrite the copy shorter', 'changes:motion': 'add a light entrance animation', 'changes:order': 'reorder the blocks', 'changes:merge': 'merge or split blocks', 'changes:focus': 'change the most prominent block', 'changes:view': 'change the display pattern (list, grid, carousel)', 'changes:size': 'resize the main block', 'changes:mergeScreen': 'merge screens, keeping every state and action', 'changes:splitScreen': 'split the screen', 'changes:entry': 'move the flow entry point',
+  'keeps:copy': 'the copy', 'keeps:func': 'functions and flows', 'keeps:ads': 'ad placements', 'keeps:cta': 'the CTA button',
+  'redesign:kind:sibling': 'a sibling app that reads as another product', 'redesign:kind:refresh': 'a refresh of this same app',
+  'redesign:follow:same': 'follow the flows already redesigned', 'redesign:follow:trial': 'try another direction as a separate trial on Explore', 'redesign:follow:redo': 'redo this flow from the original',
+  'redesign:theme:light': 'light', 'redesign:theme:dark': 'dark', 'redesign:theme:both': 'light and dark', 'redesign:theme:flip': 'opposite to the original',
+  'redesign:image:3d': '3D', 'redesign:image:photo': 'realistic photos', 'redesign:image:flat': 'flat illustration', 'redesign:image:clay': 'clay', 'redesign:image:keep': 'same kind as the original',
+  'redesign:feel:premium': 'premium', 'redesign:feel:minimal': 'minimal', 'redesign:feel:playful': 'playful', 'redesign:feel:warm': 'warm', 'redesign:feel:tech': 'techy', 'redesign:feel:soft': 'soft', 'redesign:feel:bold': 'bold',
+  'redesign:color:auto': 'your proposal', 'redesign:color:moodboard': 'from the attached moodboard', 'redesign:color:brand': 'keep the brand colours',
+  'redesign:keep:ads': 'ad placements', 'redesign:keep:cta': 'purchase CTA', 'redesign:keep:copy': 'copy', 'redesign:keep:logo': 'logo and app name', 'redesign:keep:icons': 'icon set', 'redesign:keep:nav': 'navigation bar',
+  'clone:kind:banner': 'banner', 'clone:kind:popup': 'popup header', 'clone:kind:hero': 'hero', 'clone:kind:coupon': 'coupon', 'clone:kind:topic': 'topic card', 'clone:kind:vip': 'VIP / promo card', 'clone:kind:empty': 'empty / success art',
+  'clone:changes:subject': 'subject', 'clone:changes:copy': 'text', 'clone:changes:brand': 'colours to the brand', 'clone:changes:season': 'seasonal theme', 'clone:changes:layout': 'layout', 'clone:changes:size': 'size',
+  'lottie:kind:loading': 'loading', 'lottie:kind:success': 'success', 'lottie:kind:icon': 'animated icon', 'lottie:kind:onboarding': 'onboarding', 'lottie:kind:empty': 'empty state', 'lottie:kind:button': 'button / CTA'
+};
+const LEVELS_EN = {
+  L1: { allow: 'colours, fonts, corner radius, shadows', deny: 'moving or resizing blocks, replacing images', done: 'layout and images unchanged, only the surface differs' },
+  L2: { allow: 'components, icons, shorter copy, lightly changed images', deny: 'changing block order or size', done: 'same layout with new components and images' },
+  L3: { allow: 'block order, merging/splitting blocks, display patterns, sizes', deny: 'merging/splitting screens, dropping functions, states or ads', done: 'at 25% zoom the layout clearly differs from the original, every function kept' },
+  L4: { allow: 'everything in L3, merging/splitting screens, new art direction', deny: 'dropping functions; merged screens keep every state and action', done: 'looks like another app with every function kept' }
+};
+
+
+const MCP_OPTS = [{ id: 'gemini', label: 'gemini-image' }, { id: 'muse', label: 'muse2api' }];
+function mcpText(id) {
+  if (id === 'gemini') return t('gemini-image-mcp đang mở', 'the open gemini-image-mcp');
+  if (id === 'muse') return t('muse2api đang mở', 'the open muse2api');
+  return t('MCP ảnh đang mở (muse2api hoặc gemini-image-mcp, mở cả hai thì hỏi tôi)', 'the image MCP that is open (muse2api or gemini-image-mcp, ask me if both are open)');
+}
+function imgFields(show) {
+  const base = show || (() => true);
+  return [
+    { id: 'useImg', label: 'Dùng ảnh', type: 'chips', clear: true, options: [{ id: 'use', label: 'Có' }, { id: 'ref', label: 'Có + tham chiếu, sửa theo phong cách' }, { id: 'new', label: 'Phong cách mới' }], show: base },
+    { id: 'mcp', label: 'MCP ảnh', type: 'chips', clear: true, options: MCP_OPTS, show: v => base(v) && !!v.useImg }
+  ];
+}
+function imageLine(v) {
+  const via = mcpText(v.mcp);
+  if (v.useImg === 'use') return t('Có dùng ảnh: tạo bằng skill asset-generator, qua ' + via + '.', 'Use images: generate them with the asset-generator skill through ' + via + '.');
+  if (v.useImg === 'ref') return t('Ảnh: truyền ảnh gốc làm reference, vẽ lại theo phong cách mới bằng skill asset-generator, qua ' + via + '.', 'Images: pass the original image as the reference and redraw it in the new style with the asset-generator skill through ' + via + '.');
+  if (v.useImg === 'new') return t('Ảnh: phong cách mới, không bám ảnh gốc; tạo bằng skill asset-generator, qua ' + via + '.', 'Images: a new style, not tied to the original; generate them with the asset-generator skill through ' + via + '.');
+  return '';
+}
+
+const LV_CHIPS = [{ id: 'L1', label: 'L1 Đổi màu' }, { id: 'L2', label: 'L2 Làm mới' }, { id: 'L3', label: 'L3 Bố cục mới' }, { id: 'L4', label: 'L4 Mới hoàn toàn' }];
+const ADS_VERSIONS = ['V1.5.0', 'V1.6.0', 'V1.7.0', 'V1.8.0', 'V1.9.0', 'V2.0.0'].map(v => ({ id: v, label: v }));
+function optLabel(field, id) { const o = field.options.find(x => x.id === id); if (!o) return ''; const en = LANG === 'en' && EN[field.mode + ':' + field.id + ':' + id]; return en || o.word || lowerFirst(o.label); }
+let modeCustom = {};
+function customOpts(m, id) { return (modeCustom[m + ':' + id] || []); }
+function fieldOf(m, id) {
+  const f = MODES[m].fields.find(x => x.id === id);
+  return f ? Object.assign({}, f, { mode: m, options: f.add ? f.options.concat(customOpts(m, id)) : f.options }) : f;
+}
+function gap(v, t) { return v && String(v).trim() ? String(v).trim() : '[' + t + ']'; }
+
+const MODES = {
+  edit: { label: 'Sửa màn', skill: 'figma-ui-flow' },
+  redesign: {
+    label: 'Redesign app', skill: '/app-redesign',
+    defaults: { cmd: 'start', goal: '', kind: 'sibling', scope: 'all', target: '', follow: '', level: 'L3', theme: '', image: '', platform: '', feel: [], color: '', colorText: '', keep: [], ref: '', useImg: '', mcp: '', note: '' },
+    fields: [
+      { id: 'cmd', label: 'Việc', type: 'chips', options: [{ id: 'start', label: 'Bắt đầu' }, { id: 'build', label: 'Dựng flow' }, { id: 'audit', label: 'Kiểm tra' }] },
+      { id: 'goal', label: 'Mục tiêu', type: 'text', placeholder: 'vd: đẩy thêm 1 app cho thị trường Mỹ, giữ đủ chức năng', show: v => v.cmd === 'start' },
+      { id: 'kind', label: 'Kiểu', type: 'chips', options: [{ id: 'sibling', label: 'App anh em · khác hẳn', word: 'app anh em, nhìn như sản phẩm khác' }, { id: 'refresh', label: 'Làm mới chính app', word: 'làm mới chính app này' }], show: v => v.cmd === 'start' },
+      { id: 'scope', label: 'Phạm vi', type: 'chips', options: [{ id: 'all', label: 'Cả app' }, { id: 'flow', label: 'Một flow' }, { id: 'section', label: 'Section link' }] },
+      { id: 'target', label: 'Flow / link', type: 'text', placeholder: 'FL-02 hoặc link section Figma', show: v => v.scope !== 'all' },
+      { id: 'follow', label: 'Flow này', type: 'chips', clear: true, options: [{ id: 'same', label: 'Giống các flow đã làm', word: 'làm giống các flow đã làm' }, { id: 'trial', label: 'Hướng khác · thử riêng', word: 'thử hướng khác, làm riêng trên Explore' }, { id: 'redo', label: 'Làm lại flow này', word: 'làm lại flow này từ bản gốc' }], show: v => v.cmd === 'build' && v.scope !== 'all' },
+      { id: 'level', label: 'Mức', type: 'chips', options: LV_CHIPS, clear: true, show: v => v.cmd !== 'audit' },
+      { id: 'theme', label: 'Theme', type: 'chips', clear: true, options: [{ id: 'light', label: 'Sáng' }, { id: 'dark', label: 'Tối' }, { id: 'both', label: 'Cả hai' }, { id: 'flip', label: 'Ngược bản gốc', word: 'ngược với bản gốc' }], show: v => v.cmd === 'start' || v.follow === 'trial' },
+      { id: 'image', label: 'Kiểu ảnh', type: 'chips', clear: true, options: [{ id: '3d', label: '3D', word: '3D' }, { id: 'photo', label: 'Ảnh chụp', word: 'chụp thật' }, { id: 'flat', label: 'Minh hoạ phẳng', word: 'minh hoạ phẳng' }, { id: 'clay', label: 'Clay / đất nặn', word: 'clay' }, { id: 'keep', label: 'Giữ kiểu gốc', word: 'giữ kiểu như bản gốc' }], show: v => v.cmd === 'start' || (v.cmd === 'build' && (v.level === 'L3' || v.level === 'L4')) },
+      { id: 'feel', label: 'Cảm giác', type: 'chips', multi: true, add: true, options: [{ id: 'premium', label: 'Sang trọng' }, { id: 'minimal', label: 'Tối giản' }, { id: 'playful', label: 'Vui tươi' }, { id: 'warm', label: 'Ấm áp' }, { id: 'tech', label: 'Công nghệ' }, { id: 'soft', label: 'Nhẹ nhàng' }, { id: 'bold', label: 'Mạnh mẽ' }], show: v => v.cmd === 'start' || v.follow === 'trial' },
+      { id: 'color', label: 'Màu', type: 'chips', clear: true, options: [{ id: 'auto', label: 'Agent đề xuất', word: 'agent tự đề xuất' }, { id: 'moodboard', label: 'Theo moodboard', word: 'theo moodboard đính kèm' }, { id: 'brand', label: 'Giữ màu brand', word: 'giữ màu thương hiệu' }, { id: 'text', label: 'Tự nhập' }], show: v => v.cmd === 'start' || v.follow === 'trial' },
+      { id: 'colorText', label: 'Màu chủ đạo', type: 'text', placeholder: 'vd: tím than + vàng ánh kim, hoặc #1B1F3B #F5C451', show: v => v.color === 'text' && (v.cmd === 'start' || v.follow === 'trial') },
+      { id: 'platform', label: 'Nền tảng', type: 'chips', clear: true, options: [{ id: 'ios', label: 'iOS', word: 'iOS' }, { id: 'android', label: 'Android', word: 'Android' }, { id: 'both', label: 'Cả hai', word: 'iOS + Android' }], show: v => v.cmd === 'start' },
+      { id: 'keep', label: 'Giữ', type: 'chips', multi: true, add: true, options: [{ id: 'ads', label: 'Vị trí quảng cáo' }, { id: 'cta', label: 'CTA mua' }, { id: 'copy', label: 'Chữ / copy' }, { id: 'logo', label: 'Logo, tên app' }, { id: 'icons', label: 'Bộ icon' }, { id: 'nav', label: 'Thanh điều hướng' }], show: v => v.cmd !== 'audit' },
+      { id: 'ref', label: 'Tham khảo', type: 'text', placeholder: 'Link app / ảnh / file Figma muốn học theo', show: v => v.cmd === 'start' || v.follow === 'trial' },
+      ...imgFields(v => v.cmd !== 'audit'),
+      { id: 'note', label: 'Thêm', type: 'text', placeholder: 'Ý riêng' }
+    ],
+    build(v) {
+      const F = id => fieldOf('redesign', id);
+      const target = v.scope !== 'all' ? ' ' + gap(v.target, v.scope === 'flow' ? 'FL-NN' : t('link section', 'section link')) : '';
+      const level = v.cmd !== 'audit' && v.level ? ' ' + v.level : '';
+      let text;
+      if (v.cmd === 'start') text = '/app-redesign start ' + gap(ft(v, 'goal'), t('mục tiêu', 'goal')) + level + target;
+      else if (v.cmd === 'build') text = '/app-redesign build' + target + level;
+      else text = '/app-redesign audit' + target;
+      const shown = id => { const f = F(id); return !f.show || f.show(v); };
+      const pre = [];
+      if (shown('kind') && v.kind) pre.push(optLabel(F('kind'), v.kind));
+      if (shown('follow') && v.follow) pre.push(optLabel(F('follow'), v.follow));
+      if (shown('theme') && v.theme) pre.push('theme ' + optLabel(F('theme'), v.theme));
+      if (shown('image') && v.image) pre.push(t('ảnh ', 'images: ') + optLabel(F('image'), v.image));
+      if (shown('platform') && v.platform) pre.push(t('nền tảng ', 'platform ') + optLabel(F('platform'), v.platform));
+      const lines = [text];
+      if (pre.length) lines.push(t('Đã chọn sẵn: ', 'Already decided: ') + pre.join('; ') + '.');
+      if (shown('feel') && v.feel.length) lines.push(t('Cảm giác: ', 'Feel: ') + v.feel.map(id => optLabel(F('feel'), id)).join(', ') + '.');
+      if (shown('color') && v.color) lines.push(t('Màu: ', 'Colours: ') + (v.color === 'text' ? gap(v.colorText, t('màu chủ đạo', 'main colours')) : optLabel(F('color'), v.color)) + '.');
+      if (shown('keep') && v.keep.length) lines.push(t('Giữ: ', 'Keep: ') + v.keep.map(id => optLabel(F('keep'), id)).join(', ') + '.');
+      if (shown('ref') && v.ref.trim()) lines.push(t('Tham khảo: ', 'Reference: ') + v.ref.trim());
+      if (shown('useImg') && imageLine(v)) lines.push(imageLine(v));
+      if (ft(v, 'note').trim()) lines.push(capFirst(ft(v, 'note').trim().replace(/[.\s]+$/, '')) + '.');
+      const need = [];
+      if (v.cmd === 'start') need.push('mở bản duplicate, không phải file gốc');
+      if (shown('color') && v.color === 'moodboard') need.push('gửi moodboard');
+      if (shown('useImg') && v.useImg === 'ref') need.push('gửi ảnh gốc');
+      if (shown('useImg') && v.useImg) need.push('mở MCP ảnh (muse / gemini)');
+      return { text: lines.join('\n'), need, expect: { start: 'Agent quét app, đề xuất 3 hướng, chỉ hỏi những câu chưa chọn sẵn rồi vẽ 3 màn chính để duyệt.', build: v.follow === 'trial' ? 'Flow dựng thử trên Explore theo hướng mới; flow đã làm không bị đụng tới.' : 'Dựng lại flow ở mức đã chọn; ảnh mới cần duyệt; cuối có báo cáo không thiếu màn, state, link, quảng cáo.', audit: 'Báo cáo những gì thiếu so với bản gốc (màn, state, link, quảng cáo, CTA, ảnh).' }[v.cmd] };
+    },
+    samples: [
+      { cmd: 'start', goal: 'đẩy thêm 1 app, giữ đủ chức năng', kind: 'sibling', level: 'L3', theme: 'flip', image: '3d', useImg: 'ref', feel: ['playful', 'soft'], color: 'auto', keep: ['ads', 'cta'], en: { goal: 'ship one more app, keep every function' } },
+      { cmd: 'start', goal: 'phong cách cao cấp cho thị trường Mỹ', kind: 'sibling', level: 'L4', theme: 'dark', image: 'photo', useImg: 'new', mcp: 'muse', feel: ['premium', 'minimal'], color: 'moodboard', platform: 'ios', keep: ['ads', 'cta'], en: { goal: 'premium style for the US market' } },
+      { cmd: 'start', goal: 'làm mới giao diện cho hiện đại hơn', kind: 'refresh', level: 'L2', image: 'keep', color: 'brand', keep: ['logo', 'copy', 'ads', 'cta'], en: { goal: 'refresh the UI to look more modern' } },
+      { cmd: 'build', scope: 'flow', target: 'FL-01', level: 'L3', keep: ['ads', 'cta'] },
+      { cmd: 'build', scope: 'section', target: '', follow: 'same', level: 'L3' },
+      { cmd: 'build', scope: 'section', target: '', follow: 'trial', level: 'L4', theme: 'dark', image: 'clay', feel: ['bold'] },
+      { cmd: 'audit', scope: 'all' }
+    ]
+  },
+  clone: {
+    label: 'Clone visual', skill: '/ui-visual',
+    after(v) {
+      if (v.changes.includes('layout') && (v.level === 'L1' || v.level === 'L2')) { v.level = 'L3'; toast('Đổi bố cục cần L3 — đã lên L3'); }
+    },
+    defaults: { cmd: 'clone', kind: 'banner', ref: '', level: 'L2', changes: [], brief: '', note: '', useImg: '', mcp: '' },
+    fields: [
+      { id: 'cmd', label: 'Việc', type: 'chips', options: [{ id: 'clone', label: 'Sao chép + đổi' }, { id: 'create', label: 'Tạo mới' }, { id: 'extract', label: 'Chỉ phân tích' }] },
+      { id: 'kind', label: 'Loại', type: 'chips', options: [{ id: 'banner', label: 'Banner' }, { id: 'popup', label: 'Popup header' }, { id: 'hero', label: 'Hero' }, { id: 'coupon', label: 'Coupon' }, { id: 'topic', label: 'Topic card' }, { id: 'vip', label: 'Thẻ VIP / promo' }, { id: 'empty', label: 'Empty / success' }], show: v => v.cmd !== 'extract' },
+      { id: 'ref', label: 'Tham chiếu', type: 'text', placeholder: 'Link node Figma hoặc đường dẫn ảnh mẫu' },
+      { id: 'level', label: 'Mức', type: 'chips', options: LV_CHIPS, show: v => v.cmd === 'clone' },
+      { id: 'changes', label: 'Đổi', type: 'chips', multi: true, options: [{ id: 'subject', label: 'Chủ thể' }, { id: 'copy', label: 'Chữ' }, { id: 'brand', label: 'Màu theo brand' }, { id: 'season', label: 'Chủ đề mùa lễ' }, { id: 'layout', label: 'Bố cục' }, { id: 'size', label: 'Kích thước' }], show: v => v.cmd === 'clone' },
+      { id: 'brief', label: 'Brief', type: 'text', placeholder: 'vd: Black Friday giảm 50% gói năm, tông tối, có mascot', show: v => v.cmd === 'create' },
+      { id: 'note', label: 'Chi tiết', type: 'text', placeholder: 'vd: chủ thể là mèo, chữ "Giảm 50%"', show: v => v.cmd !== 'extract' },
+      ...imgFields(v => v.cmd !== 'extract')
+    ],
+    build(v) {
+      const kind = optLabel(fieldOf('clone', 'kind'), v.kind);
+      let text;
+      if (v.cmd === 'clone') {
+        text = '/ui-visual clone ' + gap(v.ref, t('tham chiếu', 'reference')) + ' ' + v.level + ' ' + kind;
+        const ch = v.changes.map(id => optLabel(fieldOf('clone', 'changes'), id));
+        if (ch.length) text += t(', đổi ', ', change the ') + ch.join(', ');
+      } else if (v.cmd === 'create') {
+        text = '/ui-visual create ' + kind + ': ' + gap(ft(v, 'brief'), 'brief') + (v.ref.trim() ? ' ' + v.ref.trim() : '');
+      } else {
+        text = '/ui-visual extract ' + gap(v.ref, t('tham chiếu', 'reference'));
+      }
+      if (v.cmd !== 'extract' && ft(v, 'note').trim()) text += (v.cmd === 'clone' ? ': ' : '. ') + ft(v, 'note').trim();
+      const need = [];
+      if (v.cmd !== 'extract' && imageLine(v)) { text += '\n' + imageLine(v); need.push('mở MCP ảnh (muse / gemini)'); }
+      return { text, need, expect: { clone: 'Visual mới đặt cạnh bản mẫu, giữ chất phong cách, chỉ đổi phần đã chọn.', create: 'Visual mới từ đầu (L4): agent chọn kiểu bố cục và phong cách rồi ghép lớp.', extract: 'Bảng phân tích phong cách và công thức các lớp, không vẽ gì.' }[v.cmd] };
+    },
+    samples: [
+      { cmd: 'clone', kind: 'banner', level: 'L2', changes: ['subject', 'copy'], useImg: 'ref', note: 'chủ thể đổi sang mèo, chữ "Giảm 50%"', en: { note: 'the subject becomes a cat, text "50% off"' } },
+      { cmd: 'clone', kind: 'popup', level: 'L3', changes: ['season', 'layout'], note: 'chủ đề Giáng sinh', en: { note: 'Christmas theme' } },
+      { cmd: 'clone', kind: 'coupon', level: 'L1', changes: ['brand'] },
+      { cmd: 'create', kind: 'vip', useImg: 'new', mcp: 'gemini', brief: 'thẻ VIP vàng sang trọng, ánh kim, có vương miện 3D', en: { brief: 'luxurious gold VIP card, metallic sheen, with a 3D crown' } },
+      { cmd: 'extract' }
+    ]
+  },
+  image: {
+    label: 'Vẽ từ ảnh', skill: '/screen-from-image',
+    defaults: { src: '', count: 'one', screens: '', note: '', useImg: '', mcp: '' },
+    fields: [
+      { id: 'src', label: 'Ảnh / link', type: 'text', placeholder: 'Đường dẫn ảnh, link Dribbble hoặc node Figma' },
+      { id: 'count', label: 'Số màn', type: 'chips', options: [{ id: 'one', label: '1 màn' }, { id: 'many', label: 'Nhiều màn' }] },
+      { id: 'screens', label: 'Màn nào', type: 'text', placeholder: 'vd: Home, Paywall, Settings', show: v => v.count === 'many' },
+      { id: 'note', label: 'Thêm', type: 'text', placeholder: 'vd: chữ tiếng Việt, theme tối' },
+      ...imgFields()
+    ],
+    build(v) {
+      let text = '/screen-from-image ' + gap(v.src, t('ảnh hoặc link', 'image or link'));
+      if (v.count === 'many') text += ' ' + gap(ft(v, 'screens'), t('các màn', 'screens'));
+      if (ft(v, 'note').trim()) text += '\n' + capFirst(ft(v, 'note').trim().replace(/[.\s]+$/, '')) + '.';
+      const need = [];
+      if (imageLine(v)) { text += '\n' + imageLine(v); need.push('mở MCP ảnh (muse / gemini)'); }
+      return { text, need, expect: v.count === 'many' ? 'Vẽ màn tiêu biểu nhất rồi dừng chờ duyệt, sau đó vẽ các màn còn lại cùng bộ token.' : 'Một màn Figma sửa được: auto layout, chữ thật, ảnh tạo mới cùng cảm xúc, icon thư viện.' };
+    },
+    samples: [
+      { count: 'one' },
+      { count: 'many', screens: 'Home, Paywall, Settings', useImg: 'use' },
+      { count: 'one', note: 'chữ tiếng Việt, giữ nguyên màu', en: { note: 'Vietnamese text, keep the colours' } }
+    ]
+  },
+  ads: {
+    label: 'Ads board', skill: '/ads-board',
+    defaults: { cmd: 'one', flow: 'first-open', version: 'V2.0.0', v2: 'V2.0.0', newver: '', note: '' },
+    fields: [
+      { id: 'cmd', label: 'Việc', type: 'chips', options: [{ id: 'one', label: 'Vẽ 1 phiên bản' }, { id: 'add', label: 'Thêm phiên bản' }, { id: 'all', label: 'Vẽ tất cả' }, { id: 'diff', label: 'So sánh 2 bản' }, { id: 'matrix', label: 'Ma trận' }] },
+      { id: 'flow', label: 'Luồng', type: 'text', placeholder: 'first-open', show: v => v.cmd === 'one' || v.cmd === 'add' },
+      { id: 'version', label: 'Phiên bản', type: 'chips', options: ADS_VERSIONS, show: v => v.cmd === 'one' || v.cmd === 'diff', labelFor: v => v.cmd === 'diff' ? 'Bản cũ' : 'Phiên bản' },
+      { id: 'v2', label: 'Bản mới', type: 'chips', options: ADS_VERSIONS, show: v => v.cmd === 'diff' },
+      { id: 'newver', label: 'Bản mới', type: 'text', placeholder: 'vd: V2.1.0', show: v => v.cmd === 'add' },
+      { id: 'note', label: 'Thay đổi', type: 'text', placeholder: 'vd: thêm native ở màn Language', show: v => v.cmd === 'add' }
+    ],
+    build(v) {
+      const flow = v.flow.trim() && v.flow.trim() !== 'first-open' ? v.flow.trim() + ' ' : '';
+      let text;
+      if (v.cmd === 'one') text = '/ads-board ' + flow + v.version;
+      else if (v.cmd === 'add') text = '/ads-board ' + flow + gap(v.newver, t('phiên bản mới', 'new version')) + (ft(v, 'note').trim() ? '\n' + capFirst(ft(v, 'note').trim().replace(/[.\s]+$/, '')) + '.' : '');
+      else if (v.cmd === 'all') text = '/ads-board all';
+      else if (v.cmd === 'diff') text = '/ads-board diff ' + v.version + ' ' + v.v2;
+      else text = '/ads-board matrix';
+      const need = v.cmd === 'add' ? ['gửi spec YAML + ảnh wireframe bản mới'] : [];
+      if (v.cmd === 'diff' && v.version === v.v2) need.push('chọn 2 bản khác nhau');
+      return { text, need, expect: { one: 'Vẽ lại section của bản đó: hàng có quảng cáo và hàng không quảng cáo.', add: 'Thêm section phiên bản mới kèm ghi chú thay đổi so với bản trước.', all: 'Vẽ lại mọi phiên bản và bộ Ads Kit.', diff: 'Bảng khác biệt giữa 2 bản, không vẽ gì.', matrix: 'Bảng màn × phiên bản, tô các ô thay đổi.' }[v.cmd] };
+    },
+    samples: [
+      { cmd: 'one', version: 'V1.9.0' },
+      { cmd: 'add', newver: 'V2.1.0', note: 'thêm native ở màn Language', en: { note: 'add a native ad on the Language screen' } },
+      { cmd: 'diff', version: 'V1.9.0', v2: 'V2.0.0' },
+      { cmd: 'all' }
+    ]
+  },
+  lottie: {
+    label: 'Lottie', skill: '/lottie-motion',
+    defaults: { cmd: 'start', kind: 'loading', brief: '', platforms: ['ios', 'android'], id: '', file: '' },
+    fields: [
+      { id: 'cmd', label: 'Việc', type: 'chips', options: [{ id: 'start', label: 'Bắt đầu' }, { id: 'build', label: 'Dựng + xuất' }, { id: 'audit', label: 'Kiểm tra file' }, { id: 'handoff', label: 'Bàn giao' }] },
+      { id: 'kind', label: 'Loại', type: 'chips', options: [{ id: 'loading', label: 'Loading' }, { id: 'success', label: 'Thành công' }, { id: 'icon', label: 'Icon động' }, { id: 'onboarding', label: 'Onboarding' }, { id: 'empty', label: 'Empty state' }, { id: 'button', label: 'Nút / CTA' }], show: v => v.cmd === 'start' },
+      { id: 'brief', label: 'Mô tả', type: 'text', placeholder: 'vd: vòng tròn tím xoay 1.2s, lặp, dưới 30KB', show: v => v.cmd === 'start' },
+      { id: 'platforms', label: 'Nền tảng', type: 'chips', multi: true, options: [{ id: 'ios', label: 'iOS', word: 'iOS' }, { id: 'android', label: 'Android', word: 'Android' }, { id: 'web', label: 'Web', word: 'Web' }], show: v => v.cmd === 'start' },
+      { id: 'id', label: 'Mã motion', type: 'text', placeholder: 'MOT-01 (để trống = cái đang làm)', show: v => v.cmd === 'build' || v.cmd === 'handoff' },
+      { id: 'file', label: 'File', type: 'text', placeholder: 'Đường dẫn .json hoặc .lottie', show: v => v.cmd === 'audit' }
+    ],
+    build(v) {
+      let text;
+      if (v.cmd === 'start') {
+        const pf = v.platforms.map(id => optLabel(fieldOf('lottie', 'platforms'), id));
+        text = '/lottie-motion start ' + optLabel(fieldOf('lottie', 'kind'), v.kind) + ': ' + gap(ft(v, 'brief'), t('mô tả chuyển động', 'motion description')) + (pf.length ? t(', cho ', ', for ') + pf.join(' + ') : '');
+      } else if (v.cmd === 'audit') text = '/lottie-motion audit ' + gap(v.file, 'file');
+      else text = '/lottie-motion ' + v.cmd + (v.id.trim() ? ' ' + v.id.trim() : '');
+      return { text, need: [], expect: { start: 'Bản đặc tả chuyển động, cách xuất và giới hạn dung lượng để duyệt; chưa vẽ.', build: 'Animation trong Figma + file Lottie/dotLottie, điểm audit ≥ 80.', audit: 'Báo cáo lỗi chặn, cảnh báo và điểm; không sửa file.', handoff: 'Gói bàn giao: spec, file, preview, ghi chú iOS/Android, QA.' }[v.cmd] };
+    },
+    samples: [
+      { cmd: 'start', kind: 'loading', brief: 'vòng tròn tím xoay 1.2s, lặp, dưới 30KB', en: { brief: 'purple ring spinning 1.2s, looping, under 30KB' } },
+      { cmd: 'start', kind: 'success', brief: 'dấu tick vẽ nét rồi nảy nhẹ, 0.8s, chạy một lần', en: { brief: 'checkmark draws its stroke then bounces lightly, 0.8s, plays once' } },
+      { cmd: 'build' },
+      { cmd: 'audit' },
+      { cmd: 'handoff' }
+    ]
+  }
+};
+
+let mode = 'edit';
+let modeState = {};
+
+function mv(m) {
+  const k = m || mode;
+  const cur = modeState[k] || (modeState[k] = {});
+  const defs = MODES[k].defaults;
+  Object.keys(defs).forEach(key => { if (!(key in cur)) cur[key] = structuredClone(defs[key]); });
+  return cur;
+}
+
+function renderModes() {
+  const box = $('modes');
+  box.textContent = '';
+  Object.keys(MODES).forEach(k => {
+    const b = el('button', 'mode' + (mode === k ? ' on' : ''));
+    b.type = 'button';
+    b.appendChild(el('b', '', MODES[k].label));
+    b.appendChild(el('small', '', MODES[k].skill));
+    b.addEventListener('click', () => { mode = k; render(); });
+    box.appendChild(b);
+  });
+  const edit = mode === 'edit';
+  document.querySelectorAll('.edit-only').forEach(n => { n.hidden = !edit; });
+  $('modePane').hidden = edit;
+  $('scopeOpt').hidden = !edit;
+}
+
+function renderModeFields() {
+  const v = mv();
+  const box = $('mFields');
+  const focused = document.activeElement && document.activeElement.dataset ? document.activeElement.dataset.field : '';
+  box.textContent = '';
+  MODES[mode].fields.forEach(f => {
+    if (f.show && !f.show(v)) return;
+    const row = el('section', 'mrow');
+    row.appendChild(el('h2', '', f.labelFor ? f.labelFor(v) : f.label));
+    if (f.type === 'text') {
+      const input = el('input');
+      input.type = 'text';
+      input.placeholder = f.placeholder || '';
+      input.value = v[f.id] || '';
+      input.dataset.field = f.id;
+      input.addEventListener('input', () => { v[f.id] = input.value; renderOutput(); persist(); });
+      row.appendChild(input);
+      box.appendChild(row);
+      if (focused === f.id) setTimeout(() => { input.focus(); input.setSelectionRange(input.value.length, input.value.length); });
+      return;
+    }
+    const chips = el('div', 'chips');
+    fieldOf(mode, f.id).options.forEach(o => {
+      const on = f.multi ? v[f.id].includes(o.id) : v[f.id] === o.id;
+      const b = el('button', 'chip' + (on ? ' on' : ''), o.label);
+      b.type = 'button';
+      b.addEventListener('click', () => {
+        if (f.multi) v[f.id] = on ? v[f.id].filter(x => x !== o.id) : v[f.id].concat(o.id);
+        else v[f.id] = on && f.clear ? '' : o.id;
+        if (MODES[mode].after) MODES[mode].after(v);
+        render();
+      });
+      if (o.custom) {
+        const x = el('span', 'x', '×');
+        x.title = 'Xoá';
+        x.addEventListener('click', e => {
+          e.stopPropagation();
+          const key = mode + ':' + f.id;
+          modeCustom[key] = customOpts(mode, f.id).filter(y => y.id !== o.id);
+          v[f.id] = v[f.id].filter(y => y !== o.id);
+          render();
+        });
+        b.appendChild(x);
+      }
+      chips.appendChild(b);
+    });
+    if (f.add) chips.appendChild(modeAddChip(f, v));
+    row.appendChild(chips);
+    box.appendChild(row);
+  });
+  $('mFormTitle').textContent = 'Tự chọn · ' + MODES[mode].label;
+}
+
+function modeAddChip(f, v) {
+  const b = el('button', 'chip add', '+ Thêm');
+  b.type = 'button';
+  b.addEventListener('click', () => {
+    if (b.querySelector('input')) return;
+    b.textContent = '';
+    const input = el('input');
+    input.type = 'text';
+    input.placeholder = 'Gõ rồi Enter';
+    b.appendChild(input);
+    input.focus();
+    let done = false;
+    const finish = save => {
+      if (done) return;
+      done = true;
+      const text = input.value.trim();
+      if (save && text) {
+        const key = mode + ':' + f.id;
+        const exists = fieldOf(mode, f.id).options.find(o => o.label.toLowerCase() === text.toLowerCase());
+        const id = exists ? exists.id : 'c' + Date.now().toString(36);
+        if (!exists) modeCustom[key] = customOpts(mode, f.id).concat({ id, label: text, custom: true });
+        if (!v[f.id].includes(id)) v[f.id] = v[f.id].concat(id);
+      }
+      render();
+    };
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+      if (e.key === 'Escape') finish(false);
+    });
+    input.addEventListener('blur', () => finish(true));
+  });
+  return b;
+}
+
+function modeSamples() {
+  const mine = saved.filter(x => x.mode === mode).map(x => ({ values: x.state, id: x.id, own: true }));
+  return mine.concat(MODES[mode].samples.map((x, i) => ({ values: x, id: 'm' + i })));
+}
+
+function renderModeSamples() {
+  const box = $('mSamples');
+  box.textContent = '';
+  const list = modeSamples();
+  const current = MODES[mode].build(mv()).text;
+  $('mSamplesTitle').textContent = 'Mẫu · ' + MODES[mode].label + ' · ' + list.length;
+  list.forEach(x => {
+    const values = Object.assign(structuredClone(MODES[mode].defaults), x.values);
+    const text = MODES[mode].build(values).text;
+    const card = el('button', 'sample' + (text === current ? ' cur' : ''));
+    card.type = 'button';
+    const head = el('div');
+    head.appendChild(el('span', 'tag', (text.split(/\s+/)[1] || MODES[mode].skill).replace(/^\[.*/, MODES[mode].skill)));
+    if (x.own) head.appendChild(el('span', 'who', 'Mẫu của bạn'));
+    card.appendChild(head);
+    card.appendChild(el('p', '', text));
+    if (x.own) {
+      const del = el('span', 'x', '×');
+      del.title = 'Xoá mẫu';
+      del.addEventListener('click', e => { e.stopPropagation(); saved = saved.filter(y => y.id !== x.id); render(); });
+      card.appendChild(del);
+    }
+    card.addEventListener('click', () => { modeState[mode] = withEn(values); render(); toast('Đã nạp mẫu'); });
+    box.appendChild(card);
+  });
+}
+
+function currentBuild(lang) {
+  LANG = lang || 'vi';
+  try { return currentBuildIn(); } finally { LANG = 'vi'; }
+}
+
+function currentBuildIn() {
+  if (mode === 'edit') {
+    const r = build(state, { scope: state.scope });
+    return { text: r.text, full: r.full, scope: r.scope, need: attachments(state), expect: expectation(state), badge: state.level + ' · ' + LEVELS[state.level].name };
+  }
+  const r = MODES[mode].build(mv());
+  return { text: r.text, full: r.text, scope: '', need: r.need, expect: r.expect, badge: MODES[mode].skill };
+}
+
+let state = blankState();
+let custom = blankCustom();
+let saved = [];
+let showAll = false;
+let openRow = 'level';
+let allOpen = false;
+const ROWS = ['level', 'style', 'mood', 'color', 'image', 'changes', 'keeps', 'note'];
+const UI_KEY = 'figma-tool.ui';
+
+const $ = id => document.getElementById(id);
+
+function el(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text != null) n.textContent = text;
+  return n;
+}
+
+function list(group) { return BUILT[group].concat(custom[group] || []); }
+function find(group, id) { return list(group).find(x => x.id === id); }
+function allowed(min, s) { return RANK[(s || state).level] >= RANK[min || 'L1']; }
+function lowerFirst(t) { return t && !/^[A-ZĐ0-9]{2}/.test(t) ? t.charAt(0).toLowerCase() + t.slice(1) : t; }
+function wordOf(group, item) {
+  if (!item) return '';
+  if (LANG === 'en' && EN[group + ':' + item.id]) return EN[group + ':' + item.id];
+  if (item.word) return item.word;
+  if (item.clause) return item.clause;
+  return group === 'screen' ? item.label : lowerFirst(item.label);
+}
+function capFirst(t) { return t ? t.charAt(0).toUpperCase() + t.slice(1) : t; }
+
+function persist() {
+  try { localStorage.setItem(STORE, JSON.stringify({ state, custom, saved, mode, modeState, modeCustom })); } catch (_e) {}
+}
+
+function validItem(x) { return x && typeof x.id === 'string' && typeof x.label === 'string' && x.label.trim(); }
+
+function mergeCustom(src) {
+  if (!src) return 0;
+  let n = 0;
+  Object.keys(custom).forEach(group => {
+    (src[group] || []).filter(validItem).forEach(item => {
+      const i = custom[group].findIndex(x => x.id === item.id);
+      const clean = Object.assign({}, item, { custom: true });
+      if (i >= 0) custom[group][i] = clean; else custom[group].push(clean);
+      n++;
+    });
+  });
+  return n;
+}
+
+function legacyToCustom(arr) {
+  return { changes: (arr || []).filter(d => d && typeof d.label === 'string').map(d => ({
+    id: d.id || 'c' + Math.random().toString(36).slice(2, 8),
+    label: d.label,
+    clause: lowerFirst(d.label),
+    min: Array.isArray(d.levels) && d.levels.length ? d.levels.slice().sort()[0] : 'L1'
+  })) };
+}
+
+function mergeSaved(arr) {
+  let n = 0;
+  (arr || []).forEach(x => {
+    if (!x || !x.id || !x.state) return;
+    if (!saved.some(s => s.id === x.id)) { saved.push(x); n++; }
+  });
+  return n;
+}
+
+function load() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(STORE) || 'null');
+    if (raw) {
+      mergeCustom(raw.custom);
+      mergeSaved(raw.saved);
+      if (raw.state) state = Object.assign(blankState(), raw.state);
+      if (raw.mode && MODES[raw.mode]) mode = raw.mode;
+      if (raw.modeState && typeof raw.modeState === 'object') modeState = raw.modeState;
+      if (raw.modeCustom && typeof raw.modeCustom === 'object') modeCustom = raw.modeCustom;
+    } else {
+      state = Object.assign(blankState(), SAMPLES[0].state);
+      const old = JSON.parse(localStorage.getItem(LEGACY) || 'null');
+      if (Array.isArray(old) && old.length) mergeCustom(legacyToCustom(old));
+    }
+  } catch (_e) {}
+}
+
+function screenWord(s) {
+  const item = find('screen', s.screen);
+  return item ? wordOf('screen', item) : null;
+}
+
+function styleClause(s, imageNew) {
+  const st = find('style', s.style);
+  const moods = s.moods.map(id => find('mood', id)).filter(Boolean).map(m => wordOf('mood', m));
+  if (LANG === 'en') {
+    if (st && st.id === 'ref') return (imageNew ? 'make the screen and images follow' : 'follow') + ' the style of the reference screen' + (s.refLink ? ' ' + s.refLink : '') + (moods.length ? ', ' + moods.join(', ') + ' tone' : '');
+    const lead = imageNew ? 'switch the screen and images to' : 'switch to';
+    if (st) return lead + ' the ' + wordOf('style', st) + ' style' + (moods.length ? ', ' + moods.join(', ') : '');
+    if (moods.length) return lead + ' a ' + moods.join(', ') + ' tone';
+    return '';
+  }
+  const lead = imageNew ? 'màn và ảnh ' : '';
+  if (st && st.id === 'ref') {
+    let x = lead + 'theo phong cách của màn mẫu' + (s.refLink ? ' ' + s.refLink : '');
+    if (moods.length) x += ', tông ' + moods.join(', ');
+    return x;
+  }
+  if (st) return lead + 'chuyển sang phong cách ' + [wordOf('style', st)].concat(moods).join(', ');
+  if (moods.length) return lead + 'chuyển sang tông ' + moods.join(', ');
+  return '';
+}
+
+function colorClause(s) {
+  if (s.color === 'moodboard') return t('sử dụng bảng màu trong moodboard', 'use the palette from the moodboard');
+  if (s.color === 'brand') return t('giữ màu thương hiệu', 'keep the brand colours');
+  if (s.color === 'hex') return s.hex.length ? t('dùng bảng màu ', 'use the palette ') + s.hex.join(' ') : t('dùng bảng màu tự chọn', 'use a custom palette');
+  return '';
+}
+
+function keepClause(s) {
+  const ids = s.keeps.filter(id => find('keeps', id));
+  const words = [];
+  const auto = [];
+  if (s.level === 'L1' || s.level === 'L2') auto.push(t('bố cục', 'the layout'));
+  if (s.level === 'L1' && !s.image) auto.push(t('ảnh', 'the images'));
+  const emotion = ids.includes('emotion');
+  const info = ids.includes('info');
+  if (emotion && info) words.push(t('cảm xúc và thông tin trong ảnh', 'the emotion and information in the image'));
+  else if (emotion) words.push(t('cảm xúc trong ảnh', 'the emotion in the image'));
+  else if (info) words.push(t('thông tin trong ảnh', 'the information in the image'));
+  ids.filter(id => id !== 'emotion' && id !== 'info').forEach(id => words.push(wordOf('keeps', find('keeps', id))));
+  const all = auto.concat(words);
+  return all.length ? t('giữ ', 'keep ') + all.join(', ') : '';
+}
+
+function build(s, opts) {
+  const o = opts || {};
+  const parts = [];
+  const gaps = [];
+  const screen = screenWord(s);
+  const screenGap = t('[màn]', '[screen]');
+  if (!screen) gaps.push(screenGap);
+  parts.push(t('Sửa ', 'Edit ') + (screen || screenGap) + (s.link ? ' (' + s.link + ')' : '') + t(' theo mức ', ' at level ') + s.level);
+  const img = find('image', s.image);
+  const imageNew = !!(img && img.id === 'new' && allowed(img.min, s));
+  if (img && !imageNew && allowed(img.min, s)) parts.push(LANG === 'en' ? EN['image:' + img.id] : img.clause);
+  const st = styleClause(s, imageNew);
+  if (st) parts.push(st);
+  else if (imageNew) parts.push(t('ảnh theo art direction mới', 'give the images a new art direction'));
+  const color = colorClause(s);
+  if (color) parts.push(color);
+  const changes = s.changes.map(id => find('changes', id)).filter(c => c && allowed(c.min, s));
+  if (changes.length) parts.push(changes.map(c => wordOf('changes', c)).join(', '));
+  const layoutCount = changes.filter(c => c.layout).length;
+  if ((s.level === 'L3' || s.level === 'L4') && layoutCount < 3) {
+    parts.push(layoutCount ? t('tự thêm thay đổi bố cục cho đủ ít nhất 3', 'add layout changes to reach at least 3') : t('tự chọn ít nhất 3 thay đổi bố cục', 'pick at least 3 layout changes yourself'));
+  }
+  if (s.level === 'L4' && !changes.some(c => c.structure)) parts.push(t('tự đề xuất 1 thay đổi cấu trúc màn (gộp, tách hoặc đổi điểm vào)', 'propose 1 structural change (merge, split or move the entry point)'));
+  const keep = keepClause(s);
+  if (keep) parts.push(keep);
+  let text = parts.join(', ') + '.';
+  if (img && img.id !== 'keep' && allowed(img.min, s)) text += ' ' + t('Tạo ảnh bằng skill asset-generator, qua ' + mcpText(s.mcp) + '.', 'Generate the images with the asset-generator skill through ' + mcpText(s.mcp) + '.');
+  const note = ft(s, 'note').trim();
+  if (note) text += ' ' + capFirst(note.replace(/[.\s]+$/, '')) + '.';
+  let scope = '';
+  if (o.scope) {
+    const lv = LANG === 'en' ? LEVELS_EN[s.level] : LEVELS[s.level];
+    scope = t('Phạm vi ', 'Scope ') + s.level + t(': được ', ': allowed ') + lv.allow + t('; không được ', '; not allowed ') + lv.deny + t('.\nXong khi: ', '.\nDone when: ') + lv.done + '.';
+  }
+  return { text, scope, full: scope ? text + '\n\n' + scope : text, gaps, imageNew };
+}
+
+function attachments(s) {
+  const out = [];
+  const img = find('image', s.image);
+  if (img && img.id !== 'keep' && allowed(img.min, s)) { out.push('gửi ảnh gốc'); out.push('mở MCP ảnh (muse / gemini)'); }
+  if (s.color === 'moodboard') out.push('gửi moodboard');
+  if (s.style === 'ref' && !s.refLink.trim()) out.push('dán link màn mẫu ở mục Link');
+  if (!s.link.trim()) out.push('chọn frame hoặc dán link ở mục Link');
+  return out;
+}
+
+function expectation(s) {
+  const img = find('image', s.image);
+  let t = LEVELS[s.level].expect;
+  if (img && allowed(img.min, s)) t += ' ' + img.expect;
+  return t;
+}
+
+let toastTimer = 0;
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function setLevel(code, quiet) {
+  if (state.level === code) return;
+  const dropped = [];
+  const img = find('image', state.image);
+  if (img && !allowed(img.min, { level: code })) { dropped.push('ảnh ' + lowerFirst(img.label)); state.image = ''; }
+  state.changes = state.changes.filter(id => {
+    const c = find('changes', id);
+    if (c && !allowed(c.min, { level: code })) { dropped.push(lowerFirst(c.label)); return false; }
+    return true;
+  });
+  state.level = code;
+  if (!quiet && dropped.length) toast('Mức ' + code + ' bỏ: ' + dropped.join(', '));
+}
+
+function pick(group, item) {
+  const k = KEY[group];
+  if (GATED[group] && !allowed(item.min)) {
+    setLevel(item.min, true);
+    toast('Đã lên ' + item.min + ' để dùng "' + item.label + '"');
+  }
+  if (MULTI[group]) {
+    const on = state[k].includes(item.id);
+    state[k] = on ? state[k].filter(x => x !== item.id) : state[k].concat(item.id);
+    const clash = CONFLICTS[group + ':' + item.id];
+    if (!on && clash) {
+      const ck = KEY[clash[0]];
+      if (state[ck].includes(clash[1])) {
+        state[ck] = state[ck].filter(x => x !== clash[1]);
+        toast('Bỏ "' + find(clash[0], clash[1]).label + '" vì ngược nhau');
+      }
+    }
+  } else if (group === 'screen') {
+    state.screen = item.id;
+    showAll = false;
+    openRow = 'level';
+  } else {
+    state[k] = state[k] === item.id ? '' : item.id;
+    if (state[k] && !(group === 'style' && item.id === 'ref') && !(group === 'color' && item.id === 'hex') && !(group === 'image' && item.id !== 'keep')) advance(group);
+  }
+  render();
+}
+
+function addCustom(group, label) {
+  const text = label.trim();
+  if (!text) return;
+  const exists = list(group).find(x => x.label.toLowerCase() === text.toLowerCase());
+  if (exists) { pick(group, exists); return; }
+  const item = { id: 'c' + Date.now().toString(36), label: text, custom: true };
+  if (group === 'changes') item.clause = lowerFirst(text);
+  custom[group].push(item);
+  const k = KEY[group];
+  if (MULTI[group]) state[k] = state[k].concat(item.id); else state[k] = item.id;
+  render();
+  toast('Đã thêm "' + text + '"');
+}
+
+function removeCustom(group, id) {
+  custom[group] = custom[group].filter(x => x.id !== id);
+  const k = KEY[group];
+  if (MULTI[group]) state[k] = state[k].filter(x => x !== id);
+  else if (state[k] === id) state[k] = '';
+  render();
+}
+
+function addChip(group) {
+  const b = el('button', 'chip add', ADDABLE[group]);
+  b.type = 'button';
+  b.addEventListener('click', () => {
+    if (b.querySelector('input')) return;
+    b.textContent = '';
+    const input = el('input');
+    input.type = 'text';
+    input.placeholder = group === 'changes' ? 'Thay đổi riêng…' : 'Gõ rồi Enter';
+    b.appendChild(input);
+    input.focus();
+    let done = false;
+    const finish = save => {
+      if (done) return;
+      done = true;
+      if (save && input.value.trim()) addCustom(group, input.value);
+      else render();
+    };
+    input.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.preventDefault(); finish(true); }
+      if (e.key === 'Escape') finish(false);
+    });
+    input.addEventListener('blur', () => finish(true));
+  });
+  return b;
+}
+
+function renderChips(group) {
+  const box = $(group);
+  box.textContent = '';
+  const k = KEY[group];
+  list(group).forEach(item => {
+    const ok = !GATED[group] || allowed(item.min);
+    const on = MULTI[group] ? state[k].includes(item.id) : state[k] === item.id;
+    const b = el('button', 'chip' + (on && ok ? ' on' : '') + (ok ? '' : ' lock'), item.label);
+    b.type = 'button';
+    if (!ok) {
+      b.title = 'Bấm để lên ' + item.min;
+      b.appendChild(el('small', '', item.min + '+'));
+    } else if (GATED[group] && item.clause) {
+      b.title = item.clause;
+    }
+    if (item.custom) {
+      const x = el('span', 'x', '×');
+      x.title = 'Xoá';
+      x.addEventListener('click', e => { e.stopPropagation(); removeCustom(group, item.id); });
+      b.appendChild(x);
+    }
+    b.addEventListener('click', () => pick(group, item));
+    box.appendChild(b);
+  });
+  if (ADDABLE[group]) box.appendChild(addChip(group));
+}
+
+function levelSvg(code) {
+  const a = '#3B5BFD';
+  const shapes = {
+    L1: '<rect x="5" y="6" width="18" height="13" rx="2" fill="' + a + '"/><rect x="5" y="23" width="18" height="2.5" rx="1.2"/><rect x="5" y="28" width="12" height="2.5" rx="1.2"/><rect x="5" y="36" width="18" height="4.5" rx="2.2" fill="' + a + '"/>',
+    L2: '<rect x="5" y="6" width="18" height="13" rx="4" fill="' + a + '" opacity=".75"/><circle cx="7.5" cy="24.2" r="2"/><rect x="11" y="23" width="12" height="2.5" rx="1.2"/><circle cx="7.5" cy="29.2" r="2"/><rect x="11" y="28" width="9" height="2.5" rx="1.2"/><rect x="5" y="36" width="18" height="4.5" rx="2.2" fill="' + a + '"/>',
+    L3: '<rect x="5" y="6" width="18" height="4.5" rx="2.2" fill="' + a + '"/><rect x="5" y="14" width="8.5" height="10" rx="2"/><rect x="14.5" y="14" width="8.5" height="10" rx="2"/><rect x="5" y="27" width="18" height="13" rx="2" fill="' + a + '" opacity=".75"/>',
+    L4: '<path d="M2 6a4 4 0 0 1 4-4h18a4 4 0 0 1 4 4v18H2z" fill="' + a + '"/><rect x="5" y="20" width="18" height="12" rx="3" fill="#fff" stroke="#C9CDD6"/><circle cx="23" cy="8" r="1.6" fill="#fff"/><circle cx="19" cy="12" r="1" fill="#fff"/><rect x="8" y="37" width="12" height="4.5" rx="2.2" fill="#15171C"/>'
+  };
+  return '<svg viewBox="0 0 28 44" fill="#C9CDD6" aria-hidden="true"><rect x="1" y="1" width="26" height="42" rx="5" fill="none" stroke="#9AA0AD"/>' + shapes[code] + '</svg>';
+}
+
+function renderLevels() {
+  const box = $('levels');
+  box.textContent = '';
+  Object.keys(LEVELS).forEach(code => {
+    const lv = LEVELS[code];
+    const b = el('button', 'lv' + (state.level === code ? ' on' : ''));
+    b.type = 'button';
+    b.innerHTML = levelSvg(code);
+    const t = el('div');
+    const name = el('b');
+    name.appendChild(el('em', '', code));
+    name.appendChild(document.createTextNode(lv.name));
+    t.appendChild(name);
+    t.appendChild(el('span', '', lv.hint));
+    b.appendChild(t);
+    b.title = 'Được: ' + lv.allow + '\nKhông: ' + lv.deny;
+    b.addEventListener('click', () => { setLevel(code); advance('level'); render(); });
+    box.appendChild(b);
+  });
+}
+
+function sampleStates() {
+  const own = saved.filter(x => !x.mode || x.mode === 'edit');
+  const builtin = SAMPLES.map((x, i) => ({ id: 'b' + i, screen: x.screen, state: Object.assign(blankState(), { screen: x.screen }, x.state), builtin: true }));
+  return own.map(x => Object.assign({}, x, { state: Object.assign(blankState(), x.state) })).concat(builtin);
+}
+
+function sampleCard(x) {
+  const s = x.state;
+  const card = el('button', 'sample' + (build(s).text === build(state).text ? ' cur' : ''));
+  card.type = 'button';
+  const head = el('div');
+  head.appendChild(el('span', 'tag', s.level));
+  head.appendChild(el('span', 'who', x.builtin ? (find('screen', s.screen) || { label: '' }).label : 'Mẫu của bạn'));
+  card.appendChild(head);
+  card.appendChild(el('p', '', build(s).text));
+  if (!x.builtin) {
+    const del = el('span', 'x', '×');
+    del.title = 'Xoá mẫu';
+    del.addEventListener('click', e => {
+      e.stopPropagation();
+      saved = saved.filter(y => y.id !== x.id);
+      render();
+    });
+    card.appendChild(del);
+  }
+  card.addEventListener('click', () => {
+    const link = state.link;
+    state = withEn(Object.assign(blankState(), structuredClone(s), { link }));
+    showAll = false;
+    openRow = '';
+    render();
+    toast('Đã nạp mẫu ' + s.level + ' — sửa tiếp ở dưới hoặc Copy');
+  });
+  return card;
+}
+
+function renderSamples() {
+  const all = sampleStates();
+  const mine = all.filter(x => x.screen === state.screen);
+  const screenItem = find('screen', state.screen);
+  const card = $('samplesCard');
+  card.classList.toggle('open', showAll);
+  $('samplesTitle').textContent = showAll ? 'Bảng mẫu · ' + all.length + ' prompt' : 'Mẫu · ' + (mine.length ? (screenItem ? screenItem.label : '') : 'tất cả màn');
+  $('samplesAll').textContent = showAll ? 'Thu gọn ▴' : 'Mở bảng mẫu ▾';
+  const box = $('samples');
+  box.textContent = '';
+  box.className = showAll ? 'sample-board' : 'samples';
+  if (!showAll) {
+    (mine.length ? mine : all).forEach(x => box.appendChild(sampleCard(x)));
+    return;
+  }
+  const order = [state.screen].concat(list('screen').map(x => x.id).filter(id => id !== state.screen));
+  order.forEach(id => {
+    const items = all.filter(x => x.screen === id);
+    if (!items.length) return;
+    const item = find('screen', id);
+    box.appendChild(el('h4', '', item ? item.label : id));
+    const grid = el('div', 'sample-grid');
+    items.forEach(x => grid.appendChild(sampleCard(x)));
+    box.appendChild(grid);
+  });
+}
+
+function renderMcp() {
+  const img = find('image', state.image);
+  const on = !!(img && img.id !== 'keep' && allowed(img.min));
+  $('mcpLine').hidden = !on;
+  const box = $('mcpChips');
+  box.textContent = '';
+  MCP_OPTS.forEach(o => {
+    const b = el('button', 'chip' + (state.mcp === o.id ? ' on' : ''), o.label);
+    b.type = 'button';
+    b.addEventListener('click', () => { state.mcp = state.mcp === o.id ? '' : o.id; render(); });
+    box.appendChild(b);
+  });
+}
+
+function renderHex() {
+  $('hexField').hidden = state.color !== 'hex';
+  const box = $('hexList');
+  box.textContent = '';
+  state.hex.forEach((hex, i) => {
+    const sw = el('span', 'swatch');
+    const dot = el('i');
+    dot.style.background = hex;
+    sw.appendChild(dot);
+    sw.appendChild(document.createTextNode(hex));
+    const x = el('button', '', '×');
+    x.type = 'button';
+    x.addEventListener('click', () => { state.hex.splice(i, 1); render(); });
+    sw.appendChild(x);
+    box.appendChild(sw);
+  });
+  if (!state.hex.length) box.appendChild(el('span', 'hint', 'Chưa có màu.'));
+}
+
+function renderOutput() {
+  const r = currentBuild();
+  const box = $('prompt');
+  box.textContent = '';
+  r.text.split(/(\[[^\]]+\])/).forEach(p => {
+    if (/^\[[^\]]+\]$/.test(p)) box.appendChild(el('span', 'gap', p));
+    else if (p) box.appendChild(document.createTextNode(p));
+  });
+  if (r.scope) box.appendChild(el('span', 'scope', r.scope));
+  $('badge').textContent = r.badge;
+  const at = $('attach');
+  at.textContent = '';
+  const need = r.need;
+  if (need.length) {
+    at.appendChild(el('b', '', 'Nhớ:'));
+    need.forEach(t => at.appendChild(el('span', '', t)));
+  }
+  const ex = $('expect');
+  ex.textContent = '';
+  ex.appendChild(el('b', '', 'Sẽ ra: '));
+  ex.appendChild(document.createTextNode(r.expect));
+  $('barText').textContent = r.text;
+  $('scope').checked = !!state.scope;
+  return r;
+}
+
+function advance(from) {
+  const i = ROWS.indexOf(from);
+  if (i >= 0 && i < ROWS.length - 1) openRow = ROWS[i + 1];
+}
+
+function summaryOf(id) {
+  const labels = (group, ids) => ids.map(x => find(group, x)).filter(Boolean).map(x => x.label);
+  if (id === 'level') return state.level + ' · ' + LEVELS[state.level].name;
+  if (id === 'style') { const it = find('style', state.style); return it ? it.label + (it.id === 'ref' && state.refLink ? ' · ' + state.refLink : '') : ''; }
+  if (id === 'mood') return labels('mood', state.moods).join(', ');
+  if (id === 'color') { const it = find('color', state.color); return it ? it.label + (it.id === 'hex' && state.hex.length ? ' · ' + state.hex.join(' ') : '') : ''; }
+  if (id === 'image') { const it = find('image', state.image); return it && allowed(it.min) ? it.label + (it.id !== 'keep' && state.mcp ? ' · ' + (state.mcp === 'muse' ? 'muse2api' : 'gemini-image') : '') : ''; }
+  if (id === 'changes') return state.changes.map(x => find('changes', x)).filter(c => c && allowed(c.min)).map(c => c.label).join(', ');
+  if (id === 'keeps') return labels('keeps', state.keeps).join(', ');
+  if (id === 'note') return state.note.trim();
+  return '';
+}
+
+function renderRows() {
+  document.querySelectorAll('.row[data-row]').forEach(row => {
+    const id = row.dataset.row;
+    row.classList.toggle('open', allOpen || openRow === id);
+    const sum = row.querySelector('.sum');
+    const t = summaryOf(id);
+    sum.textContent = t || 'chưa chọn';
+    sum.classList.toggle('empty', !t);
+  });
+  $('expandAll').textContent = allOpen ? 'Tự thu gọn' : 'Mở hết';
+}
+
+function render() {
+  renderModes();
+  if (mode !== 'edit') {
+    renderModeSamples();
+    renderModeFields();
+    renderOutput();
+    persist();
+    return;
+  }
+  renderRows();
+  ['screen', 'style', 'mood', 'color', 'image', 'changes', 'keeps'].forEach(renderChips);
+  renderLevels();
+  renderSamples();
+  renderHex();
+  renderMcp();
+  syncInput('link', state.link);
+  syncInput('refLink', state.refLink);
+  syncInput('note', state.note);
+  renderOutput();
+  persist();
+}
+
+function syncInput(id, value) {
+  const n = $(id);
+  if (document.activeElement !== n && n.value !== value) n.value = value;
+}
+
+async function copyText(text, msg) {
+  try {
+    await navigator.clipboard.writeText(text);
+  } catch (_e) {
+    const ta = el('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    ta.remove();
+  }
+  toast(msg || 'Đã copy');
+}
+
+function copyPrompt(lang) {
+  const r = currentBuild(lang);
+  const gaps = r.full.match(/\[[^\]]+\]/g) || [];
+  const typed = lang === 'en' && /[ăâđêôơưàáảãạèéẻẽẹìíỉĩịòóỏõọùúủũụỳýỷỹỵ]/i.test(r.full) ? ' — chữ bạn tự gõ giữ nguyên tiếng Việt' : '';
+  copyText(r.full, (gaps.length ? (lang === 'en' ? 'Đã copy EN — nhớ điền ' : 'Đã copy — nhớ điền ') + gaps.join(', ') : (lang === 'en' ? 'Đã copy tiếng Anh' : 'Đã copy prompt')) + typed);
+}
+
+function saveSample() {
+  if (mode !== 'edit') {
+    const t = MODES[mode].build(mv()).text;
+    if (modeSamples().some(x => MODES[mode].build(Object.assign(structuredClone(MODES[mode].defaults), x.values)).text === t && x.own)) { toast('Mẫu này đã có'); return; }
+    saved.unshift({ id: 's' + Date.now().toString(36), mode, state: structuredClone(mv()) });
+    render();
+    toast('Đã lưu vào Mẫu');
+    return;
+  }
+  const text = build(state).text;
+  if (saved.some(x => build(Object.assign(blankState(), x.state)).text === text)) { toast('Mẫu này đã có'); return; }
+  const s = structuredClone(state);
+  s.link = '';
+  saved.unshift({ id: 's' + Date.now().toString(36), screen: state.screen, state: s });
+  showAll = false;
+  render();
+  toast('Đã lưu vào Mẫu');
+}
+
+function addHex(raw) {
+  let v = raw.trim().toUpperCase();
+  if (!v) return;
+  if (v[0] !== '#') v = '#' + v;
+  if (!/^#[0-9A-F]{6}$/.test(v)) { toast('Cần dạng #RRGGBB'); return; }
+  if (!state.hex.includes(v)) state.hex.push(v);
+  render();
+}
+
+async function extractPalette(file) {
+  const url = URL.createObjectURL(file);
+  const img = new Image();
+  img.src = url;
+  await img.decode();
+  const size = 96;
+  const canvas = document.createElement('canvas');
+  canvas.width = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(img, 0, 0, size, size);
+  URL.revokeObjectURL(url);
+  const data = ctx.getImageData(0, 0, size, size).data;
+  const buckets = new Map();
+  for (let i = 0; i < data.length; i += 4) {
+    if (data[i + 3] < 128) continue;
+    const key = ((data[i] & 0xF8) << 16) | ((data[i + 1] & 0xF8) << 8) | (data[i + 2] & 0xF8);
+    buckets.set(key, (buckets.get(key) || 0) + 1);
+  }
+  const picked = [];
+  for (const [key] of [...buckets.entries()].sort((a, b) => b[1] - a[1])) {
+    const rgb = [(key >> 16) & 255, (key >> 8) & 255, key & 255];
+    if (picked.every(p => Math.hypot(p[0] - rgb[0], p[1] - rgb[1], p[2] - rgb[2]) > 56)) picked.push(rgb);
+    if (picked.length === 5) break;
+  }
+  return picked.map(rgb => '#' + rgb.map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase());
+}
+
+function download(name, text) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+  a.download = name;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+function encodeShare() {
+  const payload = { v: 3, state, custom, saved, mode, modeState, modeCustom };
+  return btoa(unescape(encodeURIComponent(JSON.stringify(payload)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function applyPayload(data) {
+  if (!data || typeof data !== 'object') throw new Error('bad');
+  let n = 0;
+  if (Array.isArray(data)) n += mergeCustom(legacyToCustom(data));
+  else if (Array.isArray(data.properties)) n += mergeCustom(legacyToCustom(data.properties));
+  if (data.custom) n += mergeCustom(data.custom);
+  if (Array.isArray(data.saved)) n += mergeSaved(data.saved);
+  if (data.state && data.state.level) state = Object.assign(blankState(), data.state);
+  if (data.mode && MODES[data.mode]) mode = data.mode;
+  if (data.modeState && typeof data.modeState === 'object') modeState = data.modeState;
+  if (data.modeCustom && typeof data.modeCustom === 'object') Object.assign(modeCustom, data.modeCustom);
+  return n;
+}
+
+function loadHash() {
+  const hash = location.hash.slice(1);
+  if (!hash) return;
+  try {
+    applyPayload(JSON.parse(decodeURIComponent(escape(atob(hash.replace(/-/g, '+').replace(/_/g, '/'))))));
+    history.replaceState(null, '', location.pathname + location.search);
+    toast('Đã mở từ link chia sẻ');
+  } catch (_e) {}
+}
+
+function bind() {
+  $('refLink').addEventListener('change', () => {
+    if (state.refLink.trim() && !state.style) { state.style = 'ref'; render(); toast('Phong cách: Theo màn mẫu'); }
+  });
+  [['link', 'link'], ['refLink', 'refLink'], ['note', 'note']].forEach(([id, key]) => {
+    $(id).addEventListener('input', () => { state[key] = $(id).value; renderOutput(); renderRows(); renderSamples(); persist(); });
+  });
+  document.querySelectorAll('.rhead').forEach(h => h.addEventListener('click', () => {
+    const id = h.parentElement.dataset.row;
+    if (allOpen) return;
+    openRow = openRow === id ? '' : id;
+    renderRows();
+  }));
+  $('mReset').addEventListener('click', () => { modeState[mode] = structuredClone(MODES[mode].defaults); render(); toast('Đã làm lại form'); });
+  $('resetForm').addEventListener('click', () => {
+    const screen = state.screen;
+    state = Object.assign(blankState(), { screen });
+    openRow = 'level';
+    showAll = false;
+    render();
+    toast('Đã làm lại form — giữ loại màn, chip và mẫu tự thêm');
+  });
+  $('expandAll').addEventListener('click', () => {
+    allOpen = !allOpen;
+    try { localStorage.setItem(UI_KEY, allOpen ? 'all' : 'auto'); } catch (_e) {}
+    renderRows();
+  });
+  $('samplesAll').addEventListener('click', () => { showAll = !showAll; renderSamples(); });
+  $('samplesTitle').addEventListener('click', () => { showAll = !showAll; renderSamples(); });
+  $('scope').addEventListener('change', () => { state.scope = $('scope').checked; renderOutput(); persist(); });
+  $('copyBtn').addEventListener('click', () => copyPrompt('vi'));
+  $('copyEnBtn').addEventListener('click', () => copyPrompt('en'));
+  $('barCopy').addEventListener('click', () => copyPrompt('vi'));
+  $('barCopyEn').addEventListener('click', () => copyPrompt('en'));
+  $('saveBtn').addEventListener('click', saveSample);
+  document.addEventListener('keydown', e => {
+    if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') { e.preventDefault(); copyPrompt(e.shiftKey ? 'en' : 'vi'); }
+  });
+  $('hexInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); addHex($('hexInput').value); $('hexInput').value = ''; }
+  });
+  $('hexFile').addEventListener('change', async e => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    try {
+      state.hex = await extractPalette(file);
+      render();
+      toast('Lấy được ' + state.hex.length + ' màu');
+    } catch (_err) { toast('Không đọc được ảnh'); }
+  });
+  const closeMenu = () => $('menu').removeAttribute('open');
+  $('shareBtn').addEventListener('click', () => {
+    closeMenu();
+    copyText(location.href.split('#')[0] + '#' + encodeShare(), 'Đã copy link chia sẻ');
+  });
+  $('exportBtn').addEventListener('click', () => {
+    closeMenu();
+    download('figma-tool.json', JSON.stringify({ app: 'figma-tool', v: 3, custom, saved, modeCustom }, null, 2));
+  });
+  $('importBtn').addEventListener('click', () => { closeMenu(); $('importFile').click(); });
+  $('importFile').addEventListener('change', e => {
+    const file = e.target.files && e.target.files[0];
+    e.target.value = '';
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const n = applyPayload(JSON.parse(String(reader.result)));
+        render();
+        toast('Đã nhập ' + n + ' mục');
+      } catch (_err) { toast('File JSON không hợp lệ'); }
+    };
+    reader.readAsText(file);
+  });
+  $('resetBtn').addEventListener('click', () => {
+    closeMenu();
+    if (!confirm('Xoá mọi chip và mẫu tự thêm trên máy này?')) return;
+    custom = blankCustom();
+    modeCustom = {};
+    saved = [];
+    Object.keys(KEY).forEach(group => {
+      const k = KEY[group];
+      if (MULTI[group]) state[k] = state[k].filter(id => find(group, id));
+      else if (state[k] && !find(group, state[k])) state[k] = group === 'screen' ? 'onboard' : '';
+    });
+    try { localStorage.removeItem(LEGACY); } catch (_e) {}
+    render();
+    toast('Đã xoá');
+  });
+  document.addEventListener('click', e => { if (!$('menu').contains(e.target)) closeMenu(); });
+}
+
+try { allOpen = localStorage.getItem(UI_KEY) === 'all'; } catch (_e) {}
+load();
+loadHash();
+bind();
+render();
+</script>
+</body>
+</html>

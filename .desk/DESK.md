@@ -10,10 +10,12 @@
 ## Queue
 
 - ⬜ **Q-1** P0 Test prompt mẫu figma-tool (10 màn × L1–L4) trên màn thật, bắt đầu Onboarding L3/L4; sửa câu agent hiểu sai
+- ⬜ **Q-10** P2 Cho eslint bỏ qua .agentkit/.omp/.opencode/.pi (13 lỗi parse làm npm run lint đỏ) — cần user duyệt
 
 ## Memory
 
 - · **M-2** P1 figma-tool: mỗi màn/loại phải có đủ 4 mẫu L1–L4 trong SAMPLES; Màn/loại luôn ở trên cùng, Link là khối riêng
+- · **M-3** P1 figma-tool có 6 chế độ: Sửa màn (figma-ui-flow), Redesign app, Clone visual, Vẽ từ ảnh, Ads board, Lottie — mỗi chế độ ra lệnh skill chuẩn + mẫu riêng (MODES trong figma-tool.html)
 
 ## Lessons
 
@@ -29,3 +31,8 @@
 - ✅ **Q-6** figma-tool: nút reset form — Orca: điền link + chọn Home, bấm Làm lại → link trống, prompt về mặc định của Home
 - ✅ **Q-7** MCP INSTRUCTIONS: nhắc skill asset-generator (cut-out xoá nền) cạnh figma-ui-flow — build, typecheck, 290/290 test xanh; dist/server.mjs có câu asset-generator; version 1.6.24; lint src sạch (lỗi lint còn lại chỉ ở file .agentkit/.omp/.opencode/.pi chưa track)
 - ✅ **Q-8** Phát hành 1.6.24: MCP nhắc asset-generator chỉ khi cần ảnh xoá nền — 6f4f005 đã lên dev + main, tag v1.6.24 đã push; 290/290 test
+- ✅ **Q-9** Commit bộ desk (agent-work-kit) lên repo, 1.6.25 — 655c70c, 34 file, đã push dev/main, tag v1.6.25
+- ✅ **Q-11** figma-tool: thêm chế độ Redesign app, Clone visual, Vẽ từ ảnh, Ads board, Lottie (mỗi chế độ ra lệnh skill chuẩn + mẫu riêng) — Orca: 5 chế độ mới ra đúng lệnh skill; bấm mẫu, chip, gõ chữ, lưu mẫu, Làm lại đều chạy; clone đổi bố cục tự lên L3; ads diff trùng bản thì nhắc; Sửa màn giữ nguyên; console 0 lỗi
+- ✅ **Q-12** figma-tool Redesign: thêm tính chất chọn/nhập sẵn (kiểu app, nền tảng, cảm giác, màu, giữ, tham khảo, Image MCP, flow theo cách cũ/thử riêng) + chip tự thêm — Orca: mẫu start L4 ra đủ 'Đã chọn sẵn/Cảm giác/Màu/Giữ'; chọn muse2api thêm vào prompt; + Thêm 'Điện ảnh' vào Cảm giác và còn sau reload; build + section + thử riêng hiện Theme/Ảnh/Cảm giác/Màu/Tham khảo; sửa 'cTA' → 'CTA'
+- ✅ **Q-13** figma-tool: nút Copy EN — prompt tiếng Anh cho cả 6 chế độ — 62/62 mẫu (40 sửa màn + 22 chế độ khác) ra tiếng Anh không còn chữ Việt; Orca: Copy EN ở Sửa màn và Redesign copy đúng, toast báo, console 0 lỗi
+- ✅ **Q-14** figma-tool: tuỳ chọn Dùng ảnh (Có / Có + tham chiếu / Phong cách mới) + MCP ảnh, prompt nhắc skill asset-generator + MCP đang mở — Orca: Vẽ từ ảnh/Clone/Redesign có hàng Dùng ảnh (Có / Có + tham chiếu / Phong cách mới) + MCP; Sửa màn hiện MCP ảnh khi chọn ảnh đổi; prompt nhắc skill asset-generator qua MCP đã chọn hoặc 'MCP đang mở'; EN không còn chữ Việt; console 0 lỗi
